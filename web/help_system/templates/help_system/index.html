@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titleblock %}Help index{% endblock %}
+{% block content %}
+<h2>Help index</h2>
+{% if categories %}
+    {% for category, topics in categories %}
+        <h2>{{ category|capfirst }}</h2>
+        <table>
+        <tr>
+        {% for topic in topics %}
+            {% if forloop.counter0|divisibleby:"5" %}
+                </tr>
+                <tr>
+            {% endif %}
+            <td><a href="{% url 'help_system:help_index' %}?name={{ topic.name|urlencode }}">
+            {{ topic.name }}</td>
+        {% endfor %}
+        </tr>
+        </table>
+    {% endfor %}
+{% endif %}
+{% endblock %}

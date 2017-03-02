@@ -1,0 +1,5 @@
+[client]
+database = evennia
+user = tony
+password = mdp4TONY
+default-character-set = utf8
