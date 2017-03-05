@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from commands.command import Command
 
-from commands.edit_cmdset import EditCommand
+from evennia.utils.eveditor import EvEditor
 
 class CmdRoom(Command):
 
@@ -78,6 +78,22 @@ class CmdRoomName(Command):
         caller.msg("Current name of the room #{}: {}.".format(
                 location.id, location.name))
 
+def _desc_load(caller):
+    return caller.db.evmenu_target.db.desc or ""
+
+def _desc_save(caller, buf):
+    """
+    Save line buffer to the desc prop. This should
+    return True if successful and also report its status to the user.
+    """
+    caller.db.evmenu_target.db.desc = buf
+    caller.msg("Saved.")
+    return True
+
+def _desc_quit(caller):
+    caller.attributes.remove("evmenu_target")
+    caller.msg("Exited editor.")
+
 class CmdRoomDesc(Command):
 
     """
@@ -106,12 +122,6 @@ class CmdRoomDesc(Command):
             self.caller.msg("|rYou cannot edit this room.|n")
             return
 
-        self.caller.db.editing = {
-                "object": location,
-                "attr": "desc",
-        }
-
-        self.caller.cmdset.add("commands.edit_cmdset.EditCmdSet",
-                permanent=True)
-        command = self.caller.cmdset.all()[-1].commands[-1]
-        command.display_desc(self.caller, self.caller.location.db.desc)
+        self.caller.db.evmenu_target = self.caller.location
+        # launch the editor
+        EvEditor(self.caller, loadfunc=_desc_load, savefunc=_desc_save, quitfunc=_desc_quit, key="desc", persistent=True)
