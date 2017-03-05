@@ -19,7 +19,7 @@ from commands.command import CmdEdit2
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
 from commands.road import CmdStartRoad
-from commands.room import CmdRoom, CmdRoomName, CmdRoomDesc
+from commands.room import CmdRoom, CmdRoomName, CmdRoomDesc, CmdRoomAdd
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
@@ -41,6 +41,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdRoom())
         self.add(CmdRoomName())
         self.add(CmdRoomDesc())
+        self.add(CmdRoomAdd())
 
 class PlayerCmdSet(default_cmds.PlayerCmdSet):
     """

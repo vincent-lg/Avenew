@@ -23,7 +23,7 @@ class Direction(Parameter):
 
     def parse(self, command, args):
         """Parse the specified arguments."""
-        name, sep, remaining = args.partition(" ")
+        name, sep, remaining = args.strip().partition(" ")
         name = name.lower()
         if not name:
             error = self.error_empty.format(entry=args)

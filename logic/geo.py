@@ -57,19 +57,32 @@ OPP_DIRECTIONS = {
         9: 8,
 }
 
+ALIAS_DIRECTIONS = {
+        0: ["e"],
+        1: ["se", "s-e"],
+        2: ["s"],
+        3: ["sw", "s-w"],
+        4: ["w"],
+        5: ["nw", "n-w"],
+        6: ["n"],
+        7: ["ne", "n-e"],
+        8: ["d"],
+        9: ["u"],
+}
+
 ## Functions
 def coords_in(x, y, z, direction):
     """Return the tuple of coords in the given direction.
-    
+
     The direction should be given as an integer, 0 for east, 1 for
     southeast, 2 for south and so on.
-    
+
     Args:
         x (int): the X coordinate.
         y (int): the Y coordinate.
         z (int): the Z coordinate.
         direction (int): the direction.
-    
+
     Returns:
         The tuple of x, y and z of new coordinates.
 
@@ -101,21 +114,21 @@ def coords_in(x, y, z, direction):
     else:
         raise ValueError("the specified direction {} is invalid.".format(
                 direction))
-    
+
     return x, y, z
 
 def direction_between(x1, y1, z1, x2, y2, z2):
     """Find the exact direction between two sets of coords.
-    
+
     If the first set is 0, 0, 0 and the second 0, 1, 0, then returns
     6 (that is, north).  If there is no perfect direction between
     them, returns None.
-    
+
     """
     dx = x2 - x1
     dy = y2 - y1
     dz = z2 - z1
-    
+
     if dx > 0 and dy == 0 and dz == 0: # East
         return 0
     elif dx > 0 and dy == -dx and dz == 0: # Southeast

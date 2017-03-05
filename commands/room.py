@@ -5,9 +5,14 @@ This file ocntains the CmdRoom and sub-commands.
 
 from textwrap import dedent
 
-from commands.command import Command
-
+from django.conf import settings
+from evennia.utils.create import create_object
 from evennia.utils.eveditor import EvEditor
+
+from commands.command import Command
+from commands.smart.command import SmartCommand
+from logic.geo import *
+from typeclasses.rooms import Room
 
 class CmdRoom(Command):
 
@@ -94,8 +99,8 @@ def _desc_quit(caller):
     caller.attributes.remove("evmenu_target")
     caller.msg("Exited editor.")
 
-class CmdRoomDesc(Command):
 
+class CmdRoomDesc(Command):
     """
     Open a line editor to edit the room's description.
 
@@ -111,17 +116,91 @@ class CmdRoomDesc(Command):
 
     key = "room describe"
     aliases = ["room desc", "rdesc", "rd"]
-    locks = "cmd:id(1) or perm(Builders)"
 
     def func(self):
         """Open the line editor to edit the description."""
         location = self.caller.location
+        self.caller.db.evmenu_target = self.caller.location
+        # Launch the editor
+        EvEditor(self.caller, loadfunc=_desc_load,
+                savefunc=_desc_save, quitfunc=_desc_quit, key="desc",
+                persistent=True)
 
-        # Check permissions
-        if not location.access(self.caller, "edit"):
-            self.caller.msg("|rYou cannot edit this room.|n")
+
+class CmdRoomAdd(SmartCommand):
+
+    """
+    Add a new room.
+
+    Syntax:
+        room add <direction>
+
+    This command can be used to create new rooms.  You have to
+    specify the name of the exit to be created (can be an alias,
+    like |ye|n for |yeast|n).  The exit to this room and back will
+    be created.  The coordinates of the new room will be changed
+    accordingly.
+
+    Alias:
+        radd
+
+    """
+
+    key = "room add"
+    aliases = ["radd"]
+    locks = "cmd:id(1) or perm(Builders)"
+
+    def setup(self):
+        """Setup the command's arguments."""
+        self.params.add("direction")
+
+    def execute(self):
+        """Open the line editor to edit the description."""
+        name = self.direction.name
+        indice = self.direction.indice
+        opp_name = self.direction.opp_name
+        opp_indice = self.direction.opp_indice
+
+        # Typeclasses
+        room_typeclass = settings.BASE_ROOM_TYPECLASS
+        exit_typeclass = settings.BASE_EXIT_TYPECLASS
+
+        # Perform additional checks if the room has valid coordinates
+        here = self.caller.location
+        if all(c is None for c in (here.x, here.y, here.z)):
+            coords = (None, None, None)
+            msg_coords = "without valid coordinates"
+        else:
+            coords = coords_in(here.x, here.y, here.z, indice)
+            msg_coords = "with coordinates X={} Y={} Z={}".format(*coords)
+
+            # Check that there is no room at the future location
+            if Room.get_room_at(*coords):
+                self.msg("There already is a room at this location " \
+                        "(X={}, Y={}, Z={}).".format(*coords))
+                return
+
+        # Check that there is no exit in this direction
+        if [o for o in here.contents if o.destination and o.key == name]:
+            self.msg("There already is an exit in this direction.")
             return
 
-        self.caller.db.evmenu_target = self.caller.location
-        # launch the editor
-        EvEditor(self.caller, loadfunc=_desc_load, savefunc=_desc_save, quitfunc=_desc_quit, key="desc", persistent=True)
+        # Create the room
+        room = create_object(room_typeclass, key="Nowhere")
+        room.x = coords[0]
+        room.y = coords[1]
+        room.z = coords[2]
+        self.msg("The room {} (#{}) has been created {}.".format(
+                room.key, room.id, msg_coords))
+
+        # Create the exits
+        aliases = ALIAS_DIRECTIONS[indice]
+        opp_aliases = ALIAS_DIRECTIONS[opp_indice]
+        exit = create_object(exit_typeclass, key=name,
+                location=here, destination=room, aliases=aliases)
+        self.msg("The {} exit has been created between {} and {}.".format(
+                name, here.key, room.key))
+        opp_exit = create_object(exit_typeclass, key=opp_name,
+                location=room, destination=here, aliases=opp_aliases)
+        self.msg("The {} exit has been created between {} and {}.".format(
+                opp_name, room.key, here.key))
