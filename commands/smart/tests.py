@@ -70,6 +70,26 @@ class CmdAddroom(SmartCommand):
         self.msg(msg)
 
 
+class CmdTunnel(SmartCommand):
+
+    """
+    Add a room.
+
+    Usage:
+        @tunnel <direction>
+
+    """
+
+    def setup(self):
+        """Setup the command's arguments."""
+        self.params.add("direction")
+
+    def execute(self):
+        """Execute the command."""
+        self.caller.msg(
+                "Name: {d.name} ({d.indice}), opp: {d.opp_name} " \
+                        "({d.opp_indice})".format(d=self.direction))
+
 # Tests
 class TestSmart(CommandTest):
     "tests the look command by simple call"
@@ -99,3 +119,14 @@ class TestSmart(CommandTest):
         self.call(CmdAddroom(), "-i 3", "desc=no, exits=no, i=3")
         self.call(CmdAddroom(), "-i",
                 "Addroom: error: argument i: expected one argument")
+
+    def test_direction(self):
+        """Test the direction parameter."""
+        self.call(CmdTunnel(), "east", "Name: east (0), opp: west (4)")
+        self.call(CmdTunnel(), "sw",
+                "Name: southwest (3), opp: northeast (7)")
+        self.call(CmdTunnel(), "up", "Name: up (9), opp: down (8)")
+        self.call(CmdTunnel(), "",
+                "You should enter a direction name or alias.")
+        self.call(CmdTunnel(), "something",
+                "Sorry, something isn't a valid direction.")

@@ -7,10 +7,12 @@ Two constants can be used from here:
 
 """
 
+from commands.smart.parameters.direction import Direction
 from commands.smart.parameters.number import Number
 from commands.smart.parameters.options import Options
 
 LIST_PARAM = (
+        Direction,
         Number,
         Options,
 )
