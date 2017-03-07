@@ -17,6 +17,7 @@ at_server_cold_stop()
 """
 
 import pdb
+import os
 import subprocess
 import sys
 
@@ -58,6 +59,12 @@ def at_server_reload_stop():
     This is called only time the server stops before a reload.
     """
     # Pull the Git repository
+    print "Pulling Evennia master..."
+    current = os.getcwd()
+    os.chdir("../evennia")
+    process = subprocess.Popen("git pull", shell=True)
+    process.wait()
+    os.chdir(current)
     print "Pulling from Github..."
     process = subprocess.Popen("git pull", shell=True)
     process.wait()
