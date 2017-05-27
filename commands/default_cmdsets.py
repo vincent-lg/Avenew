@@ -15,11 +15,10 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds
-from commands.command import CmdEdit2
+from commands.edit import CmdEdit
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
 from commands.road import CmdStartRoad
-from commands.room import CmdRoom, CmdRoomName, CmdRoomDesc, CmdRoomAdd
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
@@ -35,13 +34,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         """
         super(CharacterCmdSet, self).at_cmdset_creation()
         self.add(CmdDrive())
-        self.add(CmdEdit2())
+        self.add(CmdEdit())
         self.add(CmdHelp())
         self.add(CmdStartRoad())
-        self.add(CmdRoom())
-        self.add(CmdRoomName())
-        self.add(CmdRoomDesc())
-        self.add(CmdRoomAdd())
 
 class PlayerCmdSet(default_cmds.PlayerCmdSet):
     """

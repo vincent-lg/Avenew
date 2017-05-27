@@ -28,16 +28,3 @@ class Command(BaseCommand):
 
     """
     pass
-
-class CmdEdit2(Command):
-
-    key = "edit2"
-
-    def func(self):
-        self.caller.db.editing = {
-                "object": self.caller.location,
-                "attr": "desc",
-        }
-
-        self.caller.msg("Editing...")
-        self.caller.cmdset.add("commands.edit_cmdset.EditCmdSet", permanent=True)

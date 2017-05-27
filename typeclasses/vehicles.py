@@ -242,6 +242,15 @@ class Vehicle(DefaultObject):
 
     """
 
+    to_edit = {
+            "name": "key",
+            "speed": {
+                    "attr": "db.speed",
+                    "type": "int",
+                    "valid": lambda speed: speed >= 0,
+            },
+    }
+
     def at_object_creation(self):
         self.db.coords = (None, None, None)
         self.db.driver = None

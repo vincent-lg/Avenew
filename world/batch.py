@@ -10,11 +10,47 @@ from typeclasses.rooms import Room
 # Constants
 ROOM_TYPECLASS = "typeclasses.rooms.Room"
 EXIT_TYPECLASS = "typeclasses.exits.Exit"
-ROOM_LOCKSTRING = "control:id(1) or perm(Wizards); " \
-                          "delete:id(1) or perm(Wizards); " \
-                          "edit:id(1) or perm(Wizards)"
+CROSSROAD_TYPECLASS = "typeclasses.vehicles.Crossroad"
+ALIASES = {
+        "east": ["e"],
+        "south-east": ["se", "s-e"],
+        "south": ["s"],
+        "south-west": ["sw", "s-w"],
+        "west": ["w"],
+        "north-west": ["nw"],
+        "north": ["n"],
+        "north-east": ["ne", "n-e"],
+        "down": ["d"],
+        "up": ["u"],
+}
 
 # Functions
+def get_room(x, y, z):
+    """Get or create the given room."""
+    room = Room.get_room_at(x, y, z)
+    if room:
+        return room
+
+    # Create the room
+    room = create.create_object(ROOM_TYPECLASS, "Nowhere")
+    room.x = x
+    room.y = y
+    room.z = z
+    return room
+
+def get_exit(room, direction, destination, name=None, aliases=None):
+    """Get or create the exit from room to destination."""
+    name = name or direction
+    exits = [o for o in room.contents if o.destination and o.name == name]
+    if exits:
+        return exits[0]
+
+    # Create the exit
+    aliases = aliases or ALIASES.get(name, [])
+    exit = create.create_object(EXIT_TYPECLASS, name, room,
+                   aliases=aliases, destination=destination)
+    return exit
+
 def describe(text):
     """Return the STR description.
 
@@ -36,30 +72,21 @@ center = Room.objects.get(id=2)
 
 #CODE
 # Rooms and exits
-center.key = "A magnificient hotel"
+center.key = "A parking lot"
 center.db.desc = describe("""
-    You are standing in front of a magnificient hotel.  A few marble
-    steps lead to the heavy wooden doors, into a hall that, judging
-    from outside, is gigantic, to say the least.
-
-    Behind you, to the south, is a large alleyway leading to a parking
-    lot and, still beyond, a busy street.
+    This is really a new place, isn't it?  Not much to be
+    seen, as it is.
 """)
 
-# Create the hotel hall
-hall = create.create_object(ROOM_TYPECLASS, "A splendid hall")
-hall.db.desc = describe("""
-    This is a magnificent hotel hall, surrounded by plants and a
-    large counter in the far corner.  A set of heavy doors leading
-    south outside of the hall, while corridors lead further into
-    this hotel.
+sidewalk = get_room(0, -1, 0)
+sidewalk.key = "A sidewalk"
+sidewalk.db.desc = describe("""
+    This is a piece of sidewalk, really beautiful.
 """)
-hall.locks.add(ROOM_LOCKSTRING)
-create.create_object(EXIT_TYPECLASS, "north", center,
-                   aliases=["n", "hall", "hotel"],
-                   locks=ROOM_LOCKSTRING,
-                   destination=hall)
-create.create_object(EXIT_TYPECLASS, "south", hall,
-                   aliases=["s", "out", "outside"],
-                   locks=ROOM_LOCKSTRING,
-                   destination=center)
+sidewalk2 = get_room(-1, -1, 0)
+sidewalk2.key = "A sidewalk"
+sidewalk.db.desc = describe("""
+    This is another piece of sidewalk, really beautiful.
+""")
+get_exit(sidewalk, "west", sidewalk2)
+get_exit(sidewalk2, "east", sidewalk)

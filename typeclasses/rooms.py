@@ -22,6 +22,11 @@ class Room(DefaultRoom):
 
     """
 
+    # Fields to edit
+    to_edit = {
+        "name": "key",
+    }
+
     @classmethod
     def get_room_at(cls, x, y, z):
         """
