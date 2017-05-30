@@ -136,6 +136,29 @@ class Crossroad(DefaultObject):
 
         return map
 
+    @classmethod
+    def get_crossroad_at(cls, x, y, z):
+        """
+        Return the crossroad at the given location or None if not found.
+
+        Args:
+            x (int): the X coord.
+            y (int): the Y coord.
+            z (int): the Z coord.
+
+        Return:
+            The crossroad at this location (Room) or None if not found.
+
+        """
+        crossroads = cls.objects.filter(
+                db_tags__db_key=str(x), db_tags__db_category="coordx").filter(
+                db_tags__db_key=str(y), db_tags__db_category="coordy").filter(
+                db_tags__db_key=str(z), db_tags__db_category="coordz")
+        if crossroads:
+            return crossroadss[0]
+
+        return None
+
     def _get_x(self):
         """Return the X coordinate or None."""
         x = self.tags.get(category="coordx")
@@ -175,6 +198,19 @@ class Crossroad(DefaultObject):
     def at_object_creation(self):
         self.db.exits = {}
 
+    def refresh_tag(self, name):
+        """Reset the tag if not present."""
+        name = name.lower()
+        if not self.tags.get(name, category="road"):
+            self.tags.add(name, category="road")
+
+    def refresh_tags(self):
+        """Refresh all tags."""
+        for info in self.db.exits.values():
+            name = info.get("name")
+            if name:
+                self.refresh_tag(name)
+
     def add_exit(self, direction, crossroad, name):
         """
         Add a new exit in the given direction.
@@ -200,6 +236,7 @@ class Crossroad(DefaultObject):
                 "distance": distance,
                 "name": name,
         }
+        self.refresh_tag(name)
 
     def del_exit(self, direction):
         """
@@ -213,8 +250,13 @@ class Crossroad(DefaultObject):
             direction (int): the direction (0 for east, 1 for south-east...)
 
         """
+        name = None
         if direction in self.db.exits:
-            del self.db.exits[direction]
+            info = self.db.exits.pop(direction)
+            name = info.get(name)
+
+        if name and self.tags.get(name, category="road"):
+            self.tags.remove(name, category="road")
 
 
 class Vehicle(DefaultObject):

@@ -71,7 +71,7 @@ ALIAS_DIRECTIONS = {
 }
 
 ## Functions
-def coords_in(x, y, z, direction):
+def coords_in(x, y, z, direction, distance=1):
     """Return the tuple of coords in the given direction.
 
     The direction should be given as an integer, 0 for east, 1 for
@@ -82,35 +82,36 @@ def coords_in(x, y, z, direction):
         y (int): the Y coordinate.
         z (int): the Z coordinate.
         direction (int): the direction.
+        distance (optional): the distance in coords.
 
     Returns:
         The tuple of x, y and z of new coordinates.
 
     """
     if direction == 0: # East
-        x += 1
+        x += distance
     elif direction == 1: # South-east
-        x += 1
-        y -= 1
+        x += distance
+        y -= distance
     elif direction == 2: # South
-        y -= 1
+        y -= distance
     elif direction == 3:
-        x -= 1
-        y -= 1
+        x -= distance
+        y -= distance
     elif direction == 4: # West
-        x -= 1
+        x -= distance
     elif direction == 5: # North-west
-        x -= 1
-        y += 1
+        x -= distance
+        y += distance
     elif direction == 6: # North
-        y += 1
+        y += distance
     elif direction == 7: # North-east
-        x += 1
-        y += 1
+        x += distance
+        y += distance
     elif direction == 8: # Down
-        z -= 1
+        z -= distance
     elif direction == 9: # Up
-        z += 1
+        z += distance
     else:
         raise ValueError("the specified direction {} is invalid.".format(
                 direction))

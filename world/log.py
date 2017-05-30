@@ -16,9 +16,6 @@ Example:
 from datetime import datetime
 import logging
 import os
-import sys
-import threading
-import traceback
 
 class CustomFormatter(logging.Formatter):
 
@@ -153,4 +150,3 @@ def end():
 
 # Prepare the different loggers
 main = logger("")  # Main logger
-gps = logger("gps")
