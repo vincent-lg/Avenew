@@ -25,12 +25,16 @@ from evennia import TICKER_HANDLER as ticker_handler
 
 from services import email
 import tickers
+from world.log import begin, end
 
 def at_server_start():
     """
     This is called every time the server starts up, regardless of
     how it was shut down.
     """
+    # Start the main logger
+    begin()
+
     # Setup the email service
     email.setup()
 
@@ -44,7 +48,7 @@ def at_server_stop():
     This is called just before the server is shut down, regardless
     of it is for a reload, reset or shutdown.
     """
-    pass
+    end()
 
 
 def at_server_reload_start():
