@@ -3,6 +3,8 @@ Module containing the GPS class.
 
 """
 
+from math import fabs as abs
+from Queue import PriorityQueue
 import re
 
 from logic.geo import coords_in
@@ -148,3 +150,43 @@ class GPS(object):
             self.path.append((end, direction, projected))
 
         return end
+
+    def find_path(self):
+        """Find the path between origin and destination."""
+        start = self.origin
+        goal = self.destination
+
+        # A* algorithm to find the path
+        def heuristic(a, b):
+            # Manhattan distance on a square grid
+            return abs(a.x - b.x) + abs(a.y - b.y)
+
+        # Feeding the frontier
+        frontier = PriorityQueue()
+        frontier.put(start, 0)
+        came_from = {}
+        cost_so_far = {}
+        came_from[start] = None
+        cost_so_far[start] = 0
+        while not frontier.empty():
+            current = frontier.get()
+            if current == goal:
+                break
+
+            for direction, info in current.db.exits.items():
+                next = info["crossroad"]
+                new_cost = cost_so_far[current] + info["distance"]
+                if next not in cost_so_far or new_cost < cost_so_far[next]:
+                    cost_so_far[next] = new_cost
+                    priority = new_cost + heuristic(goal, next)
+                    frontier.put(next, priority)
+                    came_from[next] = (current, direction)
+
+        path = []
+        while current != start:
+           old = current
+           current, direction = came_from[current]
+           path.append((current, direction, old))
+
+        path.reverse()
+        self.path = path + self.path
