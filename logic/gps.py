@@ -3,7 +3,7 @@ Module containing the GPS class.
 
 """
 
-from math import fabs as abs
+from math import fabs, sqrt
 from Queue import PriorityQueue
 import re
 
@@ -31,9 +31,9 @@ class GPS(object):
         self.origin = origin
         self.destination = destination
         self.path = []
-        if isinstance(origin, str):
+        if isinstance(origin, basestring):
             self.origin = self.find_address(origin)
-        if isinstance(destination, str):
+        if isinstance(destination, basestring):
             self.destination = self.find_address(destination, in_path=True)
 
     def find_address(self, address, in_path=False):
@@ -92,7 +92,7 @@ class GPS(object):
         next = beginning
         found = [next]
         distance = 0
-        expected = int(number / 4)
+        expected = number / 4
         if expected < 1:
             expected = 1
 
@@ -108,11 +108,28 @@ class GPS(object):
                         "{} can't be found".format(number, road))
 
             direction, info = infos[0]
-            next_distance = info["distance"] - 1
+            next_distance = int(info["distance"] - 1)
             if distance + next_distance >= expected:
                 # Try to find the right coordinates
                 end = next
                 expected -= distance
+
+                # If the address is actually closer to the next crossroad
+                # select it after some checks
+                print info
+                back = [(k, v) for (k, v) in info["crossroad"].db.exits.items() \
+                        if v["crossroad"] is next]
+                if back:
+                    t_direction = back[0][0]
+                    back = info["crossroad"]
+                    log.debug("  Found a back direction from #{}, " \
+                            "direction={}".format(back.id, t_direction))
+                    if expected > next_distance / 2 + 1:
+                        direction = t_direction
+                        expected = next_distance - expected + 1
+                        end = back
+                        log.debug("  We're closer to the back exit.")
+
                 break
 
             # The number is further ahead, go on
@@ -155,11 +172,13 @@ class GPS(object):
         """Find the path between origin and destination."""
         start = self.origin
         goal = self.destination
+        log.debug("Finding the shortest path between #{} and #{}".format(
+                start.id, goal.id))
 
         # A* algorithm to find the path
         def heuristic(a, b):
             # Manhattan distance on a square grid
-            return abs(a.x - b.x) + abs(a.y - b.y)
+            return fabs(a.x - b.x) + fabs(a.y - b.y)
 
         # Feeding the frontier
         frontier = PriorityQueue()
@@ -170,7 +189,7 @@ class GPS(object):
         cost_so_far[start] = 0
         while not frontier.empty():
             current = frontier.get()
-            if current == goal:
+            if current is goal:
                 break
 
             for direction, info in current.db.exits.items():
@@ -183,10 +202,12 @@ class GPS(object):
                     came_from[next] = (current, direction)
 
         path = []
-        while current != start:
-           old = current
-           current, direction = came_from[current]
-           path.append((current, direction, old))
+        while current is not start:
+            old = current
+            current, direction = came_from[current]
+            path.append((current, direction, old))
+            log.debug("  From #{} to #{}, direction={}".format(
+                    current.id, old.id, direction))
 
         path.reverse()
         self.path = path + self.path

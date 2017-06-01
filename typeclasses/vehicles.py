@@ -155,7 +155,7 @@ class Crossroad(DefaultObject):
                 db_tags__db_key=str(y), db_tags__db_category="coordy").filter(
                 db_tags__db_key=str(z), db_tags__db_category="coordz")
         if crossroads:
-            return crossroadss[0]
+            return crossroads[0]
 
         return None
 

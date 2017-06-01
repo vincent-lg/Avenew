@@ -6,6 +6,7 @@ from math import sqrt
 import pdb
 from random import choice
 import sys
+import time
 from textwrap import dedent
 
 from evennia.commands.cmdset import CmdSet
@@ -14,6 +15,7 @@ from evennia.utils.spawner import spawn
 
 from commands.command import Command
 from logic.geo import *
+from logic.gps import GPS
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
 
@@ -48,7 +50,7 @@ class CmdStartRoad(Command):
 
         caller.db._road_building = {
                 "x": location.x,
-                "y":  location.y,
+                "y": location.y,
                 "z": location.z,
         }
 
@@ -471,6 +473,115 @@ class CmdVehicle(Command):
                     "vehicle.".format(room.id))
 
 
+class CmdGPS(Command):
+
+    """
+    Use the GPS to find a path.
+
+    Usage:
+        gps <address of destination>
+
+    This will attempt to find the path between your current location and
+    the specified address.
+
+    Example:
+        gps 5 north star
+
+    """
+
+    key = "GPS"
+    aliases = ["gps"]
+
+    def func(self):
+        """Execute the command."""
+        building = self.caller.db._road_building
+        if not building:
+            self.caller.msg("Closing the building mode...")
+            self.caller.cmdset.delete()
+            return
+
+        x = building["x"]
+        y = building["y"]
+        z = building["z"]
+        crossroad = Crossroad.get_crossroad_at(x, y, z)
+        if crossroad is None:
+            self.msg("You are not standing at a crossroad, cannot use the GPS.")
+            return
+
+        address = self.args.strip()
+        if not address:
+            self.msg("Enter the address of the destination.")
+            return
+
+        # Try to find the address
+        t1 = time.time()
+        try:
+            gps = GPS(crossroad, address)
+            t2 = time.time()
+        except ValueError, e:
+            e = str(e)
+            self.msg(e[0].upper() + e[1:] + ".")
+            return
+
+        # Now get the path
+        t3 = time.time()
+        gps.find_path()
+        t4 = time.time()
+        tt1 = round(t2 - t1, 4)
+        tt2 = round(t4 - t3, 4)
+        text = dedent("""
+            Searching address: {}.
+            Address found in {} seconds.
+            GPS found path in {} seconds.
+            Shortest path in {} hops:
+        """.strip("\n").format(address, tt1, tt2, len(gps.path)))
+
+        directions = {
+                0: "to the east",
+                1: "to the south-east",
+                2: "to the south",
+                3: "to the south-west",
+                4: "to the west",
+                5: "to the north-west",
+                6: "to the north",
+                7: "to the north-east",
+                8: "downward",
+                9: "upward",
+        }
+
+        # Display all the hops
+        i = 1
+        for origin, direction, destination in gps.path:
+            direction = directions[direction]
+            if isinstance(origin, tuple):
+                o_x, o_y, o_z = origin
+                origin = "X={} Y={} Z={}".format(*origin)
+            elif isinstance(origin, Room):
+                o_x, o_y, o_z = origin.x, origin.y, origin.z
+                origin = origin.key
+            else:
+                o_x, o_y, o_z = origin.x, origin.y, origin.z
+                origin = "#{}".format(origin.id)
+
+            if isinstance(destination, tuple):
+                d_x, d_y, d_z = destination
+                destination = "X={} Y={} Z={}".format(*destination)
+            elif isinstance(destination, Room):
+                d_x, d_y, d_z = destination.x, destination.z, destination.z
+                destination = destination.key
+            else:
+                d_x, d_y, d_z = destination.x, destination.z, destination.z
+                destination = "#{}".format(destination.id)
+
+            distance = round(sqrt((
+                    d_x - o_x) ** 2 + (d_y - o_y) ** 2 + (d_z - o_z) ** 2), 1)
+            text += "\n{:>2} {}, from {} to {}, distance {}.".format(
+                    i, direction, origin, destination, distance)
+            i += 1
+
+        self.msg(text)
+
+
 # Command set
 class RoadCmdSet(CmdSet):
 
@@ -484,3 +595,4 @@ class RoadCmdSet(CmdSet):
         self.add(CmdCross())
         self.add(CmdRoad())
         self.add(CmdVehicle())
+        self.add(CmdGPS())
