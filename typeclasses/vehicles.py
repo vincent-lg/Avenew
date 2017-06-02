@@ -4,25 +4,17 @@ Vehicles
 """
 
 import pdb
-from math import sqrt
+from math import fabs, sqrt
 from random import choice
 import sys
 
 from evennia import DefaultObject
 
+from logic.geo import NAME_DIRECTIONS, coords_in, direction_between, distance_between
+from typeclasses.rooms import Room
+
 # Constants
-DIRECTIONS = {
-    0: "East",
-    1: "South-east",
-    2: "South",
-    3: "South-west",
-    4: "West",
-    5: "North-west",
-    6: "North",
-    7: "North-east",
-    8: "Down",
-    9: "Up",
-}
+DIRECTIONS = NAME_DIRECTIONS
 
 class Crossroad(DefaultObject):
 
@@ -38,103 +30,6 @@ class Crossroad(DefaultObject):
     players may not be aware of it).
 
     """
-
-    @classmethod
-    def get_complex(cls):
-        """Return the entire complex as a dictionary of coordinates.
-
-        This method SHOULD NOT be used in cases when performances
-        count, specifically in background tasks, such as moving a
-        vehicle.  It should only be called for building tasks, and
-        if possible, be optimized.  It will query all crossroads and
-        cache them, which may amount to some building.  It will also
-        try to create an accurate map with crossroads and routes.
-
-        Returns:
-            A dictionary containing, as keys, the coordinates
-            (x, y, z) and as values, another dict containing the
-            type of object and some additional information.
-
-        Example:
-            complex = Crossroad.get_complex()
-            at = complex.get((0, 0, 0))
-            # at is None if nothing is there
-            # It might contain a dictionary to indicate a road or crossroad
-            if at:
-                type = at["type"]
-                # type can be 'road' or 'crossroad'
-                if type == "road":
-                    directions = at["directions"]
-                    # The directions in which open crossroads stand
-                elif type == "crossroad":
-                    crossroad = at["crossroad"]
-
-        """
-        crossroads = cls.objects.all()
-        reverse = {
-            0: 4,
-            1: 5,
-            2: 6,
-            3: 7,
-            4: 0,
-            5: 1,
-            6: 2,
-            7: 3,
-            8: 9,
-            9: 8,
-        }
-        m_coords = {
-            0: (1, 0, 0),
-            1: (1, -1, 0),
-            2: (0, -1, 0),
-            3: (-1, -1, 0),
-            4: (-1, 0, 0),
-            5: (-1, 1, 0),
-            6: (0, 1, 0),
-            7: (1, 1, 0),
-            8: (0, 0, -1),
-            9: (0, 0, 1),
-        }
-
-        # Building the map
-        map = {}
-        for crossroad in crossroads:
-            x, y, z = crossroad.x, crossroad.y, crossroad.z
-            if any(c is None for c in (x, y, z)):
-                continue
-
-            map[(x, y, z)] = {
-                    "type": "crossroad",
-                    "crossroad": crossroad,
-            }
-
-            # Now, look for all routes
-            for direction, exit in crossroad.db.exits.items():
-                # Trace the straight street until next crossroad
-                exit = exit["crossroad"]
-                d_x, d_y, d_z = exit.x, exit.y, exit.z
-                contrary = reverse[direction]
-                t_x, t_y, t_z = x, y, z
-                m_x, m_y, m_z = m_coords[direction]
-                while (t_x, t_y) != (d_x, d_y):
-                    t_x += m_x
-                    t_y += m_y
-                    t_z += m_z
-                    if (t_x, t_y, t_z) not in map:
-                        map[(t_x, t_y, t_z)] = {
-                                "type": "road",
-                                "crossroads": [
-                                    (crossroad, direction),
-                                ],
-                        }
-                    else:
-                        present = map[(t_x, t_y, t_z)]
-                        if present["type"] == "road":
-                            present["crossroads"].append((crossroad, direction))
-
-                    # Add a check to make sure we're still on track
-
-        return map
 
     @classmethod
     def get_crossroad_at(cls, x, y, z):
@@ -158,6 +53,166 @@ class Crossroad(DefaultObject):
             return crossroads[0]
 
         return None
+
+    @classmethod
+    def get_crossroads_road(cls, road, city=None):
+        """
+        Get the list of crossroads connected to a road.
+
+        Args:
+            road (str): the road's name.
+            city (str, optional): the city name to filter search.
+
+        Returns:
+            The list of found crossroads directly connected.
+
+        """
+        road = road.lower().strip()
+        if city:
+            city = city.lower().strip()
+            crossroads = cls.objects.filter(
+                    db_tags__db_key=road, db_tags__db_category="road").filter(
+                    db_tags__db_key=city, db_tags__db_category="city")
+        else:
+            crossroads = cls.objects.filter(
+                    db_tags__db_key=road, db_tags__db_category="road")
+
+        # Sort by crossroad ID
+        crossroads = sorted(list(crossroads), key=lambda c: c.id)
+        return crossroads
+
+    @classmethod
+    def get_crossroads_with(cls, x, y, z):
+        """
+        Return the crossroads with a street leading to that coordinate.
+
+        Args:
+            x (int): the X coord.
+            y (int): the Y coord.
+            z (int): the Z coord.
+
+        Return:
+            The list of crossroads having a direct path to this coordinate.
+
+        """
+        tag = "{} {} {}".format(x, y, z)
+        crossroads = cls.objects.filter(
+                db_tags__db_key=tag, db_tags__db_category="croad")
+
+        return crossroads
+
+    @classmethod
+    def get_street(cls, x, y, z, city=None):
+        """
+        Return the street and additional information if found, or None.
+
+        Args:
+            x (int): the X coordinate.
+            y (int): the Y coordinate.
+            z (int): the Z coordinate.
+            city (optional, str): the city's name to filter by.
+
+        Returns:
+            A tuple containing  the closest crossroad (or None), the
+            street name (or an empty string), and a list with the
+            additional street numbers perpendicular to the street.
+            For instance, if the street is oriented from east to west,
+            the sides of the street are on the north and south, and
+            the rooms or their coordinates are returned in the dictionary.
+
+        Example:
+            (<Crossroad #3>, "First street", {
+                    "left": {
+                        "direction": 2, # south
+                        "coordinate": (0, -1, 0),
+                        "room": <Room In front of the market>,
+                        "numbers": (21, 23),
+                    },
+                    "right": {
+                        "direction": 6, # north
+                        "coordinate": (0, 1, 0),
+                        "room": <Room In front of the public library>,
+                        "numbers": (22, 24),
+                    },
+            })
+
+        """
+        crossroads = cls.get_crossroads_with(x, y, z)
+        if not crossroads:
+            return (None, "", [])
+
+        closest = crossroads[0]
+
+        # Find the street name
+        infos = [
+                v for v in closest.db.exits.values() if \
+                (x, y, z) in v["coordinates"]]
+        if not infos:
+            raise RuntimeError("unexpected: the coordinates {} {} {} " \
+                    "were found in crossroad #{}, but the road leading " \
+                    "this way cannot be found".format(x, y, z, first.id))
+
+        road = infos[0]["name"].lower()
+
+        # Find the first crossroad to this road
+        crossroads = Crossroad.get_crossroads_road(road, city)
+        if not crossroads:
+            return (None, "", [])
+
+        first = current = crossroads[0]
+        found = False
+        number = 0
+        visited = []
+        while not found:
+            infos = [
+                    (k, v) for (k, v) in current.db.exits.items() if \
+                    v["name"].lower() == road and v["crossroad"] not in visited]
+            if not infos:
+                return (None, "can't find", [])
+
+            direction, info = infos[0]
+            crossroad = info["crossroad"]
+            distance = distance_between(current.x, current.y, 0,
+                    crossroad.x, crossroad.y, 0)
+            print "Distance", current.id, crossroad.id, distance
+            end_number = (distance - 1) * info.get("interval", 2) * 2
+            if (x, y, z) in info["coordinates"]:
+                d_x, d_y = current.x, current.y
+                distance = distance_between(x, y, 0, d_x, d_y, 0)
+                end_number = distance * info.get("interval", 2) * 2
+                found = True
+
+            number += end_number
+            current = crossroad
+            visited.append(crossroad)
+
+        # We now try to find the immediate neighbors
+        print "number", number
+        interval = info.get("interval", 2)
+        left_direction = (direction - 2) % 8
+        left_coords = coords_in(x, y, z, left_direction)
+        left_room = Room.get_room_at(*left_coords)
+        left_numbers = tuple(number + n for n in range(-interval * 2 + 1, 1, 2))
+        right_direction = (direction + 2) % 8
+        right_coords = coords_in(x, y, z, right_direction)
+        right_room = Room.get_room_at(*right_coords)
+        right_numbers = tuple(number + n for n in range(-(interval - 1) * 2, 1, 2))
+
+        return (closest, info["name"], {
+                "left": {
+                        "direction": left_direction,
+                        "coordinates": left_coords,
+                        "room": left_room,
+                        "numbers": left_numbers,
+                },
+                "right": {
+                        "side": "right",
+                        "direction": right_direction,
+                        "coordinates": right_coords,
+                        "room": right_room,
+                        "numbers": right_numbers,
+                },
+        })
 
     def _get_x(self):
         """Return the X coordinate or None."""
@@ -198,20 +253,8 @@ class Crossroad(DefaultObject):
     def at_object_creation(self):
         self.db.exits = {}
 
-    def refresh_tag(self, name):
-        """Reset the tag if not present."""
-        name = name.lower()
-        if not self.tags.get(name, category="road"):
-            self.tags.add(name, category="road")
-
-    def refresh_tags(self):
-        """Refresh all tags."""
-        for info in self.db.exits.values():
-            name = info.get("name")
-            if name:
-                self.refresh_tag(name)
-
-    def add_exit(self, direction, crossroad, name):
+    def add_exit(self, direction, crossroad, name, coordinates=None,
+            interval=2):
         """
         Add a new exit in the given direction.
 
@@ -219,24 +262,85 @@ class Crossroad(DefaultObject):
             direction (int): the direction (0 for east, 1 for south-east...)
             crossroad (Crossroad): the destination (another crossroad)
             name (str): name of the exit (like "eight street")
+            coordinates (optional, list): coordinate replacements.
+            interval (optional, int): change the default number interval.
 
         If there already was a crossroad in this direction, replace it.
         The given crossroad has to be logically set (if you give a
         direction of 0, the crossroad should be straight to the east
-        of the configured position).
+        of the configured position).  Otherwise, a ValueError will
+        be raised.
+
+        The number interval determines the number of numbers per
+        coordinates of a road.  By default, it is 2 (meaning, on
+        one coordinate are actually 2 numbers).
 
         """
         # Check the geographical logic
-        # Get the distance between self and crossroad
         x, y, z = self.x, self.y, self.z
         d_x, d_y, d_z = crossroad.x, crossroad.y, crossroad.z
+
+        # Since the vertical distance will affect coordinates, we
+        # need to make sure it's properly handled.
+        if direction_between(x, y, 0, d_x, d_y, 0) != direction:
+            raise ValueError("the direction between {} and {} doesn't " \
+                    "match {}".format(self, crossroad, direction))
+
+        # Get the distance between self and crossroad
         distance = sqrt((d_x - x) ** 2 + (d_y - y) ** 2)
+
+        coordinates = coordinates or []
+        slope = d_z - z
+        if not coordinates:
+            progress = 0
+            current_slope = 0
+
+            # Calculate in-between coordinates
+            if slope <= -1 or slope >= 1:
+                slope_frequency = int(distance / fabs(slope))
+            else:
+                slope_frequency = 0
+
+            if slope < 0:
+                slope_step = -1
+            else:
+                slope_step = 1
+
+            while progress < distance:
+                progress += 1
+                if progress >= distance:
+                    break
+
+                if slope_frequency and progress % slope_frequency == 0:
+                    current_slope += slope_step
+
+                coords = coords_in(x, y, z, direction, distance=progress)
+                if current_slope:
+                    coords = coords[:2] + (coords[2] + current_slope, )
+                coordinates.append(coords)
+
+        # Create the tags of possible coordinates
+        for coords in coordinates:
+            tag = "{} {} {}".format(*coords)
+            if not self.tags.get(tag, category="croad"):
+                self.tags.add(tag, category="croad")
+
         self.db.exits[direction] = {
+                "coordinates": coordinates,
                 "crossroad": crossroad,
                 "distance": distance,
+                "direction": direction,
+                "interval": interval,
                 "name": name,
+                "slope": slope,
         }
-        self.refresh_tag(name)
+
+        # Add the tag for the street name itself
+        name = name.lower()
+        if not self.tags.get(name, category="road"):
+            self.tags.add(name, category="road")
+
+        return coordinates
 
     def del_exit(self, direction):
         """
@@ -254,6 +358,12 @@ class Crossroad(DefaultObject):
         if direction in self.db.exits:
             info = self.db.exits.pop(direction)
             name = info.get(name)
+
+            # Remove the coordinate tags
+            for coords in info.get("coordinates", []):
+                tag = "{} {} {}".format(*coords)
+                if self.tags.get(tag, category="croad"):
+                    self.tags.remove(tag, category="croad")
 
         if name and self.tags.get(name, category="road"):
             self.tags.remove(name, category="road")

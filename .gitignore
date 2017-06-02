@@ -33,6 +33,7 @@ server/ssl.cert
 server/ssl.key
 web/static/*
 web/media/*
+world/areas
 
 # Installer logs
 pip-log.txt

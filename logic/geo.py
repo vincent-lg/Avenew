@@ -5,6 +5,8 @@ It also handles a basic representation of coordinates in 2 or 3 dimensions.
 
 """
 
+from math import fabs
+
 ## Constants
 NAME_DIRECTIONS = {
         "east": 0,
@@ -123,7 +125,7 @@ def direction_between(x1, y1, z1, x2, y2, z2):
 
     If the first set is 0, 0, 0 and the second 0, 1, 0, then returns
     6 (that is, north).  If there is no perfect direction between
-    them, returns None.
+    them, return None.
 
     """
     dx = x2 - x1
@@ -152,3 +154,18 @@ def direction_between(x1, y1, z1, x2, y2, z2):
         return 9
     else:
         return None
+
+def distance_between(x1, y1, z1, x2, y2, z2):
+    """
+    Return the relative distance between two coordinates.
+
+    IMPORTANT: the relative distance between two points will not be
+    absolutely measured.  Instead, the greatest difference between
+    axis will be returned.  It means that the relative distance between
+    0 0 0 and 2 2 0 is 2, not sqrt(4).
+
+    """
+    dx = int(fabs(x2 - x1))
+    dy = int(fabs(y2 - y1))
+    dz = int(fabs(z2 - z1))
+    return max(dx, dy, dz)

@@ -119,36 +119,16 @@ class CmdLook(Command):
         x = building["x"]
         y = building["y"]
         z = building["z"]
-        complex = Crossroad.get_complex()
 
         # Look for a room at this location
+        crossroad = Crossroad.get_crossroad_at(x, y, z)
         room = Room.get_room_at(x, y, z)
-        entry = complex.get((x, y, z))
-        type = entry["type"] if entry else ""
-        if type == "road":
-            name = "A unknown street"
-            if entry["crossroads"]:
-                first = entry["crossroads"][0][0]
-                direction = entry["crossroads"][0][1]
-                name = first.db.exits[direction]["name"]
-
+        closest, street, exits = Crossroad.get_street(x, y, z)
+        if crossroad:
             text = dedent("""
-                {name} ({x}, {y}, {z})
-                This is {name}.  It is connected to:
-            """.format(name=name, x=x, y=y, z=z).strip("\n"))
-            for crossroad, direction in entry["crossroads"]:
-                distance = int(round(sqrt((
-                        crossroad.x - x) ** 2 + (crossroad.y - y) ** 2)))
-                text += "\n    {}, at {}, distance {}.".format(
-                        opposed[direction], crossroad.key, distance)
-            self.caller.msg(text)
-        elif type == "crossroad":
-            crossroad = entry["crossroad"]
-            text = dedent("""
-                {crossroad} #{id} ({x} {y} {z})
-                You are at the {crossroad} crossroad (#{id}).
-            """.format(crossroad=crossroad.key, id=crossroad.id,
-                    x=x, y=y, z=z).strip("\n"))
+                Crossroad #{id} ({x} {y} {z})
+                You are at the crossroad #{id}.
+            """.format(id=crossroad.id, x=x, y=y, z=z).strip("\n"))
             if crossroad.db.exits:
                 text += "\nAvailable roads:"
                 for direction, exit in crossroad.db.exits.items():
@@ -156,14 +136,56 @@ class CmdLook(Command):
                     name = exit["name"]
                     destination = exit["crossroad"]
                     distance = int(round(exit["distance"], 1))
-                    text += "\n    {}, {} (#{}), distance {}.".format(
-                            direction, name, destination.id, distance)
+                    slope = exit["slope"]
+                    text += "\n    {}, {} (#{}), distance {}, slope {}.".format(
+                            direction, name, destination.id, distance, slope)
             else:
                 text += "\n" + dedent("""
                     This crossroad has no configured route yet.
                     Use the |yroad|n command to create roads from here.
                 """.strip("\n"))
 
+            self.caller.msg(text)
+        elif closest:
+            name = street
+            text = dedent("""
+                {name} ({x}, {y}, {z})
+                This is {name}.  It is connected:
+            """.format(name=name, x=x, y=y, z=z).strip("\n"))
+            crossroads = Crossroad.get_crossroads_with(x, y, z)
+            for crossroad in crossroads:
+                infos = [v for v in crossroad.db.exits.values() if \
+                        (x, y, z) in v["coordinates"]]
+                if not infos:
+                    continue
+
+                info = infos[0]
+                direction = info["direction"]
+                distance = int(round(sqrt((
+                        crossroad.x - x) ** 2 + (crossroad.y - y) ** 2)))
+                text += "\n    {}, at #{}, distance {}, slope {}.".format(
+                        opposed[direction], crossroad.id, distance,
+                        info["slope"])
+
+            # Display the coordinates on either side
+            left = exits["left"]
+            left_direction = left["direction"]
+            left_numbers = "-".join([str(n) for n in left["numbers"]])
+            if left["room"]:
+                left = left["room"].key
+            else:
+                left = " ".join([str(c) for c in left["coordinates"]])
+            right = exits["right"]
+            right_direction = right["direction"]
+            right_numbers = "-".join([str(n) for n in right["numbers"]])
+            if right["room"]:
+                right = right["room"].key
+            else:
+                right = " ".join([str(c) for c in right["coordinates"]])
+            text += "\n    {}, {} {}: {}".format(directions[left_direction],
+                    left_numbers, street.lower(), left)
+            text += "\n    {}, {} {}: {}".format(directions[right_direction],
+                    right_numbers, street.lower(), right)
             self.caller.msg(text)
         elif room:
             text = dedent("""
@@ -249,15 +271,10 @@ class CmdCross(Command):
     Create a crossroad where you are.
 
     Syntax:
-        cross <name of the crossroad to create>
+        cross/add
 
     This command can be used to create a crossroad where you are in
-    road building mode.  You will need to specify a name for the
-    crossroad: this name won't be visible by players, and will
-    just serve as a reference to you and other builders.  It doesn't
-    have to be unique.  It's usually short and indicate what road
-    it can join.  Following a given convention, the crossroad named
-    3-8 could be joining third street with eighth avenue.
+    road building mode.
 
     Aliases:
         cr
@@ -280,28 +297,26 @@ class CmdCross(Command):
         y = building["y"]
         z = building["z"]
 
-        command = self.args.strip()
-        if not command:
-            self.caller.msg("Specify the name of this crossroad.")
-            return
-
         # Check that there is no crossroad here
-        complex = Crossroad.get_complex()
-        entry = complex.get((x, y, z))
-        if entry and entry["type"] == "crossroad":
+        already = Crossroad.get_crossroad_at(x, y, z)
+        if already:
             self.caller.msg("A crossroad already exists here.")
             return
 
+        if not self.args.strip().lower() == "/add":
+            self.msg(self.args)
+            return
+
         # Create the crossroad
-        crossroad = create_object("vehicles.Crossroad", key=command,
+        crossroad = create_object("vehicles.Crossroad", key="",
                 nohome=True)
 
         # Set the coordinates
-        crossroad.tags.add(str(x), category="coordx")
-        crossroad.tags.add(str(y), category="coordy")
-        crossroad.tags.add(str(z), category="coordz")
-        self.caller.msg("The crossroad {} (#{}) has been created here.".format(
-                crossroad.key, crossroad.id))
+        crossroad.x = x
+        crossroad.y = y
+        crossroad.z = z
+        self.caller.msg("The crossroad (#{}) has been created here.".format(
+                crossroad.id))
         self.caller.msg("Use the |yroad|n command to create roads " \
                 "from this crossroad.")
 
@@ -349,13 +364,11 @@ class CmdRoad(Command):
         z = building["z"]
 
         # Check that there is a crossroad here
-        complex = Crossroad.get_complex()
-        entry = complex.get((x, y, z))
-        if entry is None or entry["type"] != "crossroad":
+        crossroad = Crossroad.get_crossroad_at(x, y, z)
+        if crossroad is None:
             self.caller.msg("There is no crossroad here.")
             return
 
-        crossroad = entry["crossroad"]
         command, s, remaining = self.args.strip().partition(" ")
 
         # The first parameter is a direction
@@ -379,8 +392,8 @@ class CmdRoad(Command):
             return
 
         # Before continuing, check that the crossroad is in this direction
-        if direction_between(x, y, z, destination.x, destination.y,
-                destination.z) != direction:
+        if direction_between(x, y, 0, destination.x, destination.y,
+                0) != direction:
             self.msg("The specified crossroad (#{}) isn't in that " \
                     "direction.".format(destination.id))
             return
@@ -433,9 +446,8 @@ class CmdVehicle(Command):
         z = building["z"]
 
         # Check that there is a crossroad here
-        complex = Crossroad.get_complex()
-        entry = complex.get((x, y, z))
-        if entry is None or entry["type"] != "crossroad":
+        crossroad = Crossroad.get_crossroad_at(x, y, z)
+        if crossroad is None:
             self.caller.msg("There is no crossroad here.")
             return
 
@@ -471,6 +483,62 @@ class CmdVehicle(Command):
                     key="Inside of the vehicle", location=vehicle)
             self.caller.msg("The room #{} has been added in the " \
                     "vehicle.".format(room.id))
+
+
+class CmdCompass(Command):
+
+    """
+    Use a compass to locate a crossroad.
+
+    Usage:
+        compass <crossroad ID>
+
+    This will attempt to find the 2D direction between where you are
+    and the specified crossroad.
+
+    """
+
+    key = "compass"
+
+    def func(self):
+        """Execute the command."""
+        building = self.caller.db._road_building
+        if not building:
+            self.caller.msg("Closing the building mode...")
+            self.caller.cmdset.delete()
+            return
+
+        x = building["x"]
+        y = building["y"]
+        z = building["z"]
+
+        cid = self.args.strip()
+        if not cid:
+            self.msg("Specify the crossroad ID.")
+            return
+
+        if cid.startswith("#"):
+            cid = cid[1:]
+
+        if not cid.isdigit():
+            self.msg("Invalid crossroad ID.")
+            return
+
+        try:
+            crossroad = Crossroad.objects.get(id=int(cid))
+        except Crossroad.DoesNotExist:
+            self.caller.msg("The crossroad of ID {} doesn't exist.".format(cid))
+            return
+
+        # Try to obtain the 2D direction
+        direction = direction_between(x, y, 0, crossroad.x, crossroad.y, 0)
+        if direction is None:
+            self.msg("The crossroad #{} isn't in any straight " \
+                    "direction from here.".format(crossroad.id))
+            return
+
+        self.msg("The crossroad #{} is in direction {}.".format(
+                crossroad.id, NAME_OPP_DIRECTIONS[direction]))
 
 
 class CmdGPS(Command):
@@ -595,4 +663,5 @@ class RoadCmdSet(CmdSet):
         self.add(CmdCross())
         self.add(CmdRoad())
         self.add(CmdVehicle())
+        self.add(CmdCompass())
         self.add(CmdGPS())
