@@ -641,8 +641,7 @@ class CmdGPS(Command):
                 d_x, d_y, d_z = destination.x, destination.z, destination.z
                 destination = "#{}".format(destination.id)
 
-            distance = round(sqrt((
-                    d_x - o_x) ** 2 + (d_y - o_y) ** 2 + (d_z - o_z) ** 2), 1)
+            distance = distance_between(o_x, o_y, 0, d_x, d_y, 0)
             text += "\n{:>2} {}, from {} to {}, distance {}.".format(
                     i, direction, origin, destination, distance)
             i += 1

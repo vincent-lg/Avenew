@@ -102,6 +102,28 @@ class GPS(object):
             if current_number + end_number >= number:
                 end = current
                 found = True
+
+                # If the destination is closer to the end crossroad, choose it instead
+                remaining = number - current_number - 1
+                distance = 1 + remaining / info.get("interval", 2) / 2
+                projected = coords_in(end.x, end.y, end.z,
+                        direction, distance=distance)
+
+                # If the number is odd, look for the other side of the street
+                if number % 2 == 1:
+                    shift = (direction - 2) % 8
+                else:
+                    shift = (direction + 2) % 8
+
+                if remaining > end_number / 2:
+                    log.debug("We actually are closer from #{}.".format(
+                            crossroad.id))
+                    opp_direction = (direction + 4) % 8
+                    if crossroad.db.exits.get(opp_direction, {}).get("crossroad") is current:
+                        log.debug("There's a reverse road, use it.")
+                        end = crossroad
+                        direction = opp_direction
+
                 break
 
             # The number is further ahead, go on
@@ -115,19 +137,8 @@ class GPS(object):
             raise ValueError("the expected road number ({}) on " \
                     "{} can't be found".format(number, road))
 
-        remaining = number - current_number - 1
-        distance = 1 + remaining / info.get("interval", 2) / 2
         log.debug("Found end=#{}, direction={}, distance={}".format(
                 end.id, direction, distance))
-        projected = coords_in(end.x, end.y, end.z,
-                direction, distance=distance)
-
-        # If the number is odd, look for the other side of the street
-        if number % 2 == 1:
-            shift = (direction - 2) % 8
-        else:
-            shift = (direction + 2) % 8
-
         projected = coords_in(projected[0], projected[1],
                 projected[2], shift)
         room = Room.get_room_at(*projected)
@@ -171,7 +182,8 @@ class GPS(object):
                 new_cost = cost_so_far[current] + info["distance"]
                 if next not in cost_so_far or new_cost < cost_so_far[next]:
                     cost_so_far[next] = new_cost
-                    priority = new_cost + heuristic(goal, next)
+                    priority = new_cost + distance_between(goal.x, goal.y,
+                            0, next.x, next.y, 0)
                     frontier.put(next, priority)
                     came_from[next] = (current, direction)
 
@@ -185,3 +197,10 @@ class GPS(object):
 
         path.reverse()
         self.path = path + self.path
+
+        # There's a possibility the path may be shortened on hop -2
+        if len(self.path) > 1:
+            if (self.path[-2][1] + 4) % 8 == self.path[-1][1]:
+                log.debug("The before last hop can be removed.")
+                self.path[-2] = self.path[-2][:2] + (self.path[-1][2], )
+                del self.path[-1]
