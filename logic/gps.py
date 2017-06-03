@@ -7,7 +7,7 @@ from math import fabs, sqrt
 from Queue import PriorityQueue
 import re
 
-from logic.geo import coords_in
+from logic.geo import coords_in, distance_between
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
 from world.log import logger
@@ -69,15 +69,7 @@ class GPS(object):
         city = match.group("city")
 
         # Try to find all the crossroads serving this street
-        if city:
-            city = city.lower().strip()
-            crossroads = Crossroad.objects.filter(
-                    db_tags__db_key=road, db_tags__db_category="road").filter(
-                    db_tags__db_key=city, db_tags__db_category="city")
-        else:
-            crossroads = Crossroad.objects.filter(
-                    db_tags__db_key=road, db_tags__db_category="road")
-
+        crossroads = Crossroad.get_crossroads_road(road, city)
         log.debug("Searching for number={}, road={}, city={}".format(
                 number, road, city))
         if not crossroads:
@@ -89,53 +81,33 @@ class GPS(object):
         beginning = crossroads[0]
 
         # Look for the distance
-        next = beginning
-        found = [next]
-        distance = 0
-        expected = number / 4
-        if expected < 1:
-            expected = 1
-
-        end = None
-        while distance < expected:
-            log.debug("  Current distance={} ({}), current crossroad=#{}".format(
-                    distance, expected, next.id))
-            infos = [(dir, info) for (dir, info) in next.db.exits.items() if \
-                    info["name"].lower() == road and info["crossroad"] not in found]
+        current = beginning
+        found = False
+        current_number = 0
+        visited = []
+        while not found:
+            infos = [
+                    (k, v) for (k, v) in current.db.exits.items() if \
+                    v["name"].lower() == road and v["crossroad"] not in visited]
             if not infos:
                 log.debug("  The expected road number can't be found")
                 raise ValueError("the expected road number ({}) on " \
                         "{} can't be found".format(number, road))
 
             direction, info = infos[0]
-            next_distance = int(info["distance"] - 1)
-            if distance + next_distance >= expected:
-                # Try to find the right coordinates
-                end = next
-                expected -= distance
-
-                # If the address is actually closer to the next crossroad
-                # select it after some checks
-                print info
-                back = [(k, v) for (k, v) in info["crossroad"].db.exits.items() \
-                        if v["crossroad"] is next]
-                if back:
-                    t_direction = back[0][0]
-                    back = info["crossroad"]
-                    log.debug("  Found a back direction from #{}, " \
-                            "direction={}".format(back.id, t_direction))
-                    if expected > next_distance / 2 + 1:
-                        direction = t_direction
-                        expected = next_distance - expected + 1
-                        end = back
-                        log.debug("  We're closer to the back exit.")
-
+            crossroad = info["crossroad"]
+            distance = distance_between(current.x, current.y, 0,
+                    crossroad.x, crossroad.y, 0)
+            end_number = (distance - 1) * info.get("interval", 2) * 2
+            if current_number + end_number >= number:
+                end = current
+                found = True
                 break
 
             # The number is further ahead, go on
-            next = info["crossroad"]
-            distance += next_distance
-            found.append(next)
+            visited.append(crossroad)
+            current = crossroad
+            current_number += end_number
 
         # If not end, the address couldn't be found
         if end is None:
@@ -143,10 +115,12 @@ class GPS(object):
             raise ValueError("the expected road number ({}) on " \
                     "{} can't be found".format(number, road))
 
+        remaining = number - current_number - 1
+        distance = 1 + remaining / info.get("interval", 2) / 2
         log.debug("Found end=#{}, direction={}, distance={}".format(
                 end.id, direction, distance))
         projected = coords_in(end.x, end.y, end.z,
-                direction, distance=expected)
+                direction, distance=distance)
 
         # If the number is odd, look for the other side of the street
         if number % 2 == 1:

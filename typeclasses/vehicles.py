@@ -174,7 +174,6 @@ class Crossroad(DefaultObject):
             crossroad = info["crossroad"]
             distance = distance_between(current.x, current.y, 0,
                     crossroad.x, crossroad.y, 0)
-            print "Distance", current.id, crossroad.id, distance
             end_number = (distance - 1) * info.get("interval", 2) * 2
             if (x, y, z) in info["coordinates"]:
                 d_x, d_y = current.x, current.y
@@ -187,7 +186,6 @@ class Crossroad(DefaultObject):
             visited.append(crossroad)
 
         # We now try to find the immediate neighbors
-        print "number", number
         interval = info.get("interval", 2)
         left_direction = (direction - 2) % 8
         left_coords = coords_in(x, y, z, left_direction)
