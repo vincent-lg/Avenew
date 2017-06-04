@@ -36,12 +36,6 @@ SERVERNAME = "Even"
 ######################################################################
 
 
-# The secret key is randomly seeded upon creation. It is used to sign
-# Django's cookies. Do not share this with anyone. Changing it will
-# log out all active web browsing sessions. Game web client sessions
-# may survive.
-SECRET_KEY = open("server/conf/secret.txt", "r").read()
-
 # Activate SSL protocol (SecureSocketLibrary)
 SSL_ENABLED = True
 
@@ -66,3 +60,4 @@ INSTALLED_APPS += (
         "web.help_system",
 )
 
+from server.conf.secret_settings import *

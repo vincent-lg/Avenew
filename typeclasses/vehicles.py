@@ -157,7 +157,7 @@ class Crossroad(DefaultObject):
         # Find the first crossroad to this road
         crossroads = Crossroad.get_crossroads_road(road, city)
         if not crossroads:
-            return (None, "no fist crossroad", [])
+            return (None, "no first crossroad", [])
 
         first = current = crossroads[0]
         found = False
