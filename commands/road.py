@@ -499,6 +499,7 @@ class CmdCompass(Command):
     """
 
     key = "compass"
+    help_category = "road building"
 
     def func(self):
         """Execute the command."""
@@ -558,7 +559,7 @@ class CmdGPS(Command):
     """
 
     key = "GPS"
-    aliases = ["gps"]
+    help_category = "road building"
 
     def func(self):
         """Execute the command."""
