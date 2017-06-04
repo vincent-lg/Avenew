@@ -139,7 +139,7 @@ class Crossroad(DefaultObject):
         """
         crossroads = cls.get_crossroads_with(x, y, z)
         if not crossroads:
-            return (None, "", [])
+            return (None, "no crossroad", [])
 
         closest = crossroads[0]
 
@@ -157,19 +157,21 @@ class Crossroad(DefaultObject):
         # Find the first crossroad to this road
         crossroads = Crossroad.get_crossroads_road(road, city)
         if not crossroads:
-            return (None, "", [])
+            return (None, "no fist crossroad", [])
 
         first = current = crossroads[0]
         found = False
         number = 0
         visited = []
         while not found:
+            before = visited[-1] if visited else None
             infos = [
                     (k, v) for (k, v) in current.db.exits.items() if \
-                    v["name"].lower() == road and v["crossroad"] not in visited]
-            if not infos:
+                    v["name"].lower() == road and v["crossroad"] is not before]
+            if current in visited or not infos:
                 return (None, "can't find", [])
 
+            infos.sort(key=lambda tup: tup[1]["crossroad"].id)
             direction, info = infos[0]
             crossroad = info["crossroad"]
             distance = distance_between(current.x, current.y, 0,
@@ -182,8 +184,8 @@ class Crossroad(DefaultObject):
                 found = True
 
             number += end_number
+            visited.append(current)
             current = crossroad
-            visited.append(crossroad)
 
         # We now try to find the immediate neighbors
         interval = info.get("interval", 2)

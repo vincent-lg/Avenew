@@ -635,10 +635,10 @@ class CmdGPS(Command):
                 d_x, d_y, d_z = destination
                 destination = "X={} Y={} Z={}".format(*destination)
             elif isinstance(destination, Room):
-                d_x, d_y, d_z = destination.x, destination.z, destination.z
+                d_x, d_y, d_z = destination.x, destination.y, destination.z
                 destination = destination.key
             else:
-                d_x, d_y, d_z = destination.x, destination.z, destination.z
+                d_x, d_y, d_z = destination.x, destination.y, destination.z
                 destination = "#{}".format(destination.id)
 
             distance = distance_between(o_x, o_y, 0, d_x, d_y, 0)

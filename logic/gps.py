@@ -86,14 +86,16 @@ class GPS(object):
         current_number = 0
         visited = []
         while not found:
+            before = visited[-1] if visited else None
             infos = [
                     (k, v) for (k, v) in current.db.exits.items() if \
-                    v["name"].lower() == road and v["crossroad"] not in visited]
-            if not infos:
+                    v["name"].lower() == road and v["crossroad"] is not before]
+            if current in visited or not infos:
                 log.debug("  The expected road number can't be found")
                 raise ValueError("the expected road number ({}) on " \
                         "{} can't be found".format(number, road))
 
+            infos.sort(key=lambda tup: tup[1]["crossroad"].id)
             direction, info = infos[0]
             crossroad = info["crossroad"]
             distance = distance_between(current.x, current.y, 0,
@@ -127,7 +129,7 @@ class GPS(object):
                 break
 
             # The number is further ahead, go on
-            visited.append(crossroad)
+            visited.append(current)
             current = crossroad
             current_number += end_number
 
@@ -161,30 +163,25 @@ class GPS(object):
                 start.id, goal.id))
 
         # A* algorithm to find the path
-        def heuristic(a, b):
-            # Manhattan distance on a square grid
-            return fabs(a.x - b.x) + fabs(a.y - b.y)
-
-        # Feeding the frontier
         frontier = PriorityQueue()
-        frontier.put(start, 0)
+        frontier.put((0, start))
         came_from = {}
         cost_so_far = {}
         came_from[start] = None
         cost_so_far[start] = 0
         while not frontier.empty():
-            current = frontier.get()
+            current = frontier.get()[1]
             if current is goal:
                 break
 
             for direction, info in current.db.exits.items():
                 next = info["crossroad"]
-                new_cost = cost_so_far[current] + info["distance"]
+                new_cost = cost_so_far[current] + distance_between(current.x, current.y, 0, next.x, next.y, 0)
                 if next not in cost_so_far or new_cost < cost_so_far[next]:
                     cost_so_far[next] = new_cost
-                    priority = new_cost + distance_between(goal.x, goal.y,
-                            0, next.x, next.y, 0)
-                    frontier.put(next, priority)
+                    priority = new_cost + sqrt(
+                            (next.x - goal.x) ** 2 + (next.y - goal.y) ** 2)
+                    frontier.put((priority, next))
                     came_from[next] = (current, direction)
 
         path = []
