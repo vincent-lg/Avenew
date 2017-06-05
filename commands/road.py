@@ -420,7 +420,7 @@ class CmdVehicle(Command):
         vehicle <name of the vehicle>
 
     This command can be used to create a vehicle at the crossrsoad where
-    you stand in road building mode.  You can put an plus sign (+)
+    you stand in road building mode.  You can put a plus sign (+)
     before the name of the vehicle, to force a room to be created
     inside of it.  If the sign isn't present, the vehicle is created
     with no room, which makes it a "fake" vehicle that will be
@@ -468,7 +468,6 @@ class CmdVehicle(Command):
         vehicle.db.coords = (x, y, z)
 
         # Set the vehicle in a random direction
-        crossroad = entry["crossroad"]
         direction, destination = choice(crossroad.db.exits.items())
         destination = destination["crossroad"]
         vehicle.db.previous_crossroad = crossroad

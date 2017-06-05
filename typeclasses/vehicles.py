@@ -3,18 +3,18 @@ Vehicles
 
 """
 
-import pdb
 from math import fabs, sqrt
 from random import choice
-import sys
 
 from evennia import DefaultObject
 
-from logic.geo import NAME_DIRECTIONS, coords_in, direction_between, distance_between
+from logic.geo import NAME_OPP_DIRECTIONS, coords_in, direction_between, distance_between
 from typeclasses.rooms import Room
+from world.log import logger
 
 # Constants
-DIRECTIONS = NAME_DIRECTIONS
+DIRECTIONS = NAME_OPP_DIRECTIONS
+log = logger("vehicle")
 
 class Crossroad(DefaultObject):
 
@@ -406,12 +406,17 @@ class Vehicle(DefaultObject):
     def at_object_creation(self):
         self.db.coords = (None, None, None)
         self.db.driver = None
+        self.db.previous_crossroad = None
+        self.db.next_crossroad = None
+
+        # Direction
         self.db.direction = 0
+        self.db.expected_direciton = None
+
+        # Speed
         self.db.speed = 0
         self.db.constant_speed = 0
         self.db.desired_speed = 0
-        self.db.previous_crossroad = None
-        self.db.next_crossroad = None
 
     def msg_contents(self, msg):
         """Send a message to all the vehicle's content (presumably rooms)."""
@@ -470,6 +475,7 @@ class Vehicle(DefaultObject):
         direction = self.db.direction
         previous = self.db.previous_crossroad
         next = self.db.next_crossroad
+        switch = False
         if previous is None or next is None:
             return
 
@@ -477,8 +483,6 @@ class Vehicle(DefaultObject):
 
         # If the vehicle is in a crossroad, select logical exit or
         # raise a RuntimeError
-        #mypdb = pdb.Pdb(stdout=sys.__stdout__)
-        #mypdb.set_trace()
         if (x, y, z) == (n_x, n_y, n_z):
             destinations = [(direction, exit["crossroad"]) for \
                     direction, exit in next.db.exits.items()]
@@ -495,11 +499,13 @@ class Vehicle(DefaultObject):
             next = self.db.next_crossroad
             n_x, n_y, n_z = next.x, next.y, next.z
             direction = self.db.direction
+            switch = True
 
         between = sqrt((n_x - x) ** 2 + (n_y - y) ** 2)
         if between <= distance:
             # The vehicle has moved in the crossroad (not checking Z)
             self.db.coords = (n_x, n_y, n_z)
+            switch = True
         else:
             if between <= distance * 2 and self.db.constant_speed > 16:
                 self.db.constant_speed = 16
@@ -533,6 +539,17 @@ class Vehicle(DefaultObject):
             x = round(x, 3)
             y = round(y, 3)
             z = round(z, 3)
+
+            # Get the Z coordinate closer to the street
+            previous = self.db.previous_crossroad
+            distance = distance_between(int(round(x)), int(round(y)), 0,
+                    previous.x, previous.y, 0)
+            if switch:
+                try:
+                    z = previous.db.exits[direction]["coordinates"][distance][2]
+                except (KeyError, IndexError):
+                    pass
+
             self.db.coords = (x, y, z)
 
     def vary_speed(self):
@@ -570,18 +587,18 @@ class Vehicle(DefaultObject):
         self.db.direction = direction
         previous = self.db.previous_crossroad
         road = previous.db.exits[direction]["name"]
-        diff = direction - old_direction
+        diff = (direction - old_direction) % 8
         msg = ""
-        side = "left" if diff < 0 else "right"
+        side = "left" if diff > 4 else "right"
         if diff == 0:
             msg = "You go foward and take {road}."
-        elif diff in (-1, 1):
+        elif diff in (1, 7):
             msg = "You slightly turn to the {side} on {road}."
-        elif diff in (-2, 2):
+        elif diff in (2, 6):
             msg = "You veer off to the {side} on {road}."
-        elif diff in (-3, 3):
+        elif diff in (3, 5):
             msg = "You take a very sharp turn to the {side} on {road}."
-        elif diff in (4, -4):
+        elif diff == 4:
             msg = "An illegal U turn and you're going back on {road}."
 
         if msg:
