@@ -418,10 +418,27 @@ class Vehicle(DefaultObject):
         self.db.constant_speed = 0
         self.db.desired_speed = 0
 
-    def msg_contents(self, msg):
+    def teleport(self, crossroad):
+        """Teleport the vehicle to a crossroad."""
+        if isinstance(crossroad, str):
+            if crossroad.startswith("#"):
+                corssroad = crossroad[1:]
+
+            crossroad = Crossroad.objects.get(id=crossroad)
+        x, y, z = crossroad.x, crossroad.y, crossroad.z
+        self.db.coords = (x, y, z)
+
+        # Set the vehicle in a random direction
+        direction, destination = choice(crossroad.db.exits.items())
+        destination = destination["crossroad"]
+        self.db.previous_crossroad = crossroad
+        self.db.next_crossroad = destination
+        self.db.direction = direction
+
+    def msg_contents(self, msg, *args, **kwargs):
         """Send a message to all the vehicle's content (presumably rooms)."""
         for object in self.contents:
-            object.msg_contents(msg)
+            object.msg_contents(msg, *args, **kwargs)
 
     def control_panel(self, looker):
         """Return the control panel of the vehicle."""
@@ -473,6 +490,7 @@ class Vehicle(DefaultObject):
         """
         x, y, z = self.db.coords
         direction = self.db.direction
+        driver = self.db.driver
         previous = self.db.previous_crossroad
         next = self.db.next_crossroad
         switch = False
@@ -484,14 +502,40 @@ class Vehicle(DefaultObject):
         # If the vehicle is in a crossroad, select logical exit or
         # raise a RuntimeError
         if (x, y, z) == (n_x, n_y, n_z):
-            destinations = [(direction, exit["crossroad"]) for \
-                    direction, exit in next.db.exits.items()]
+            expected = self.db.expected_direction
+            destinations = [(dir, exit["crossroad"]) for \
+                    dir, exit in next.db.exits.items()]
             destinations = [(dir, dest) for dir, dest in destinations \
                     if dest is not previous]
-            if len(destinations) == 0:
+            if expected is not None and expected in next.db.exits:
+                print "expected"
+                # Set direction in which to move
+                destinations = [(expected, next.db.exits[expected]["crossroad"])]
+            elif direction in next.db.exits and driver:
+                print "forward"
+                destinations = [(direction, next.db.exits[direction]["crossroad"])]
+            elif self.contents and len(destinations) > 1:
+                print "brake"
+                if driver:
+                    driver.msg("You brake hard, unsure where to go.")
+                    self.msg_contents("{driver} brakes hard in the middle of the crossroad.",
+                            exclude=[driver], mapping=dict(driver=driver))
+                self.db.speed = 0
+                self.db.constant_speed = 0
+                self.db.desired_speed = 0
                 return
-            if len(destinations) > 1:
-                destinations = [choice(destinations)]
+            else:
+                print "random"
+                if len(destinations) == 0:
+                    opp_direction = (direction + 4) % 8
+                    if opp_direction in next.db.exits:
+                        destinations = [(opp_direction, next.db.exits[
+                                opp_direction]["crossroad"])]
+                    else:
+                        return
+
+                elif len(destinations) > 1:
+                    destinations = [choice(destinations)]
 
             self.db.previous_crossroad = next
             self.db.next_crossroad = destinations[0][1]
