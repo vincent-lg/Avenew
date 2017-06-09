@@ -88,7 +88,7 @@ class CmdLook(Command):
         building = self.caller.db._road_building
         if not building:
             self.caller.msg("Closing the building mode...")
-            self.caller.cmdset.delete()
+            self.caller.cmdset.remove("commands.road.RoadCmdSet")
             return
 
         directions = {

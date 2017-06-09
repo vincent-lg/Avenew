@@ -3,6 +3,8 @@ Driving command set and commands.
 """
 
 from evennia import default_cmds
+from evennia.commands.default.general import CmdLook
+
 from evennia.utils.utils import inherits_from
 
 from commands.command import Command
@@ -62,7 +64,7 @@ class CmdDrive(Command):
             self.msg("You let go of the steering wheel.")
             room.msg_contents("{driver} lets go of the streering wheel.",
                     exclude=[self.caller], mapping=dict(driver=self.caller))
-            self.caller.cmdset.delete()
+            self.caller.cmdset.remove("commands.driving.DrivingCmdSet")
             return
 
         # Or someone else could be riving
@@ -374,6 +376,13 @@ class CmdTurn(Command):
         self.msg(msg)
 
 
+class CmdLook2(CmdLook):
+
+    # Replacement for the look command without the "l" alias
+    key = "look"
+    aliases = ["ls"]
+
+
 class DrivingCmdSet(default_cmds.CharacterCmdSet):
 
     """
@@ -396,3 +405,4 @@ class DrivingCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdPark())
         self.add(CmdSpeed())
         self.add(CmdTurn())
+        self.add(CmdLook2())
