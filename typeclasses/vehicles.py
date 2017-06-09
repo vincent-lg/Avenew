@@ -547,9 +547,7 @@ class Vehicle(DefaultObject):
 
                     self.remove_message("turns")
                     self.display_turns(driver, next)
-                self.db.speed = 0
-                self.db.constant_speed = 0
-                self.db.desired_speed = 0
+                self.stop()
                 return
             else:
                 if len(destinations) == 0:
@@ -734,6 +732,13 @@ class Vehicle(DefaultObject):
 
     def speed_to_distance(self, speed):
         return speed / 16.0
+
+    def stop(self):
+        """Abruptly stop, put the speed back to 0."""
+        self.db.speed = 0
+        self.db.constant_speed = 0
+        self.db.desired_speed = 0
+
 
 
 # Constants

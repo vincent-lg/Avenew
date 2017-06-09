@@ -4,7 +4,10 @@ Driving command set and commands.
 
 from evennia import default_cmds
 from evennia.utils.utils import inherits_from
+
 from commands.command import Command
+from logic.geo import distance_between
+from typeclasses.vehicles import Crossroad, log
 
 # Commands
 class CmdDrive(Command):
@@ -17,16 +20,16 @@ class CmdDrive(Command):
 
     This command is both used to begin driving a vehicle when you
     are in the front seat, or to stop driving if the vehicle has
-    stopped moving.  Entering the |ydrive|n command to stop driving
+    stopped moving.  Entering the |wdrive|n command to stop driving
     will stop the vehicle in the middle of the street, which isn't
-    often a good idea.  Instead, you can use the |ypark|n command,
-    which will try to park the vehicle neatly on the right side of
+    often a good idea.  Instead, you can use the |wpark|n command,
+    which will try to park the vehicle neatly on the side of
     the street you are currently driving in.  Once parked, you can
-    |yleave|n the vehicle.
+    |wleave|n the vehicle.
 
     While driving, you can use several short commands to control
-    speed, direction and driving mode.  Read the |ydriving|n help
-    file (by typing |yhelp driving|n) for more information.
+    speed, direction and driving mode.  Read the |wdriving|n help
+    file (by typing |whelp driving|n) for more information.
 
     """
 
@@ -74,8 +77,125 @@ class CmdDrive(Command):
         room.msg_contents("{driver} grips the steering wheel and stretches " \
                 "his legs to reach the pedals.", exclude=[self.caller],
                 mapping=dict(driver=self.caller))
+
+        # If the vehicle is in a room, leave it.
+        if vehicle.location is not None:
+            vehicle.location = None
+            self.msg("You start the engine and begin to drive {} " \
+                    "on the street.".format(vehicle.key))
+            vehicle.msg_contents("The engine of {} starts.",
+                    exclude=[self.caller], mapping=dict(vehicle=vehicle))
+
         self.caller.cmdset.add("commands.driving.DrivingCmdSet",
                 permanent=True)
+
+
+class CmdPark(Command):
+
+    """
+    Park the vehicle you are driving.
+
+    Usage:
+        park
+        park left
+
+    This command can be used to park the vehicle you are driving,
+    right on the sidewalk.  The vehicle's speed has to be really
+    reduced.  You will not be able to park anywhere.  When you have
+    arrived at your destination, after reducing speed (using the
+    |wspeed|n command), you can |wpark|n, then use the |wdrive|n
+    command to stop driving.  Then, you can |wleave|n the vehicle.
+
+    By default, you will try to park on the right side of the street.
+    You can also type |wpark left|n to park instead on the left side
+    of the street.
+
+    """
+
+    key = "park"
+    help_category = "Driving"
+
+    def func(self):
+        """Execute the command."""
+        room = self.caller.location
+        if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
+            self.msg("It seems you are not in a vehicle.")
+            return
+
+        vehicle = room.location
+
+        # A VehicleRoom should be contained in a vehicle... but let's check
+        if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
+            self.msg(
+                    "Are you, or are you not, in a vehicle?  Hard to say...")
+            return
+
+        # Make sure we are currently driving
+        if vehicle.db.driver is not self.caller:
+            self.msg("You aren't driving {}.".format(vehicle.key))
+            return
+
+        # Check the speed
+        if vehicle.db.speed > 10:
+            self.msg("You are still driving too fast.")
+            return
+
+        # Get both sides of the current coordinate
+        x, y, z = vehicle.db.coords
+
+        # The Z coordinate could be invalid at this point, if there's a slope.
+        previous = vehicle.db.previous_crossroad
+        direction = vehicle.db.direction
+        distance = int(round(distance_between(x, y, 0,
+                previous.x, previous.y, 0)))
+
+        if distance >= 1:
+            street = previous.db.exits[direction]
+
+            try:
+                x, y, z = street["coordinates"][distance - 1]
+            except IndexError:
+                log.warning("Cannot find the Z coordinate for vehicle " \
+                        "#{}, trying to park at {} {}.".format(
+                        vehicle.id, x, y))
+
+                self.msg("It seems you can't park here.")
+                return
+        else:
+            self.msg("Now, you cannot park in the middle of a crossroad.")
+            return
+
+        # Get the matching street
+        log.debug("Parking #{} on {} {} {}".format(vehicle.id, x, y, z))
+        closest, name, streets = Crossroad.get_street(x, y, z)
+        if not streets:
+            self.msg("You don't find any free spot to park.")
+            return
+
+        # Park on the left or right
+        left = self.args.lower().strip() == "left"
+
+        if left:
+            spot = streets["left"]
+        else:
+            spot = streets["right"]
+
+        # If there's no room there
+        if spot["room"] is None:
+            self.msg("You don't find any free spot to park.")
+            return
+
+        room = spot["room"]
+        vehicle.location = room
+        vehicle.stop()
+        numbers = "-".join(str(n) for n in spot["numbers"])
+        self.caller.msg("You park {} on the {side} side.".format(
+                vehicle.key, side="left" if left else "right"))
+        self.caller.location.msg_contents("{driver} parks {vehicle} on the {side} side.",
+                exclude=[self.caller], mapping=dict(driver=self.caller,
+                vehicle=vehicle, side="left" if left else "right"))
+        vehicle.msg_contents("{vehicle} pulls up in front of {numbers} {street}",
+                mapping=dict(vehicle=vehicle, numbers=numbers, street=name))
 
 
 class CmdSpeed(Command):
@@ -205,6 +325,19 @@ class CmdTurn(Command):
             return
 
         vehicle = room.location
+
+        # A VehicleRoom should be contained in a vehicle... but let's check
+        if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
+            self.msg(
+                    "Are you, or are you not, in a vehicle?  Hard to say...")
+            return
+
+        # Make sure we are currently driving
+        if vehicle.db.driver is not self.caller:
+            self.msg("You aren't driving {}.".format(vehicle.key))
+            return
+
+        # Proceed to turn
         name = self.raw_string.strip().lower()
         direction = vehicle.db.direction
 
@@ -233,6 +366,9 @@ class CmdTurn(Command):
         elif name in ("go behind", "behind", "go b", "b"):
             turn = 4
             msg = "You prepare to do some scarcely-legal U turn."
+        else:
+            self.msg("In what direction do you want to turn?")
+            return
 
         vehicle.db.expected_direction = (direction + turn) % 8
         self.msg(msg)
@@ -257,6 +393,6 @@ class DrivingCmdSet(default_cmds.CharacterCmdSet):
 
     def at_cmdset_creation(self):
         """Populates the cmdset with commands."""
-        #self.add(CmdPark())
+        self.add(CmdPark())
         self.add(CmdSpeed())
         self.add(CmdTurn())
