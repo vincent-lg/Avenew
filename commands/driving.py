@@ -163,6 +163,81 @@ class CmdSpeed(Command):
 
 
 # Command set
+class CmdTurn(Command):
+
+    """
+    Prepare to turn in a direction.
+
+    If you are driving a vehicle, you can use this command to prepare to turn.  When the vehicle approaches a crossroad, the possibility should be displayed to you, much like the obvious exits in a room.  The vehicle isn't in the middle of the crossroad yet, just a short distance away, and you can turn without slowing down too much.  However, if you wait too long to turn, then the vehicle will stop in the middle of the crossroad, and you will need to speed up again after you have turned.
+
+    To use this command, you can either use the full name of the turn, or aliases.  Aliases are much quicker to type, and once you get used to driving in the game, you will find using them is much better, particularly if your client doesn't support macro.  Here are all the directions and possible syntaxes:
+
+    +------------|---------------------------------------------+
+    | Directions | Commands                                    ||
+    +------------|---------------------------------------------+
+    | Forward    | |wgo forward|n      | |wforward|n    | |wgo f|n    | |yf|n  |
+    | Easy right | |wturn easy right|n | |weasy right|n | |wturn er|n | |wer|n |
+    | Easy left  | |wturn easy left|n  | |weasy left|n  | |wturn el|n | |wel|n |
+    | Right      | |wturn right|n      | |wright|n      | |wturn r|n  | |wr|n  |
+    | Left       | |wturn left|n       | |wleft|n       | |wturn l|n  | |wl|n  |
+    | Hard right | |wturn hard right|n | |whard right|n | |wturn hr|n | |whr|n |
+    | Hard left  | |wturn hard left|n  | |whard left|n  | |wturn hl|n | |whl|n |
+    | Behind     | |wgo behind|n       | |wbehind|n     | |wgo b|n    | |wb|n  |
+    +------------||---------------------------------------------+
+
+    In other words, a little before arriving to a crossroad with
+    an exit on the left, you could prepare to turn in this direction
+    by entering either |wturn left|n, or |wleft|n, or simply |wl|n.
+
+    """
+
+    key = "turn"
+    aliases = ["go", "forward", "f", "easy right", "er", "easy left", "el",
+            "right", "r", "left", "l", "hard right", "hr", "hard left", "hl",
+            "behind", "b"]
+    help_category = "Driving"
+
+    def func(self):
+        """Execute the command."""
+        room = self.caller.location
+        if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
+            self.msg("It seems you are not in a vehicle.")
+            return
+
+        vehicle = room.location
+        name = self.raw_string.strip().lower()
+        direction = vehicle.db.direction
+
+        # Different choices
+        if name in ("go", "forward", "go f", "f"):
+            turn = 0
+            msg = "You prepare to go forward on the next open crossroad."
+        elif name in ("turn easy right", "easy right", "turn er", "er"):
+            turn = 1
+            msg = "You prepare to do an easy right on the next open crossroad."
+        elif name in ("turn easy left", "easy left", "turn el", "el"):
+            turn = 7
+            msg = "You prepare to do an easy left on the next open crossroad."
+        elif name in ("turn right", "right", "turn r", "r"):
+            turn = 2
+            msg = "You prepare to turn right on the next open crossroad."
+        elif name in ("turn left", "left", "turn l", "l"):
+            turn = 6
+            msg = "You prepare to turn left on the next open crossroad."
+        elif name in ("turn hard right", "hard right", "turn hr", "hr"):
+            turn = 3
+            msg = "You prepare to do a hard right on the next open crossroad."
+        elif name in ("turn hard left", "hard left", "turn hl", "hl"):
+            turn = 5
+            msg = "You prepare to do a hard left on the next open crossroad."
+        elif name in ("go behind", "behind", "go b", "b"):
+            turn = 4
+            msg = "You prepare to do some scarcely-legal U turn."
+
+        vehicle.db.expected_direction = (direction + turn) % 8
+        self.msg(msg)
+
+
 class DrivingCmdSet(default_cmds.CharacterCmdSet):
 
     """
@@ -184,3 +259,4 @@ class DrivingCmdSet(default_cmds.CharacterCmdSet):
         """Populates the cmdset with commands."""
         #self.add(CmdPark())
         self.add(CmdSpeed())
+        self.add(CmdTurn())

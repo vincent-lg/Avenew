@@ -418,6 +418,30 @@ class Vehicle(DefaultObject):
         self.db.constant_speed = 0
         self.db.desired_speed = 0
 
+        # Event messages
+        self.db.messages = []
+
+    def has_message(self, msg_type):
+        """Return whether the vehicle has this message type."""
+        return self.db.messages and msg_type in self.db.messages
+
+    def add_message(self, msg_type):
+        """Add the message if not already present."""
+        if self.db.messages is None:
+            self.db.messages = []
+        if msg_type not in self.db.messages:
+            self.db.messages.append(msg_type)
+
+    def remove_message(self, msg_type):
+        """Remove the message type if present."""
+        if self.db.messages is None:
+            self.db.messages = []
+        self.db.messages = [msg for msg in self.db.messages if msg != msg_type]
+
+    def clear_messages(self):
+        """Clear the list of messages."""
+        self.db.messages = []
+
     def teleport(self, crossroad):
         """Teleport the vehicle to a crossroad."""
         if isinstance(crossroad, str):
@@ -502,30 +526,32 @@ class Vehicle(DefaultObject):
         # If the vehicle is in a crossroad, select logical exit or
         # raise a RuntimeError
         if (x, y, z) == (n_x, n_y, n_z):
+            self.clear_messages()
             expected = self.db.expected_direction
+            self.db.expected_direction = None
             destinations = [(dir, exit["crossroad"]) for \
                     dir, exit in next.db.exits.items()]
             destinations = [(dir, dest) for dir, dest in destinations \
                     if dest is not previous]
             if expected is not None and expected in next.db.exits:
-                print "expected"
                 # Set direction in which to move
                 destinations = [(expected, next.db.exits[expected]["crossroad"])]
             elif direction in next.db.exits and driver:
-                print "forward"
                 destinations = [(direction, next.db.exits[direction]["crossroad"])]
             elif self.contents and len(destinations) > 1:
-                print "brake"
-                if driver:
-                    driver.msg("You brake hard, unsure where to go.")
-                    self.msg_contents("{driver} brakes hard in the middle of the crossroad.",
-                            exclude=[driver], mapping=dict(driver=driver))
+                if self.db.speed > 0:
+                    if driver:
+                        driver.msg("You brake hard, unsure where to go.")
+                        self.msg_contents("{driver} brakes hard in the middle of the crossroad.",
+                                exclude=[driver], mapping=dict(driver=driver))
+
+                    self.remove_message("turns")
+                    self.display_turns(driver, next)
                 self.db.speed = 0
                 self.db.constant_speed = 0
                 self.db.desired_speed = 0
                 return
             else:
-                print "random"
                 if len(destinations) == 0:
                     opp_direction = (direction + 4) % 8
                     if opp_direction in next.db.exits:
@@ -545,12 +571,16 @@ class Vehicle(DefaultObject):
             direction = self.db.direction
             switch = True
 
-        between = sqrt((n_x - x) ** 2 + (n_y - y) ** 2)
+        between = distance_between(x, y, 0, n_x, n_y, 0)
         if between <= distance:
             # The vehicle has moved in the crossroad (not checking Z)
             self.db.coords = (n_x, n_y, n_z)
             switch = True
         else:
+            if between <= distance * 3 and driver:
+                pass
+                self.display_turns(driver, next)
+
             if between <= distance * 2 and self.db.constant_speed > 16:
                 self.db.constant_speed = 16
             elif self.db.constant_speed != self.db.desired_speed:
@@ -583,16 +613,6 @@ class Vehicle(DefaultObject):
             x = round(x, 3)
             y = round(y, 3)
             z = round(z, 3)
-
-            # Get the Z coordinate closer to the street
-            previous = self.db.previous_crossroad
-            distance = distance_between(int(round(x)), int(round(y)), 0,
-                    previous.x, previous.y, 0)
-            if switch:
-                try:
-                    z = previous.db.exits[direction]["coordinates"][distance][2]
-                except (KeyError, IndexError):
-                    pass
 
             self.db.coords = (x, y, z)
 
@@ -646,9 +666,93 @@ class Vehicle(DefaultObject):
             msg = "An illegal U turn and you're going back on {road}."
 
         if msg:
-            self.msg_contents(msg.format(side=side, road=road))
+            self.msg_contents(msg, mapping=dict(side=side, road=road))
 
+    def display_turns(self, driver, crossroad):
+        """Display the turn of the next crossroad."""
+        if self.has_message("turns"):
+            return
 
-    @staticmethod
-    def speed_to_distance(speed):
+        self.add_message("turns")
+        direction = self.db.direction
+        exits = dict([((k - direction) % 8, v) for k, v in crossroad.db.exits.items()])
+        names = {
+                0: "Forward",
+                1: "Easy right",
+                2: "Right",
+                3: "Hard right",
+                4: "Behind",
+                5: "Hard left",
+                6: "Left",
+                7: "Easy left",
+        }
+
+        if not driver.sessions.get():
+            # The driver doesn't have a session, don't display anything
+            return
+
+        if any(session.protocol_flags.get(
+                "SCREENREADER", False) for session in driver.sessions.get()):
+            # One sessions on the driver have SCREENREADER turned on.
+            msg = ""
+            for dir, exit in exits.items():
+                if msg:
+                    msg += "\n"
+
+                name = names[dir]
+                msg += "  {:<10} - {}".format(name, exit["name"])
+        else:
+            # Create the diagram to represent the crossroad
+            msg = MAP.format(
+                    f="F" if 0 in exits else " ",
+                    fl="|" if 0 in exits else " ",
+                    fn="F  - " + exits[0]["name"] if 0 in exits else "",
+                    er="ER" if 1 in exits else "  ",
+                    erl="/" if 1 in exits else " ",
+                    ern="ER - " + exits[1]["name"] if 1 in exits else "",
+                    el="EL" if 7 in exits else "  ",
+                    ell="\\" if 7 in exits else " ",
+                    eln="EL - " + exits[7]["name"] if 7 in exits else "",
+                    r="R" if 2 in exits else " ",
+                    rl="-" if 2 in exits else " ",
+                    rn="R  - " + exits[2]["name"] if 2 in exits else "",
+                    l="L" if 6 in exits else " ",
+                    ll="-" if 6 in exits else " ",
+                    ln="L  - " + exits[6]["name"] if 6 in exits else "",
+                    hr="HR" if 3 in exits else "  ",
+                    hrl="\\" if 3 in exits else " ",
+                    hrn="HR - " + exits[3]["name"] if 3 in exits else "",
+                    hl="HL" if 5 in exits else "  ",
+                    hll="/" if 5 in exits else " ",
+                    hln="HL - " + exits[5]["name"] if 5 in exits else "",
+                    b="B" if 4 in exits else " ",
+                    bl="|" if 4 in exits else " ",
+                    bn="B  - " + exits[4]["name"] if 4 in exits else "",
+            )
+
+        driver.msg(msg)
+
+    def speed_to_distance(self, speed):
         return speed / 16.0
+
+
+# Constants
+MAP = r"""
+Crossroad
+
+   Map                        Roads
+
+        {f}                     {fn}
+  {el}    {fl}    {er}
+    {ell}   {fl}   {erl}                 {ern}
+     {ell}  {fl}  {erl}                  {eln}
+      {ell} {fl} {erl}
+       {ell}{fl}{erl}                    {rn}
+{l}{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}{r}             {ln}
+       {hll}{bl}{hrl}
+      {hll} {bl} {hrl}                   {hrn}
+     {hll}  {bl}  {hrl}                  {hln}
+    {hll}   {bl}   {hrl}
+  {hl}    {bl}    {hr}
+        {b}                     {bn}
+"""
