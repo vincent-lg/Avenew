@@ -7,9 +7,9 @@ is setup to be the "default" character type created by the default
 creation commands.
 
 """
-from evennia import DefaultCharacter
+from evennia.contrib.events.typeclasses import EventCharacter
 
-class Character(DefaultCharacter):
+class Character(EventCharacter):
     """
     The Character defaults to reimplementing some of base Object's hook methods with the
     following functionality:
@@ -22,7 +22,7 @@ class Character(DefaultCharacter):
     at_post_unpuppet(player) -  when Player disconnects from the Character, we
                     store the current location in the pre_logout_location Attribute and
                     move it to a None-location so the "unpuppeted" character
-                    object does not need to stay on grid. Echoes "Player has disconnected" 
+                    object does not need to stay on grid. Echoes "Player has disconnected"
                     to the room.
     at_pre_puppet - Just before Player re-connects, retrieves the character's
                     pre_logout_location Attribute and move it back on the grid.

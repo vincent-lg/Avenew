@@ -8,9 +8,9 @@ Rooms are simple containers that has no location of their own.
 from math import sqrt
 from textwrap import wrap
 
-from evennia import DefaultRoom
+from evennia.contrib.events.typeclasses import EventRoom
 
-class Room(DefaultRoom):
+class Room(EventRoom):
 
     """
     A room with coords.

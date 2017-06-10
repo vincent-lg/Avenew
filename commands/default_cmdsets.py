@@ -15,6 +15,8 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds
+from evennia.contrib.events.commands import CmdCallback
+
 from commands.edit import CmdEdit
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
@@ -34,10 +36,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         Populates the cmdset
         """
         super(CharacterCmdSet, self).at_cmdset_creation()
+        self.add(CmdCallback())
+        self.add(CmdEnter())
         self.add(CmdDrive())
         self.add(CmdEdit())
         self.add(CmdHelp())
-        self.add(CmdEnter())
         self.add(CmdLeave())
         self.add(CmdStartRoad())
 

@@ -13,7 +13,7 @@ just overloads its hooks to have it perform its function.
 """
 
 from evennia import DefaultScript
-
+from evennia.contrib.events.scripts import EventHandler
 
 class Script(DefaultScript):
     """
@@ -90,6 +90,7 @@ class Script(DefaultScript):
     """
     pass
 
+
 class WrongPassword(DefaultScript):
 
     """This script is used to delay the input of a new password by 3 seconds.
@@ -126,3 +127,10 @@ class WrongPassword(DefaultScript):
         self.obj.db._locked = False
         if self.db.session:
             self.db.session.msg("Enter your password again.")
+
+
+class AvEventHandler(EventHandler):
+
+    """Avenew version of the event handler."""
+
+    pass

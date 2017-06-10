@@ -16,16 +16,15 @@ at_server_cold_stop()
 
 """
 
-import pdb
 import os
 import subprocess
-import sys
 
 from evennia import TICKER_HANDLER as ticker_handler
+from evennia import ScriptDB, create_script
 
 from services import email
 import tickers
-from world.log import begin, end
+from world.log import begin, end, main
 
 def at_server_start():
     """
@@ -37,6 +36,13 @@ def at_server_start():
 
     # Setup the email service
     email.setup()
+
+    # Launch the script if it's not running
+    try:
+        script = ScriptDB.objects.get(db_key="event_handler")
+    except ScriptDB.DoesNotExist:
+        script = create_script("typeclasses.scripts.AvEventHandler")
+        main.info("Creating the EventHandler")
 
     # Launch tickers
     ticker_handler.add(3, tickers.vehicles.move)
