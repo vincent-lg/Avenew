@@ -3,8 +3,6 @@ Driving command set and commands.
 """
 
 from evennia import default_cmds
-from evennia.commands.default.general import CmdLook
-
 from evennia.utils.utils import inherits_from
 
 from commands.command import Command
@@ -300,8 +298,8 @@ class CmdTurn(Command):
     | Forward    | |wgo forward|n      | |wforward|n    | |wgo f|n    | |yf|n  |
     | Easy right | |wturn easy right|n | |weasy right|n | |wturn er|n | |wer|n |
     | Easy left  | |wturn easy left|n  | |weasy left|n  | |wturn el|n | |wel|n |
-    | Right      | |wturn right|n      | |wright|n      | |wturn r|n  | |wr|n  |
-    | Left       | |wturn left|n       | |wleft|n       | |wturn l|n  | |wl|n  |
+    | Right      | |wturn right|n      | |wright|n      | |wturn r|n  | |wtr|n |
+    | Left       | |wturn left|n       | |wleft|n       | |wturn l|n  | |wtl|n |
     | Hard right | |wturn hard right|n | |whard right|n | |wturn hr|n | |whr|n |
     | Hard left  | |wturn hard left|n  | |whard left|n  | |wturn hl|n | |whl|n |
     | Behind     | |wgo behind|n       | |wbehind|n     | |wgo b|n    | |wb|n  |
@@ -315,7 +313,7 @@ class CmdTurn(Command):
 
     key = "turn"
     aliases = ["go", "forward", "f", "easy right", "er", "easy left", "el",
-            "right", "r", "left", "l", "hard right", "hr", "hard left", "hl",
+            "right", "tr", "left", "tl", "hard right", "hr", "hard left", "hl",
             "behind", "b"]
     help_category = "Driving"
 
@@ -353,10 +351,10 @@ class CmdTurn(Command):
         elif name in ("turn easy left", "easy left", "turn el", "el"):
             turn = 7
             msg = "You prepare to do an easy left on the next open crossroad."
-        elif name in ("turn right", "right", "turn r", "r"):
+        elif name in ("turn right", "right", "turn r", "tr"):
             turn = 2
             msg = "You prepare to turn right on the next open crossroad."
-        elif name in ("turn left", "left", "turn l", "l"):
+        elif name in ("turn left", "left", "turn l", "tl"):
             turn = 6
             msg = "You prepare to turn left on the next open crossroad."
         elif name in ("turn hard right", "hard right", "turn hr", "hr"):
@@ -374,13 +372,6 @@ class CmdTurn(Command):
 
         vehicle.db.expected_direction = (direction + turn) % 8
         self.msg(msg)
-
-
-class CmdLook2(CmdLook):
-
-    # Replacement for the look command without the "l" alias
-    key = "look"
-    aliases = ["ls"]
 
 
 class DrivingCmdSet(default_cmds.CharacterCmdSet):
@@ -405,4 +396,3 @@ class DrivingCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdPark())
         self.add(CmdSpeed())
         self.add(CmdTurn())
-        self.add(CmdLook2())

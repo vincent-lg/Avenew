@@ -18,6 +18,7 @@ from evennia import default_cmds
 from commands.edit import CmdEdit
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
+from commands.moving import CmdEnter, CmdLeave
 from commands.road import CmdStartRoad
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -36,6 +37,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdDrive())
         self.add(CmdEdit())
         self.add(CmdHelp())
+        self.add(CmdEnter())
+        self.add(CmdLeave())
         self.add(CmdStartRoad())
 
 class PlayerCmdSet(default_cmds.PlayerCmdSet):
