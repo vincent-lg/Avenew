@@ -260,6 +260,10 @@ class CmdSpeed(Command):
             self.msg("You aren't driving {}.".format(vehicle.key))
             return
 
+        # If the vehicle is parked, un-park it
+        if vehicle.location is not None:
+            vehicle.location = None
+
         # Change the speed
         current = vehicle.db.speed
         desired = self.args.strip()
