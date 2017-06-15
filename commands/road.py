@@ -404,9 +404,10 @@ class CmdRoad(Command):
             return
 
         # Everything seems okay, add the exit
-        crossroad.add_exit(direction, destination, name)
-        destination.add_exit(OPP_DIRECTIONS[direction], crossroad, name)
-        self.caller.msg("There is now a road from this crossroad " \
+        coords = crossroad.add_exit(direction, destination, name)
+        destination.add_exit(OPP_DIRECTIONS[direction], crossroad, name,
+                        coordinates=coords)
+        self.caller.msg("There now is a road from this crossroad " \
                "leading to the crossroad {} (#{}), called {}.".format(
                destination.key, destination.id, name))
 

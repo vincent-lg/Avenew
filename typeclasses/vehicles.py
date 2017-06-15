@@ -176,11 +176,11 @@ class Crossroad(DefaultObject):
             crossroad = info["crossroad"]
             distance = distance_between(current.x, current.y, 0,
                     crossroad.x, crossroad.y, 0)
-            end_number = (distance - 1) * info.get("interval", 2) * 2
+            end_number = (distance - 1) * info["interval"] * 2
             if (x, y, z) in info["coordinates"]:
                 d_x, d_y = current.x, current.y
                 distance = distance_between(x, y, 0, d_x, d_y, 0)
-                end_number = distance * info.get("interval", 2) * 2
+                end_number = distance * info["interval"] * 2
                 found = True
 
             number += end_number
@@ -188,7 +188,7 @@ class Crossroad(DefaultObject):
             current = crossroad
 
         # We now try to find the immediate neighbors
-        interval = info.get("interval", 2)
+        interval = info["interval"]
         left_direction = (direction - 2) % 8
         left_coords = coords_in(x, y, z, left_direction)
         left_room = Room.get_room_at(*left_coords)
@@ -254,7 +254,7 @@ class Crossroad(DefaultObject):
         self.db.exits = {}
 
     def add_exit(self, direction, crossroad, name, coordinates=None,
-            interval=2):
+            interval=1):
         """
         Add a new exit in the given direction.
 
@@ -276,7 +276,8 @@ class Crossroad(DefaultObject):
         one coordinate are actually 2 numbers).
 
         """
-        # Check the geographical logic
+        log = logger("crossroad")
+        lower_name = name.lower().strip()
         x, y, z = self.x, self.y, self.z
         d_x, d_y, d_z = crossroad.x, crossroad.y, crossroad.z
 
@@ -287,10 +288,32 @@ class Crossroad(DefaultObject):
                     "match {}".format(self, crossroad, direction))
 
         # Get the distance between self and crossroad
+        log.debug("Connecting crossroad #{} with #{} on {}".format(
+                self.id, crossroad.id, name))
+
         distance = sqrt((d_x - x) ** 2 + (d_y - y) ** 2)
+        relative_dist = distance_between(x, y, 0, d_x, d_y, 0)
 
         coordinates = coordinates or []
         slope = d_z - z
+        number = 0
+        left_dir = (direction - 2) % 8
+        right_dir = (direction + 2) % 8
+
+        # Calculate the original number
+        number = 0
+        crossroads = Crossroad.get_crossroads_road(name)
+        if crossroads:
+            numbers = []
+            for c in crossroads:
+                if c.tags.get(category="#" + lower_name) is not None:
+                    numbers.append(int(c.tags.get(category="#" + lower_name)))
+                else:
+                    numbers.append(0)
+
+            number = max(numbers)
+
+        log.debug("  Found greatest address number: {}".format(number))
         if not coordinates:
             progress = 0
             current_slope = 0
@@ -306,11 +329,9 @@ class Crossroad(DefaultObject):
             else:
                 slope_step = 1
 
-            while progress < distance:
+            # Find the various coordinates on the road
+            while progress < relative_dist:
                 progress += 1
-                if progress >= distance:
-                    break
-
                 if slope_frequency and progress % slope_frequency == 0:
                     current_slope += slope_step
 
@@ -325,6 +346,7 @@ class Crossroad(DefaultObject):
             if not self.tags.get(tag, category="croad"):
                 self.tags.add(tag, category="croad")
 
+        # Add the road representation to the crossroad's attribute
         self.db.exits[direction] = {
                 "coordinates": coordinates,
                 "crossroad": crossroad,
@@ -336,9 +358,53 @@ class Crossroad(DefaultObject):
         }
 
         # Add the tag for the street name itself
-        name = name.lower()
-        if not self.tags.get(name, category="road"):
-            self.tags.add(name, category="road")
+        if not self.tags.get(lower_name, category="road"):
+            self.tags.add(lower_name, category="road")
+
+        # If this road is in the right order, performs a bit more
+        if self.id < crossroad.id:
+            # Add the tag to identify road number
+            category = "#" + lower_name
+            if self.tags.get(category=category) is None:
+                self.tags.add(str(number), category=category)
+            if crossroad.tags.get(category=category) is None:
+                end_number = number + (relative_dist - 1) * interval * 2
+                log.debug("  Adding tag {} ({}) to #{}".format(
+                        end_number, category, crossroad.id))
+                crossroad.tags.add(str(end_number), category=category)
+
+            # Add the rooms (tag them to indcate they belong to the road)
+            for i, coords in enumerate(coordinates):
+                t_number = number + interval * (i + 1) * 2
+
+                # Find the left room
+                left_coords = coords_in(*coords, direction=left_dir)
+                left_room = Room.get_room_at(*left_coords)
+                left_numbers = tuple(t_number + n for n in range(-interval * 2 + 1, 1, 2))
+                if left_room:
+                    left_room.tags.add(name, category="road")
+                    for n in left_numbers:
+                        log.debug("    Tagging left room #{} as {} {}".format(
+                                left_room.id, n, lower_name))
+                        left_room.tags.add("{} {}".format(n, lower_name),
+                                category="address")
+
+                # Find the right room
+                right_coords = coords_in(*coords, direction=right_dir)
+                right_room = Room.get_room_at(*right_coords)
+                right_numbers = tuple(t_number + n for n in range(-(interval - 1) * 2, 1, 2))
+                if right_room:
+                    right_room.tags.add(name, category="road")
+                    for n in right_numbers:
+                        log.debug("    Tagging right room #{} as {} {}".format(
+                                right_room.id, n, lower_name))
+                        right_room.tags.add("{} {}".format(n, lower_name),
+                                category="address")
+
+            if number == 0:
+                log.debug("  Adding #{} as road origin".format(self.id))
+                if not self.tags.get(lower_name, category="oroad"):
+                    self.tags.add(lower_name, category="oroad")
 
         return coordinates
 
