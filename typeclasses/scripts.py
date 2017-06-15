@@ -14,6 +14,7 @@ just overloads its hooks to have it perform its function.
 
 from evennia import DefaultScript
 from evennia.contrib.events.scripts import EventHandler
+from evennia.utils.utils import inherits_from
 
 class Script(DefaultScript):
     """
@@ -133,4 +134,33 @@ class AvEventHandler(EventHandler):
 
     """Avenew version of the event handler."""
 
-    pass
+    def get_callbacks(self, obj):
+        """
+        Return a dictionary of the object's callbacks.
+
+        Args:
+            obj (Object): the connected objects.
+
+        Returns:
+            A dictionary of the object's callbacks.
+
+        Note:
+            This method can be useful to override in some contexts,
+            when several objects would share callbacks.
+
+        """
+        callbacks = EventHandler.get_callbacks(self, obj)
+        others = {}
+
+        # If a character, look for a PChar
+        if inherits_from(obj, "typeclasses.characters.Character"):
+            if obj.db.prototype:
+                others = EventHandler.get_callbacks(self, obj.db.prototype)
+
+        # Merge both dictionaries
+        for name, callback_list in others.items():
+            if name not in callbacks:
+                callbacks[name] = []
+            callbacks[name].extend(callback_list)
+
+        return callbacks

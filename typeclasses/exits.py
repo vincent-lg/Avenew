@@ -46,7 +46,7 @@ class Exit(EventExit):
             except RuntimeError:
                 return
 
-        DefaultExit.at_traverse(self, traversing_object, target_location)
+        EventExit.at_traverse(self, traversing_object, target_location)
 
     def call_event(self, event_name, **kwargs):
         """Call the given event with variables."""
