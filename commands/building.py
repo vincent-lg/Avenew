@@ -1,6 +1,4 @@
-"""
-This file contains the editing commands and options for builders.
-"""
+"""This file contains the commands for builders."""
 
 from evennia.commands.default.muxcommand import MuxCommand
 from evennia.utils.utils import class_from_module
