@@ -79,6 +79,10 @@ class CmdEdit(MuxCommand):
         else:
             if hasattr(repr, "get_" + field_name):
                 getattr(repr, "get_" + field_name)(self.caller)
+            elif field_name in repr.fields:
+                value = getattr(obj, field_name)
+                self.caller.msg("Current value {} = {} for {}.".format(
+                        field_name, value, obj.get_display_name(self.caller)))
             else:
                 self.msg("You cannot see this field name {} in {}.".format(
                         field_name, obj.get_display_name(self.caller)))

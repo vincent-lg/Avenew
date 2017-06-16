@@ -4,7 +4,7 @@ class RoomRepr:
 
     """The room representation."""
 
-    can_set = {
+    fields = {
             "x": int,
             "y": int,
             "z": int,
@@ -92,18 +92,3 @@ class RoomRepr:
     def clear_z(self, caller):
         """Clear the Z value."""
         self._set_coordinate(caller, "z", None)
-
-    def get_x(self, caller):
-        """Display X."""
-        caller.msg("Current value X = {} for {}.".format(self.room.x,
-                self.room.get_display_name(caller)))
-
-    def get_y(self, caller):
-        """Display Y."""
-        caller.msg("Current value Y = {} for {}.".format(self.room.y,
-                self.room.get_display_name(caller)))
-
-    def get_z(self, caller):
-        """Display Z."""
-        caller.msg("Current value Z = {} for {}.".format(self.room.z,
-                self.room.get_display_name(caller)))
