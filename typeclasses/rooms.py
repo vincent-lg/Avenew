@@ -22,10 +22,7 @@ class Room(EventRoom):
 
     """
 
-    # Fields to edit
-    to_edit = {
-        "name": "key",
-    }
+    repr = "representations.room.RoomRepr"
 
     @classmethod
     def get_room_at(cls, x, y, z):
@@ -108,7 +105,8 @@ class Room(EventRoom):
         old = self.tags.get(category="coordx")
         if old is not None:
             self.tags.remove(old, category="coordx")
-        self.tags.add(str(x), category="coordx")
+        if x is not None:
+            self.tags.add(str(x), category="coordx")
     x = property(_get_x, _set_x)
 
     def _get_y(self):
@@ -120,7 +118,8 @@ class Room(EventRoom):
         old = self.tags.get(category="coordy")
         if old is not None:
             self.tags.remove(old, category="coordy")
-        self.tags.add(str(y), category="coordy")
+        if y is not None:
+            self.tags.add(str(y), category="coordy")
     y = property(_get_y, _set_y)
 
     def _get_z(self):
@@ -132,7 +131,8 @@ class Room(EventRoom):
         old = self.tags.get(category="coordz")
         if old is not None:
             self.tags.remove(old, category="coordz")
-        self.tags.add(str(z), category="coordz")
+        if z is not None:
+            self.tags.add(str(z), category="coordz")
     z = property(_get_z, _set_z)
 
     def return_appearance(self, looker):

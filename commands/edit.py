@@ -3,7 +3,7 @@ This file contains the editing commands and options for builders.
 """
 
 from evennia.commands.default.muxcommand import MuxCommand
-from evennia.utils.evtable import EvTable
+from evennia.utils.utils import class_from_module
 
 class CmdEdit(MuxCommand):
 
@@ -37,6 +37,11 @@ class CmdEdit(MuxCommand):
     def func(self):
         """Main function for this command."""
         field_name, sep, obj_name = self.lhs.partition(" ")
+        field_name = field_name.lower()
+        if field_name.endswith("/del"):
+            field_name = field_name[:-4]
+            self.switches = ["del"]
+
         if not obj_name:
             obj_name = field_name
             field_name = ""
@@ -50,100 +55,30 @@ class CmdEdit(MuxCommand):
         if not obj:
             return
 
-        # Get the fields that can be modified
-        fields = getattr(type(obj), "to_edit", {})
-
-        # If no field name is specified, display the table
-        if not field_name:
-            table = EvTable("Field", "Value", width=78)
-            for field, attr in sorted(fields.items()):
-                table.add_row(field, self.get_value(obj, attr))
-
-            self.msg(table)
+        # Get the representation value for this object type
+        repr = getattr(type(obj), "repr", None)
+        if repr is None:
+            self.msg("This object has no representation to describe it.")
             return
 
-        # At this point, field_name is not empty and should match a field
-        if field_name not in type(obj).to_edit:
-            self.msg("You can't edit {} in {} (#{}) of type {}.".format(
-                    field_name, obj, obj.id, type(obj).__name__))
-            return
-
-        # If the value isn't specified, only display this field
-        attr = type(obj).to_edit[field_name]
-        if not self.rhs:
-            self.msg("Current value for the field {}: {}".format(
-                    field_name, self.get_value(obj, attr)))
-            return
-
-        # If a value has been specified, try to update it
-        old = self.get_value(obj, attr)
-        self.set_value(obj, attr, self.rhs)
-        new = self.get_value(obj, attr)
-        if old != new:
-            self.msg("Set to: {}.".format(new))
-
-    def get_value(self, obj, attr):
-        """Return a string value of the attribute."""
-        if isinstance(attr, str):
-            attrs = attr.split(".")
-            for a in attrs[:-1]:
-                obj = getattr(obj, a)
-            return str(getattr(obj, attrs[-1], "|rUnknown|n"))
-        elif isinstance(attr, (tuple, list)):
-            return " / ".join([self.get_value(obj, a) for a in attr])
-        elif isinstance(attr, dict):
-            attr = attr["attr"]
-            return self.get_value(obj, attr)
-        else:
-            raise ValueError("unknwon type for attribute")
-
-    def set_value(self, obj, attr, value):
-        """Set the new value to the attribute."""
-        if isinstance(attr, str):
-            attrs = attr.split(".")
-            for a in attrs[:-1]:
-                obj = getattr(obj, a)
-
-            value = value.strip()
-            if not value:
-                self.msg("The field's value cannot be empty.")
+        repr = class_from_module(repr)
+        repr = repr(obj)
+        if self.rhs:
+            value = self.rhs
+            if hasattr(repr, "set_" + field_name):
+                getattr(repr, "set_" + field_name)(self.caller, value)
             else:
-                setattr(obj, attrs[-1], value)
-        elif isinstance(attr, (tuple, list)):
-            values = value.split("/")
-            for i, a in enumerate(attr):
-                try:
-                    value = values[i]
-                except IndexError:
-                    self.msg("You didn't specify enough parameters for this field.")
-                else:
-                    self.set_value(obj, a, value)
-        elif isinstance(attr, dict):
-            attrs = attr["attr"].split(".")
-            for a in attrs[:-1]:
-                obj = getattr(obj, a)
-
-            name = attrs[-1]
-            f_type = attr.get("type")
-            if f_type == "str":
-                pass
-            elif f_type in ("int", "float"):
-                cnv = int if f_type == "int" else float
-                try:
-                    value = cnv(value)
-                except ValueError:
-                    self.msg("This value is invalid.")
-                else:
-                    valid = attr.get("valid")
-                    if valid:
-                        if not valid(value):
-                            self.msg("This value is invalid.")
-                            return
-
-                    f_set = attr.get("set")
-                    if f_set:
-                        value = f_set(value)
-
-                    setattr(obj, name, value)
+                self.msg("You cannot modify this field name {} in {}.".format(
+                        field_name, obj.get_display_name(self.caller)))
+        elif "del" in self.switches:
+            if hasattr(repr, "clear_" + field_name):
+                getattr(repr, "clear_" + field_name)(self.caller)
+            else:
+                self.msg("You cannot clear this field name {} in {}.".format(
+                        field_name, obj.get_display_name(self.caller)))
         else:
-            raise ValueError("unknwon type for attribute")
+            if hasattr(repr, "get_" + field_name):
+                getattr(repr, "get_" + field_name)(self.caller)
+            else:
+                self.msg("You cannot see this field name {} in {}.".format(
+                        field_name, obj.get_display_name(self.caller)))
