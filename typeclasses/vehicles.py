@@ -612,7 +612,7 @@ class Vehicle(DefaultObject):
                                 exclude=[driver], mapping=dict(driver=driver))
 
                     self.remove_message("turns")
-                    self.display_turns(driver, next)
+                    self.close_turn(driver, next)
                 self.stop()
                 return
             else:
@@ -635,6 +635,11 @@ class Vehicle(DefaultObject):
             direction = self.db.direction
             switch = True
 
+            # If there's a driver, call its 'post_turn' event
+            if driver:
+                driver.callbacks.call("post_turn", driver, self,
+                        self.db.previous_crossroad)
+
         between = distance_between(x, y, 0, n_x, n_y, 0)
         if between <= distance:
             # The vehicle has moved in the crossroad (not checking Z)
@@ -642,8 +647,7 @@ class Vehicle(DefaultObject):
             switch = True
         else:
             if between <= distance * 3 and driver:
-                pass
-                self.display_turns(driver, next)
+                self.close_turn(driver, next)
 
             if between <= distance * 2 and self.db.constant_speed > 16:
                 self.db.constant_speed = 16
@@ -732,69 +736,11 @@ class Vehicle(DefaultObject):
         if msg:
             self.msg_contents(msg, mapping=dict(side=side, road=road))
 
-    def display_turns(self, driver, crossroad):
-        """Display the turn of the next crossroad."""
-        if self.has_message("turns"):
-            return
-
-        self.add_message("turns")
-        direction = self.db.direction
-        exits = dict([((k - direction) % 8, v) for k, v in crossroad.db.exits.items()])
-        names = {
-                0: "Forward",
-                1: "Easy right",
-                2: "Right",
-                3: "Hard right",
-                4: "Behind",
-                5: "Hard left",
-                6: "Left",
-                7: "Easy left",
-        }
-
-        if not driver.sessions.get():
-            # The driver doesn't have a session, don't display anything
-            return
-
-        if any(session.protocol_flags.get(
-                "SCREENREADER", False) for session in driver.sessions.get()):
-            # One sessions on the driver have SCREENREADER turned on.
-            msg = ""
-            for dir, exit in exits.items():
-                if msg:
-                    msg += "\n"
-
-                name = names[dir]
-                msg += "  {:<10} - {}".format(name, exit["name"])
-        else:
-            # Create the diagram to represent the crossroad
-            msg = MAP.format(
-                    f="F" if 0 in exits else " ",
-                    fl="|" if 0 in exits else " ",
-                    fn="F  - " + exits[0]["name"] if 0 in exits else "",
-                    er="ER" if 1 in exits else "  ",
-                    erl="/" if 1 in exits else " ",
-                    ern="ER - " + exits[1]["name"] if 1 in exits else "",
-                    el="EL" if 7 in exits else "  ",
-                    ell="\\" if 7 in exits else " ",
-                    eln="EL - " + exits[7]["name"] if 7 in exits else "",
-                    r="R" if 2 in exits else " ",
-                    rl="-" if 2 in exits else " ",
-                    rn="R  - " + exits[2]["name"] if 2 in exits else "",
-                    l="L" if 6 in exits else " ",
-                    ll="-" if 6 in exits else " ",
-                    ln="L  - " + exits[6]["name"] if 6 in exits else "",
-                    hr="HR" if 3 in exits else "  ",
-                    hrl="\\" if 3 in exits else " ",
-                    hrn="HR - " + exits[3]["name"] if 3 in exits else "",
-                    hl="HL" if 5 in exits else "  ",
-                    hll="/" if 5 in exits else " ",
-                    hln="HL - " + exits[5]["name"] if 5 in exits else "",
-                    b="B" if 4 in exits else " ",
-                    bl="|" if 4 in exits else " ",
-                    bn="B  - " + exits[4]["name"] if 4 in exits else "",
-            )
-
-        driver.msg(msg)
+    def close_turn(self, driver, next):
+        """A turn is upcoming, time to warn the driver."""
+        driver = self.db.driver
+        if driver:
+            driver.close_turn(self, next)
 
     def speed_to_distance(self, speed):
         return speed / 16.0
@@ -804,26 +750,3 @@ class Vehicle(DefaultObject):
         self.db.speed = 0
         self.db.constant_speed = 0
         self.db.desired_speed = 0
-
-
-
-# Constants
-MAP = r"""
-Crossroad
-
-   Map                        Roads
-
-        {f}                     {fn}
-  {el}    {fl}    {er}
-    {ell}   {fl}   {erl}                 {ern}
-     {ell}  {fl}  {erl}                  {eln}
-      {ell} {fl} {erl}
-       {ell}{fl}{erl}                    {rn}
-{l}{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}{r}             {ln}
-       {hll}{bl}{hrl}
-      {hll} {bl} {hrl}                   {hrn}
-     {hll}  {bl}  {hrl}                  {hln}
-    {hll}   {bl}   {hrl}
-  {hl}    {bl}    {hr}
-        {b}                     {bn}
-"""

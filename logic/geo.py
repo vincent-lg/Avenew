@@ -169,3 +169,49 @@ def distance_between(x1, y1, z1, x2, y2, z2):
     dy = int(fabs(y2 - y1))
     dz = int(fabs(z2 - z1))
     return max(dx, dy, dz)
+
+def coords(string, allow_float=False):
+    """
+    Return, if found, a tuple of numbers.
+
+    Args:
+        string (str): the string containing the "X Y Z".
+        allow_float (bool, optional): allow floating coordinates?
+
+    Returns:
+        The tuple containing the three numbers (X, Y, Z) extracted
+        from the string.
+
+    Raises:
+        ValueError: the format cannot be used.
+
+    """
+    # Remove beginning or ending parenthesis if necessary
+    string = string.lstrip("(").rstrip(")")
+
+    # string could be X,Y,Z
+    if "," in string:
+        coords = string.split(",")
+    else:
+        coords = string.split(" ")
+
+    if len(coords) != 3:
+        raise ValueError("wrong number of coordinates, must be X Y Z")
+
+    converter = float if allow_float else int
+    try:
+        x = converter(coords[0].strip())
+    except ValueError:
+        raise ValueError("wrong value for X: {}".format(coords[0]))
+
+    try:
+        y = converter(coords[1].strip())
+    except ValueError:
+        raise ValueError("wrong value for Y: {}".format(coords[1]))
+
+    try:
+        z = converter(coords[2].strip())
+    except ValueError:
+        raise ValueError("wrong value for Z: {}".format(coords[2]))
+
+    return (x, y, z)

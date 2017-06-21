@@ -54,10 +54,15 @@ TIME_FACTOR = 4
 TIME_ZONE = "America/Los_Angeles"
 TIME_GAME_EPOCH = 1577865600
 
+# Screen reader and accessibility options
+SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
 # Web
 INSTALLED_APPS += (
         "web.help_system",
 )
 
-from server.conf.secret_settings import *
+try:
+    from server.conf.secret_settings import *
+except ImportError:
+    pass

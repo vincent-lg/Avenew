@@ -7,26 +7,131 @@ is setup to be the "default" character type created by the default
 creation commands.
 
 """
-from evennia.contrib.events.typeclasses import EventCharacter
 
+from evennia.contrib.events.typeclasses import EventCharacter
+from evennia.contrib.events.utils import register_events
+
+# Constants
+MAP = r"""
+Crossroad
+
+   Map                        Roads
+
+        {f}                     {fn}
+  {el}    {fl}    {er}
+    {ell}   {fl}   {erl}                 {ern}
+     {ell}  {fl}  {erl}                  {eln}
+      {ell} {fl} {erl}
+       {ell}{fl}{erl}                    {rn}
+{l}{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}{r}             {ln}
+       {hll}{bl}{hrl}
+      {hll} {bl} {hrl}                   {hrn}
+     {hll}  {bl}  {hrl}                  {hln}
+    {hll}   {bl}   {hrl}
+  {hl}    {bl}    {hr}
+        {b}                     {bn}
+"""
+
+PRE_TURN = """
+Before the driven vehicle turn into a crossroad.
+This event is called on the character driving a vehicle, when this
+vehicle is close from a crossroad where it will have to turn.  This
+event can be called to set taxi drivers or other automatic NPCs on a
+driving mission.
+
+Variables you can use in this event:
+    character: the character connected to this event.
+    vehicle: the vehicle driven by the character.
+    crossroad: the crossroad on which the vehicle is about to arrive.
+"""
+
+POST_TURN = """
+After the driven vehicle has turned into a road.
+This event is called on the character driving a vehicle, when this
+vehicle has just turned from a crossroad onto a road.  This
+event can be called to set taxi drivers or other automatic NPCs on a
+driving mission.
+
+Variables you can use in this event:
+    character: the character connected to this event.
+    vehicle: the vehicle driven by the character.
+    crossroad: the crossroad on which the vehicle has just turned.
+"""
+
+# Classes
+@register_events
 class Character(EventCharacter):
     """
-    The Character defaults to reimplementing some of base Object's hook methods with the
-    following functionality:
-
-    at_basetype_setup - always assigns the DefaultCmdSet to this object type
-                    (important!)sets locks so character cannot be picked up
-                    and its commands only be called by itself, not anyone else.
-                    (to change things, use at_object_creation() instead).
-    at_after_move(source_location) - Launches the "look" command after every move.
-    at_post_unpuppet(player) -  when Player disconnects from the Character, we
-                    store the current location in the pre_logout_location Attribute and
-                    move it to a None-location so the "unpuppeted" character
-                    object does not need to stay on grid. Echoes "Player has disconnected"
-                    to the room.
-    at_pre_puppet - Just before Player re-connects, retrieves the character's
-                    pre_logout_location Attribute and move it back on the grid.
-    at_post_puppet - Echoes "PlayerName has entered the game" to the room.
-
+    The character, representing a player-character (connected) or
+    NPC (non-connected).
     """
-    pass
+
+    _events = {
+        "pre_turn": (["character", "vehicle", "crossroad"], PRE_TURN),
+        "post_turn": (["character", "vehicle", "crossroad"], POST_TURN),
+    }
+
+    def close_turn(self, vehicle, crossroad):
+        """A turn is upcoming, display or warn."""
+        if vehicle.has_message("turns"):
+            return
+
+        vehicle.add_message("turns")
+        direction = vehicle.db.direction
+        exits = dict([((k - direction) % 8, v) for k, v in crossroad.db.exits.items()])
+        names = {
+                0: "Forward",
+                1: "Easy right",
+                2: "Right",
+                3: "Hard right",
+                4: "Behind",
+                5: "Hard left",
+                6: "Left",
+                7: "Easy left",
+        }
+
+        sessions = self.sessions.get()
+        if sessions:
+            if any(session.protocol_flags.get(
+                    "SCREENREADER", False) for session in sessions):
+                # One session on the driver has SCREENREADER turned on
+                msg = ""
+                for dir, exit in exits.items():
+                    if msg:
+                        msg += "\n"
+
+                    name = names[dir]
+                    msg += "  {:<10} - {}".format(name, exit["name"])
+            else:
+                # Create the diagram to represent the crossroad
+                msg = MAP.format(
+                        f="F" if 0 in exits else " ",
+                        fl="|" if 0 in exits else " ",
+                        fn="F  - " + exits[0]["name"] if 0 in exits else "",
+                        er="ER" if 1 in exits else "  ",
+                        erl="/" if 1 in exits else " ",
+                        ern="ER - " + exits[1]["name"] if 1 in exits else "",
+                        el="EL" if 7 in exits else "  ",
+                        ell="\\" if 7 in exits else " ",
+                        eln="EL - " + exits[7]["name"] if 7 in exits else "",
+                        r="R" if 2 in exits else " ",
+                        rl="-" if 2 in exits else " ",
+                        rn="R  - " + exits[2]["name"] if 2 in exits else "",
+                        l="L" if 6 in exits else " ",
+                        ll="-" if 6 in exits else " ",
+                        ln="L  - " + exits[6]["name"] if 6 in exits else "",
+                        hr="HR" if 3 in exits else "  ",
+                        hrl="\\" if 3 in exits else " ",
+                        hrn="HR - " + exits[3]["name"] if 3 in exits else "",
+                        hl="HL" if 5 in exits else "  ",
+                        hll="/" if 5 in exits else " ",
+                        hln="HL - " + exits[5]["name"] if 5 in exits else "",
+                        b="B" if 4 in exits else " ",
+                        bl="|" if 4 in exits else " ",
+                        bn="B  - " + exits[4]["name"] if 4 in exits else "",
+                )
+
+            self.msg(msg)
+
+        # Call the 'pre_turn' event on the driver
+        self.callbacks.call("pre_turn", self, vehicle, crossroad)
