@@ -39,6 +39,9 @@ SERVERNAME = "Even"
 # Activate SSL protocol (SecureSocketLibrary)
 SSL_ENABLED = True
 
+# IRC
+IRC_ENABLED = True
+
 # UnloggedinCmdSet
 CMDSET_UNLOGGEDIN = "commands.unloggedin.UnloggedinCmdSet"
 
