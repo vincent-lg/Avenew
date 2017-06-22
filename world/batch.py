@@ -4,7 +4,9 @@ from textwrap import dedent
 from evennia.utils import create, search
 
 from logic.geo import direction_between
+from typeclasses.characters import Character
 from typeclasses.objects import Object
+from typeclasses.prototypes import PChar
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad, Vehicle
 
@@ -52,21 +54,14 @@ def get_exit(room, direction, destination, name=None, aliases=None):
                    aliases=aliases, destination=destination)
     return exit
 
-def describe(text):
-    """Return the STR description.
+def get_pchar(key):
+    """Get or create the PChar."""
+    try:
+        pchar = PChar.objects.get(db_key=key)
+    except PChar.DoesNotExist:
+        pchar = create.create_object("typeclasses.prototypes.PChar", key=key)
 
-    Simple new lines are replaced with spaces.  Double line breaks
-    are considered as paragraphs.  The text is run through the dedent
-    function.
-
-    """
-    lines = []
-    for line in text.split("\n\n"):
-        line = dedent(line.strip("\n"))
-        line = line.replace("\n", " ")
-        lines.append(line)
-
-    return "\n".join(lines)
+    return pchar
 
 def get_crossroad(x, y, z):
     """Return or create the given crossroad."""
@@ -109,3 +104,40 @@ def add_road(origin, destination, name, back=True):
 
     if back and reverse not in destination.db.exits:
         destination.add_exit(reverse, origin, name, coordinates)
+
+def describe(text):
+    """Return the STR description.
+
+    Simple new lines are replaced with spaces.  Double line breaks
+    are considered as paragraphs.  The text is run through the dedent
+    function.
+
+    """
+    lines = []
+    for line in text.split("\n\n"):
+        line = dedent(line.strip("\n"))
+        line = line.replace("\n", " ")
+        lines.append(line)
+
+    return "\n".join(lines)
+
+def add_callback(obj, name, number, code, parameters=""):
+    """
+    Add or edit the callback.
+
+    Args:
+        obj (Object): the object that should contain the callback.
+        name (str): the name of the callback to add/edit.
+        number (int): the number of the callback to add/edit.
+        code (str): the code of the callback to add/edit.
+
+    """
+    author = Character.objects.get(id=1)
+    callbacks = obj.callbacks.get(name)
+    code = dedent(code.strip("\n"))
+    if 0 <= number < len(callbacks):
+        # Obviously the callback is there, so we edit it
+        obj.callbacks.edit(name, number, code, author=author, valid=True)
+    else:
+        # Just add it
+        obj.callbacks.add(name, code, author=author, valid=True, parameters=parameters)

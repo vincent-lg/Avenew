@@ -7,6 +7,8 @@ from math import fabs, sqrt
 from Queue import PriorityQueue
 import re
 
+from evennia.typeclasses.tags import Tag
+
 from logic.geo import coords_in, distance_between
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
@@ -14,6 +16,7 @@ from world.log import logger
 
 # Constants
 RE_ADDRESS = re.compile(r"^(?P<num>[0-9 ]*)?\s*(?P<road>.*?)(,\s*(?P<city>.*))?$")
+RE_NUMBER = re.compile(r"(\d+)")
 log = logger("gps")
 
 class GPS(object):
@@ -30,13 +33,14 @@ class GPS(object):
     def __init__(self, origin=None, destination=None):
         self.origin = origin
         self.destination = destination
+        self.address = ""
         self.path = []
         if isinstance(origin, basestring):
             self.origin = self.find_address(origin)
         if isinstance(destination, basestring):
-            self.destination = self.find_address(destination, in_path=True)
+            self.destination = self.find_address(destination, is_dest=True)
 
-    def find_address(self, address, in_path=False):
+    def find_address(self, address, is_dest=False):
         """
         Find and return the address.
 
@@ -72,6 +76,14 @@ class GPS(object):
         crossroads = Crossroad.get_crossroads_road(road, city)
         log.debug("Searching for number={}, road={}, city={}".format(
                 number, road, city))
+
+        # Recording the address
+        if is_dest:
+            if city:
+                self.address = "{} {} in {}".format(number, road, city)
+            else:
+                self.address = "{} {}".format(number, road)
+
         if not crossroads:
             log.debug("Cannot find a matching crossroad")
             raise ValueError("cannot find the address '{} {}, {}', " \
@@ -149,8 +161,8 @@ class GPS(object):
                     room.y, room.z))
             projected = room
 
-        # If in_path, add the path
-        if in_path:
+        # If is_dest, add the path
+        if is_dest:
             self.path.append((end, direction, projected))
 
         return end
@@ -201,3 +213,51 @@ class GPS(object):
                 log.debug("The before last hop can be removed.")
                 self.path[-2] = self.path[-2][:2] + (self.path[-1][2], )
                 del self.path[-1]
+
+    @staticmethod
+    def extract_address(string):
+        """Extract the address from the string.
+
+        The string could be formatted in different ways.
+
+        Args:
+            string (str): the string containing the address.
+
+        Returns:
+            (number, road, city): a tuple containing three str objects.
+
+        """
+        string = string.lower()
+        tags = Tag.objects.filter(db_category__in=("road", "city"))
+        roads = []
+        cities = []
+        for tag in tags:
+            if tag.db_category == "road":
+                if tag.db_key not in roads:
+                    roads.append(tag.db_key)
+            else:
+                if tag.db_key not in cities:
+                    cities.append(tag.db_key)
+
+        # Extract the number
+        match = RE_NUMBER.search(string)
+        if match:
+            number = match.group(1)
+        else:
+            number = "1"
+
+        # Extract the name of the city
+        city = ""
+        for name in cities:
+            if name.lower() in string:
+                city = name
+                break
+
+        # Find the road name
+        road = ""
+        for name in roads:
+            if name.lower() in string:
+                road = name
+                break
+
+        return (number, road, city)

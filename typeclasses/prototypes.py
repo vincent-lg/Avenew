@@ -30,7 +30,8 @@ class PChar(DefaultObject):
 
     """
 
-    _events = Character._events
+    _events = Character._events.copy()
+    _events.update(Character.__bases__[0]._events)
 
     @property
     def characters(self):
