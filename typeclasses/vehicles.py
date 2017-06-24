@@ -6,7 +6,7 @@ Vehicles
 from math import fabs, sqrt
 from random import choice
 
-from evennia import DefaultObject
+from evennia import DefaultObject, MONITOR_HANDLER
 
 from logic.geo import NAME_OPP_DIRECTIONS, coords_in, direction_between, distance_between
 from typeclasses.rooms import Room
@@ -122,13 +122,13 @@ class Crossroad(DefaultObject):
 
         Example:
             (<Crossroad #3>, "First street", {
-                    "left": {
+                    2: {
                         "direction": 2, # south
                         "coordinate": (0, -1, 0),
                         "room": <Room In front of the market>,
                         "numbers": (21, 23),
                     },
-                    "right": {
+                    6: {
                         "direction": 6, # north
                         "coordinate": (0, 1, 0),
                         "room": <Room In front of the public library>,
@@ -206,6 +206,19 @@ class Crossroad(DefaultObject):
                         "numbers": left_numbers,
                 },
                 "right": {
+                        "side": "right",
+                        "direction": right_direction,
+                        "coordinates": right_coords,
+                        "room": right_room,
+                        "numbers": right_numbers,
+                },
+                left_direction: {
+                        "direction": left_direction,
+                        "coordinates": left_coords,
+                        "room": left_room,
+                        "numbers": left_numbers,
+                },
+                right_direction: {
                         "side": "right",
                         "direction": right_direction,
                         "coordinates": right_coords,
@@ -294,7 +307,7 @@ class Crossroad(DefaultObject):
         distance = sqrt((d_x - x) ** 2 + (d_y - y) ** 2)
         relative_dist = distance_between(x, y, 0, d_x, d_y, 0)
 
-        coordinates = coordinates or []
+        coordinates = list(reversed(coordinates)) if coordinates else []
         slope = d_z - z
         number = 0
         left_dir = (direction - 2) % 8
@@ -330,7 +343,7 @@ class Crossroad(DefaultObject):
                 slope_step = 1
 
             # Find the various coordinates on the road
-            while progress < relative_dist:
+            while progress + 1 < relative_dist:
                 progress += 1
                 if slope_frequency and progress % slope_frequency == 0:
                     current_slope += slope_step
@@ -750,3 +763,24 @@ class Vehicle(DefaultObject):
         self.db.speed = 0
         self.db.constant_speed = 0
         self.db.desired_speed = 0
+
+    def start_monitoring(self):
+        """Begin monitoring the vehicle's coordinates.
+
+        This method will begin monitoring for the vehicle's movements,
+        and call 'report_move' when the coordinates change.
+
+        """
+        MONITOR_HANDLER.add(self, "coords", report_move, persistent=True, vehicle=self)
+
+    def stop_monitoring(self):
+        """Stop monitoring the vehicle's movements."""
+        MONITOR_HANDLER.remove(self, "coords")
+
+
+def report_move(obj, fieldname, vehicle):
+    """Report a change in coordinates."""
+    driver = vehicle.db.driver
+    if driver:
+        for behavior in driver.behaviors:
+            behavior.call("attempt_parking", driver, vehicle, obj.value)

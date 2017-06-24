@@ -11,6 +11,8 @@ creation commands.
 from evennia.contrib.events.typeclasses import EventCharacter
 from evennia.contrib.events.utils import register_events
 
+from behaviors import BEHAVIORS
+
 # Constants
 MAP = r"""
 Crossroad
@@ -70,6 +72,21 @@ class Character(EventCharacter):
         "pre_turn": (["character", "vehicle", "crossroad"], PRE_TURN),
         "post_turn": (["character", "vehicle", "crossroad"], POST_TURN),
     }
+
+    @property
+    def behaviors(self):
+        """Return the list of active behaviors."""
+        tags = self.tags.get(category="behavior")
+        if isinstance(tags, basestring):
+            tags = [tags]
+
+        # Place the behaviors in a list
+        behaviors = []
+        for name in tags:
+            if name in BEHAVIORS:
+                behaviors.append(BEHAVIORS[name])
+
+        return behaviors
 
     def close_turn(self, vehicle, crossroad):
         """A turn is upcoming, display or warn."""
@@ -135,3 +152,7 @@ class Character(EventCharacter):
 
         # Call the 'pre_turn' event on the driver
         self.callbacks.call("pre_turn", self, vehicle, crossroad)
+
+        # Call the pre_turn behavior
+        for behavior in self.behaviors:
+            behavior.call("pre_turn", self, vehicle)

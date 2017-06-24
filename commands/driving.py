@@ -83,7 +83,7 @@ class CmdDrive(Command):
             vehicle.location = None
             self.msg("You start the engine and begin to drive {} " \
                     "on the street.".format(vehicle.key))
-            vehicle.msg_contents("The engine of {} starts.",
+            vehicle.msg_contents("The engine of {vehicle} starts.",
                     exclude=[self.caller], mapping=dict(vehicle=vehicle))
 
         self.caller.cmdset.add("commands.driving.DrivingCmdSet",
@@ -146,14 +146,17 @@ class CmdPark(Command):
         # The Z coordinate could be invalid at this point, if there's a slope.
         previous = vehicle.db.previous_crossroad
         direction = vehicle.db.direction
-        distance = int(round(distance_between(x, y, 0,
-                previous.x, previous.y, 0)))
+        distance = distance_between(int(round(x)), int(round(y)), 0,
+                previous.x, previous.y, 0)
 
-        if distance >= 1:
+        if (x, y) != (previous.x, previous.y):
             street = previous.db.exits[direction]
 
             try:
+                assert distance > 0
                 x, y, z = street["coordinates"][distance - 1]
+            except AssertionError:
+                x, y, z = previous.x, previous.y, previous.z
             except IndexError:
                 log.warning("Cannot find the Z coordinate for vehicle " \
                         "#{}, trying to park at {} {}.".format(
@@ -176,12 +179,14 @@ class CmdPark(Command):
         left = self.args.lower().strip() == "left"
 
         if left:
-            spot = streets["left"]
+            side_direction = (direction - 2) % 8
         else:
-            spot = streets["right"]
+            side_direction = (direction - 2) % 8
+        spot = streets.get(side_direction)
+        log.debug("  Parking #{} on the {} side, found {}".format(vehicle.id, "left" if left else "right", spot))
 
         # If there's no room there
-        if spot["room"] is None:
+        if spot and spot["room"] is None:
             self.msg("You don't find any free spot to park.")
             return
 
