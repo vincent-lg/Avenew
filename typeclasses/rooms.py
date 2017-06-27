@@ -177,6 +177,66 @@ class Room(EventRoom):
             string += "\n{wYou see:{n " + ", ".join(users + things)
         return string
 
+    def add_address(self, number, name):
+        """
+        Add the specified address(es) to this room.
+
+        Args:
+            number (int or tuple): number(s) to be connected to this road.
+            name (str): the name of the road to be connected to.
+
+        Example:
+            room.add_address(3, "first street")
+            room.add_address((4, 6), "colony street")
+
+        """
+        name = name.lower()
+        numbers = (number, ) if isinstance(number, int) else number
+        if not self.tags.get(name, category="road"):
+            self.tags.add(name, category="road")
+
+        # Add the individual numbers
+        if self.db.addresses is None:
+            self.db.addresses = {}
+        if name not in self.db.addresses:
+            self.db.addresses[name] = {}
+        addresses = self.db.addresses[name]
+        for n in numbers:
+            tag = "{} {}".format(n, name)
+            if not self.tags.get(name, category="address"):
+                self.tags.add(tag, category="address")
+            if n not in addresses:
+                addresses[n] = ""
+
+    def del_address(self, number, name):
+        """
+        Remove the address and specific tags.
+
+        Args:
+            number (int or tuple): the numbers to be removed.
+            name (str): the name of the road to be removed.
+
+        Note:
+            This method doesn't remove a road, it just disconnects
+            this room from the road name and number.  Meaning that it
+            will be inaccessible from the road complex, and the road
+            complex will be inaccessible from this road as well.
+
+        """
+        name = name.lower()
+        numbers = (number, ) if isinstance(number, int) else number
+        if self.tags.get(name, category="road"):
+            self.tags.remove(name, category="road")
+
+        # Remove the individual numbers
+        addresses = self.attributes.get("addresses", {}).get(name, {})
+        for n in numbers:
+            tag = "{} {}".format(n, name)
+            if self.tags.get(name, category="address"):
+                self.tags.remove(tag, category="address")
+            if n in addresses:
+                del addresses[n]
+
 
 class VehicleRoom(Room):
 

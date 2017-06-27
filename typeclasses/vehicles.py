@@ -3,6 +3,7 @@ Vehicles
 
 """
 
+from collections import OrderedDict
 from math import fabs, sqrt
 from random import choice
 
@@ -100,6 +101,71 @@ class Crossroad(DefaultObject):
                 db_tags__db_key=tag, db_tags__db_category="croad")
 
         return crossroads
+
+    @classmethod
+    def get_road_coordinates(cls, road, city=None, include_sides=True,
+            include_road=True, include_crossroads=True):
+        """
+        Return all the coordinates of a road name, if found.
+
+        Args:
+            road (str): the name of the road.
+            city (str, optional): the city name to filter search.
+            include_sides (bool, optional) include the coordinates on
+                    either side of the road.
+            include_road (bool, optional): include the road coordinates.
+            include_crossroads (bool, optional) include the crossroads.
+
+        Returns:
+            A sorted dictionary of coordinates as key and additional
+            information as values.
+
+        """
+        coordinates = OrderedDict()
+        crossroads = cls.get_crossroads_road(road, city)
+        if not crossroads:
+            return {}
+
+        first = current = crossroads[0]
+        number = 0
+        visited = []
+        finished = False
+        while not finished:
+            before = visited[-1] if visited else None
+            infos = [
+                    (k, v) for (k, v) in current.db.exits.items() if \
+                    v["name"].lower() == road and v["crossroad"] is not before]
+            if current in visited or not infos:
+                break
+
+            infos.sort(key=lambda tup: tup[1]["crossroad"].id)
+            direction, info = infos[0]
+            if include_crossroads:
+                coordinates[(current.x, current.y, current.z)] = current
+
+            crossroad = info["crossroad"]
+            interval = info["interval"]
+            distance = distance_between(current.x, current.y, 0,
+                    crossroad.x, crossroad.y, 0)
+            for x, y, z in info["coordinates"]:
+                number += interval * 2
+                if include_road:
+                    coordinates[(x, y, z)] = (number, )
+
+                if include_sides:
+                    left_direction = (direction - 2) % 8
+                    left_coords = coords_in(x, y, z, left_direction)
+                    left_numbers = tuple(number + n for n in range(-interval * 2 + 1, 1, 2))
+                    right_direction = (direction + 2) % 8
+                    right_coords = coords_in(x, y, z, right_direction)
+                    right_numbers = tuple(number + n for n in range(-(interval - 1) * 2, 1, 2))
+                    coordinates[left_coords] = left_numbers
+                    coordinates[right_coords] = right_numbers
+
+            visited.append(current)
+            current = crossroad
+
+        return coordinates
 
     @classmethod
     def get_street(cls, x, y, z, city=None):
@@ -266,6 +332,24 @@ class Crossroad(DefaultObject):
     def at_object_creation(self):
         self.db.exits = {}
 
+    def get_road(self, name):
+        """
+        Return the entry representing the road with this name, if found.
+
+        Args:
+            name (str): the name of the road.
+
+        Returns:
+            The dictionary representing the road or None.
+
+        """
+        name = name.lower()
+        for road in self.db.exits.values():
+            if road["name"].lower() == name:
+                return road
+
+        return None
+
     def add_exit(self, direction, crossroad, name, coordinates=None,
             interval=1):
         """
@@ -370,7 +454,7 @@ class Crossroad(DefaultObject):
                 "slope": slope,
         }
 
-        # Add the tag for the street name itself
+        # Add the tag for the road name itself
         if not self.tags.get(lower_name, category="road"):
             self.tags.add(lower_name, category="road")
 
@@ -395,24 +479,14 @@ class Crossroad(DefaultObject):
                 left_room = Room.get_room_at(*left_coords)
                 left_numbers = tuple(t_number + n for n in range(-interval * 2 + 1, 1, 2))
                 if left_room:
-                    left_room.tags.add(name, category="road")
-                    for n in left_numbers:
-                        log.debug("    Tagging left room #{} as {} {}".format(
-                                left_room.id, n, lower_name))
-                        left_room.tags.add("{} {}".format(n, lower_name),
-                                category="address")
+                    left_room.add_address(left_numbers, name)
 
                 # Find the right room
                 right_coords = coords_in(*coords, direction=right_dir)
                 right_room = Room.get_room_at(*right_coords)
                 right_numbers = tuple(t_number + n for n in range(-(interval - 1) * 2, 1, 2))
                 if right_room:
-                    right_room.tags.add(name, category="road")
-                    for n in right_numbers:
-                        log.debug("    Tagging right room #{} as {} {}".format(
-                                right_room.id, n, lower_name))
-                        right_room.tags.add("{} {}".format(n, lower_name),
-                                category="address")
+                    right_room.add_address(right_numbers, name)
 
             if number == 0:
                 log.debug("  Adding #{} as road origin".format(self.id))

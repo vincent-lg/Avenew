@@ -215,3 +215,28 @@ def coords(string, allow_float=False):
         raise ValueError("wrong value for Z: {}".format(coords[2]))
 
     return (x, y, z)
+
+def get_direction(direction):
+    """
+    Return information on the provided direction.
+
+    Args:
+        direction (int): a direction number (between 0 and 9).
+
+    Returns:
+        A dictionary containing the name of the direction, aliases, and
+        opposite directions.
+
+    """
+    name = NAME_OPP_DIRECTIONS[direction]
+    aliases = ALIAS_DIRECTIONS[direction]
+    opp_direction = OPP_DIRECTIONS[direction]
+    opp_name = NAME_OPP_DIRECTIONS[opp_direction]
+    opp_aliases = ALIAS_DIRECTIONS[opp_direction]
+    return {
+            "name": name,
+            "aliases": aliases,
+            "opposite_direction": opp_direction,
+            "opposite_name": opp_name,
+            "opposite_aliases": opp_aliases,
+    }
