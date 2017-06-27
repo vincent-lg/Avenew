@@ -7,7 +7,7 @@ from evennia.commands.default.muxcommand import MuxCommand
 from evennia.utils.create import create_object
 from evennia.utils.utils import class_from_module, inherits_from
 
-from commands.unixcommand import UnixCommand
+from evennia.contrib.unixcommand import UnixCommand
 from logic.geo import NAME_DIRECTIONS, coords_in, coords, get_direction
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
@@ -115,7 +115,7 @@ class CmdNew(UnixCommand):
     locks = "cmd:id(1) or perm(Builders)"
     help_category = "Building"
 
-    def init(self):
+    def init_parser(self):
         """Configure the parser and sub-commands."""
         subparsers = self.parser.add_subparsers()
 
@@ -124,14 +124,20 @@ class CmdNew(UnixCommand):
                 epilog=dedent(self.create_room.__doc__).strip())
         room.add_argument("exit", nargs="?",
                 help="the exit in which to create the room")
+        room.add_argument("-h", "--help", action="store_true",
+                help="display the help")
         room.add_argument("-c", "--coordinates", type=coords,
                 help="the new room's coordinates (X Y Z)")
         room.add_argument("-r", "--road", default=["AUTO"], nargs="+",
                 help="the road name, AUTO to find it automatically or NONE")
         room.set_defaults(func=self.create_room)
+        room.set_defaults(parser=room)
 
     def func(self):
-        self.opts.func(self.opts)
+        if self.opts.help:
+            self.msg(self.opts.parser.format_help())
+        else:
+            self.opts.func(self.opts)
 
     def create_room(self, args):
         """
@@ -259,8 +265,8 @@ class CmdNew(UnixCommand):
         room.x = n_x
         room.y = n_y
         room.z = n_z
-        self.msg("Creating a new room: {} (X={}, Y={}, Z={}).".format(
-                room.key, n_x, n_y, n_z))
+        self.msg("Creating a new room: {}(#{}) (X={}, Y={}, Z={}).".format(
+                room.key, room.id, n_x, n_y, n_z))
         if road:
             name = road["name"]
             numbers = road["numbers"]
@@ -277,7 +283,8 @@ class CmdNew(UnixCommand):
                 aliases = info["aliases"]
                 create_object("typeclasses.exits.Exit", exit, origin,
                                aliases=aliases, destination=room)
-                self.msg("Created {} exit from {} to {}.".format(exit, origin.key, room.key))
+                self.msg("Created {} exit from {} to {}.".format(
+                        exit, origin.key, room.key))
 
         # Creating the back exit
         if info and origin:
