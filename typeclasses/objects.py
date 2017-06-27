@@ -10,7 +10,7 @@ the other types, you can do so by adding this as a multiple
 inheritance.
 
 """
-from evennia.contrib.events.typeclasses import EventObject
+from evennia.contrib.ingame_python.typeclasses import EventObject
 
 class Object(EventObject):
     """

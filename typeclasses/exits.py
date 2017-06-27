@@ -6,7 +6,7 @@ set and has a single command defined on itself with the same name as its key,
 for allowing Characters to traverse the exit to its destination.
 
 """
-from evennia.contrib.events.typeclasses import EventExit
+from evennia.contrib.ingame_python.typeclasses import EventExit
 from typeclasses.characters import Character
 
 class Exit(EventExit):

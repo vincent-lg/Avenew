@@ -8,8 +8,8 @@ creation commands.
 
 """
 
-from evennia.contrib.events.typeclasses import EventCharacter
-from evennia.contrib.events.utils import register_events
+from evennia.contrib.ingame_python.typeclasses import EventCharacter
+from evennia.contrib.ingame_python.utils import register_events
 
 from behaviors import BEHAVIORS
 

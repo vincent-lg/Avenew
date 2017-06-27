@@ -13,7 +13,7 @@ just overloads its hooks to have it perform its function.
 """
 
 from evennia import DefaultScript
-from evennia.contrib.events.scripts import EventHandler
+from evennia.contrib.ingame_python.scripts import EventHandler
 from evennia.utils.utils import inherits_from
 
 class Script(DefaultScript):

@@ -15,7 +15,7 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds
-from evennia.contrib.events.commands import CmdCallback
+from evennia.contrib.ingame_python.commands import CmdCallback
 
 from commands.building import CmdEdit, CmdNew
 from commands.driving import CmdDrive
