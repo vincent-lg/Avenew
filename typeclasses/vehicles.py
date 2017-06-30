@@ -698,8 +698,7 @@ class Vehicle(DefaultObject):
                         self.msg_contents("{driver} brakes hard in the middle of the crossroad.",
                                 exclude=[driver], mapping=dict(driver=driver))
 
-                    self.remove_message("turns")
-                    self.close_turn(driver, next)
+                    driver.display_turns(self, next)
                 self.stop()
                 return
             else:
@@ -733,8 +732,12 @@ class Vehicle(DefaultObject):
             self.db.coords = (n_x, n_y, n_z)
             switch = True
         else:
-            if between <= distance * 3 and driver:
-                self.close_turn(driver, next)
+            if driver and not self.has_message("pre_turn"):
+                self.add_message("pre_turn")
+                driver.pre_turn(self, next)
+
+            if between <= distance * 3 and driver and not self.has_message("turns"):
+                driver.display_turns(self, next)
 
             if between <= distance * 2 and self.db.constant_speed > 16:
                 self.db.constant_speed = 16
@@ -822,12 +825,6 @@ class Vehicle(DefaultObject):
 
         if msg:
             self.msg_contents(msg, mapping=dict(side=side, road=road))
-
-    def close_turn(self, driver, next):
-        """A turn is upcoming, time to warn the driver."""
-        driver = self.db.driver
-        if driver:
-            driver.close_turn(self, next)
 
     def speed_to_distance(self, speed):
         return speed / 16.0

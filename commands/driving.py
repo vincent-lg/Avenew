@@ -181,7 +181,7 @@ class CmdPark(Command):
         if left:
             side_direction = (direction - 2) % 8
         else:
-            side_direction = (direction - 2) % 8
+            side_direction = (direction + 2) % 8
         spot = streets.get(side_direction)
         log.debug("  Parking #{} on the {} side, found {}".format(vehicle.id, "left" if left else "right", spot))
 
@@ -351,7 +351,7 @@ class CmdTurn(Command):
         direction = vehicle.db.direction
 
         # Different choices
-        if name in ("go", "forward", "go f", "f"):
+        if name in ("go", "go forward", "forward", "go f", "f"):
             turn = 0
             msg = "You prepare to go forward on the next open crossroad."
         elif name in ("turn easy right", "easy right", "turn er", "er"):

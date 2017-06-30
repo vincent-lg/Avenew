@@ -49,8 +49,7 @@ class Driver(Behavior):
                     0, final[0], final[1], 0)
 
             # Last turn, get ready to park
-            if len(destinations) == 1:
-                driver.db.destinations = None
+            if len(destinations) <= 2:
                 if vehicle.db.expected is None:
                     expected = coords_in(destinations[-1][0].x, destinations[-1][0].y, final[2],
                             direction=destinations[-1][1], distance=distance)
@@ -68,10 +67,6 @@ class Driver(Behavior):
                         log.warning("#{}-{}: can't find on which side to park, left={}, right={}, expected={}".format(
                                 vehicle.id, prototype, left_expected, right_expected, final))
                     vehicle.start_monitoring()
-                    vehicle.db.last_distance = distance
-                    driver.execute_cmd("speed 10")
-                    log.debug("#{}-{}: slow down to 10 MPH".format(vehicle.id, prototype))
-
             del destinations[0]
 
     @classmethod
@@ -82,14 +77,15 @@ class Driver(Behavior):
             prototype = driver.db.prototype
             distance = sqrt((new_coords[0] - expected[0]) ** 2 + (new_coords[1] - expected[1]) ** 2)
             log.debug("#{}-{}: attempting to park, distance={}".format(vehicle.id, prototype, distance))
-            last_distance = vehicle.db.last_distance
-            if last_distance:
-                if distance <= 0.5:
-                    side = vehicle.db.expected_side
-                    log.debug("#{}-{}: try to park on {} side".format(vehicle.id, prototype, side))
-                    driver.execute_cmd("park {}".format(side))
-                elif distance < 3 and vehicle.db.desired_speed > 5:
-                    driver.execute_cmd("speed 5")
-                    log.debug("#{}-{}: slow down to 5 MPH".format(vehicle.id, prototype))
-
-            vehicle.db.last_distance = distance
+            if distance <= 0.5:
+                side = vehicle.db.expected_side
+                log.debug("#{}-{}: try to park on {} side".format(vehicle.id, prototype, side))
+                driver.execute_cmd("park {}".format(side))
+                if vehicle.location: # The vehicle is parked
+                    vehicle.stop_monitoring()
+            elif distance < 4 and vehicle.db.desired_speed > 5:
+                driver.execute_cmd("speed 5")
+                log.debug("#{}-{}: slow down to 5 MPH".format(vehicle.id, prototype))
+            elif distance < 7 and vehicle.db.desired_speed > 10:
+                driver.execute_cmd("speed 10")
+                log.debug("#{}-{}: slow down to 10 MPH".format(vehicle.id, prototype))

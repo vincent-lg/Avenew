@@ -88,8 +88,8 @@ class Character(EventCharacter):
 
         return behaviors
 
-    def close_turn(self, vehicle, crossroad):
-        """A turn is upcoming, display or warn."""
+    def display_turns(self, vehicle, crossroad):
+        """Called to display the list of available exits."""
         if vehicle.has_message("turns"):
             return
 
@@ -150,9 +150,15 @@ class Character(EventCharacter):
 
             self.msg(msg)
 
+    def pre_turn(self, vehicle, crossroad):
+        """Called to have the driver make a decision regarding turning."""
+        from world.log import main as log
+        log.debug("Calling pre_turn X={} Y={} direciton={} crossroad={} {}".format(round(vehicle.db.coords[0], 3), round(vehicle.db.coords[1], 3), vehicle.db.direction, vehicle.db.next_crossroad, crossroad))
+
         # Call the 'pre_turn' event on the driver
         self.callbacks.call("pre_turn", self, vehicle, crossroad)
 
         # Call the pre_turn behavior
         for behavior in self.behaviors:
             behavior.call("pre_turn", self, vehicle)
+        log.debug("  Decided to turn {}".format(vehicle.db.expected_direction))
