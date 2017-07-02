@@ -10,8 +10,8 @@ from textwrap import dedent
 
 from django.conf import settings
 
-from evennia import ObjectDB
-from evennia.utils import create
+from evennia import ChannelDB, ObjectDB
+from evennia.utils import create, logger
 from evennia.utils.evmenu import EvMenu
 
 from menu.generic import _formatter, _input_no_digit
@@ -341,10 +341,10 @@ def _create_character(name, player):
     """Create a new character.
 
     Args:
-        name: the name of the character to be created
-        player: the player owning the character.
+        name (str): the name of the character to be created.
+        player (Player): the player owning the character.
 
-    Return:
+    Returns:
         The newly-created character.
 
     """
@@ -370,6 +370,13 @@ def _create_character(name, player):
 
     # We need to set this to have @ic auto-connect to this character.
     player.db._last_puppet = character
+
+
+    # Join the new character to the public channel
+    pchannel = ChannelDB.objects.get_channel(settings.DEFAULT_CHANNELS[0]["key"])
+    if not pchannel or not pchannel.connect(character):
+        string = "New character '%s' could not connect to public channel!" % character.key
+        logger.log_err(string)
 
     return character
 

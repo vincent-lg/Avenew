@@ -15,9 +15,11 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds
+from evennia.commands.default import comms
 from evennia.contrib.ingame_python.commands import CmdCallback
 
 from commands.building import CmdEdit, CmdNew
+from commands.comms import CmdConnect, CmdDisconnect, CmdChannel
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
 from commands.moving import CmdEnter, CmdLeave
@@ -45,6 +47,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdLeave())
         self.add(CmdStartRoad())
 
+        # Channel commands
+        self.add(CmdChannel())
+        self.add(CmdConnect())
+        self.add(CmdDisconnect())
+
 class PlayerCmdSet(default_cmds.PlayerCmdSet):
     """
     This is the cmdset available to the Player at all times. It is
@@ -59,9 +66,17 @@ class PlayerCmdSet(default_cmds.PlayerCmdSet):
         Populates the cmdset
         """
         super(PlayerCmdSet, self).at_cmdset_creation()
-        #
-        # any commands you add below will overload the default ones.
-        #
+        # Remove all the default channel commands
+        self.remove(comms.CmdCBoot())
+        self.remove(comms.CmdCdesc())
+        self.remove(comms.CmdCdestroy())
+        self.remove(comms.CmdCemit())
+        self.remove(comms.CmdClock())
+        self.remove(comms.CmdCWho())
+        self.remove(comms.CmdAddCom())
+        self.remove(comms.CmdAllCom())
+        self.remove(comms.CmdDelCom())
+        self.remove(comms.CmdChannels())
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):

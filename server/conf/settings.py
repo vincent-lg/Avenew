@@ -57,6 +57,9 @@ TIME_FACTOR = 4
 TIME_ZONE = "America/Los_Angeles"
 TIME_GAME_EPOCH = 1577865600
 
+# Channel options
+CHANNEL_COMMAND_CLASS = "commands.comms.ChannelCommand"
+
 # Screen reader and accessibility options
 SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 

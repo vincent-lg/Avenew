@@ -9,7 +9,7 @@ from textwrap import dedent
 from django.conf import settings
 
 from evennia import logger
-
+from evennia.utils import create
 from menu.character import _login
 from menu.email_address import text_email_address
 
@@ -53,7 +53,7 @@ def confirm_password(caller, input):
         from evennia.commands.default import unloggedin
         try:
             permissions = settings.PERMISSION_PLAYER_DEFAULT
-            player = unloggedin._create_player(caller, playername,
+            player = _create_player(caller, playername,
                     password, permissions)
         except Exception:
             # We are in the middle between logged in and -not, so we have
@@ -81,3 +81,27 @@ def confirm_password(caller, input):
             )
 
     return text, options
+
+
+def _create_player(session, playername, password, permissions, typeclass=None, email=None):
+    """
+    Helper function, creates a player of the specified typeclass.
+
+
+    Contrary to the default `evennia.commands.default.unlogged._create_player`,
+    the player isn't connected to the public chaannel.
+
+    """
+    try:
+        new_player = create.create_player(playername, email, password, permissions=permissions, typeclass=typeclass)
+
+    except Exception as e:
+        session.msg("There was an error creating the Player:\n%s\n If this problem persists, contact an admin." % e)
+        logger.log_trace()
+        return False
+
+    # This needs to be set so the engine knows this player is
+    # logging in for the first time. (so it knows to call the right
+    # hooks during login later)
+    new_player.db.FIRST_LOGIN = True
+    return new_player
