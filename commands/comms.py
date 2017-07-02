@@ -198,24 +198,23 @@ class ChannelCommand(Command):
     {channeldesc}
 
     Usage:
-       {lower_channelkey}  <message>
-       {lower_channelkey}/history [start]
-       {lower_channelkey}/me <message>
-       {lower_channelkey}/who
+      {lower_channelkey} <message>
+      {lower_channelkey}/history [start]
+      {lower_channelkey}/me <message>
+      {lower_channelkey}/who
 
     Switch:
-        history: View 20 previous messages, either from the end or
-            from <start> number of messages from the end.
-        me: Perform an emote on this channel.
-        who: View who is connected to this channel.
+      history: View 20 previous messages, either from the end or
+          from <start> number of messages from the end.
+      me: Perform an emote on this channel.
+      who: View who is connected to this channel.
 
     Example:
-        {lower_channelkey} Hello World!
-        {lower_channelkey}/history
-        {lower_channelkey}/history 30
-        {lower_channelkey}/me grins.
-        {lower_channelkey}/who
-
+      {lower_channelkey} Hello World!
+      {lower_channelkey}/history
+      {lower_channelkey}/history 30
+      {lower_channelkey}/me grins.
+      {lower_channelkey}/who
     """
     # ^note that channeldesc and lower_channelkey will be filled
     # automatically by ChannelHandler
@@ -343,7 +342,6 @@ class ChannelCommand(Command):
                 if not msg:
                     self.msg("Who do you want to kick from this channel?")
                 else:
-                    print connected
                     to_kick = caller.search(msg, candidates=connected)
                     if to_kick is None:
                         return
@@ -379,3 +377,40 @@ class ChannelCommand(Command):
             A string with identifying information to disambiguate the object, conventionally with a preceding space.
         """
         return _(" (channel)")
+
+    def get_help(self, caller, cmdset):
+        """
+        Return the help message for this command and this caller.
+
+        By default, return self.__doc__ (the docstring just under
+        the class definition).  You can override this behavior,
+        though, and even customize it depending on the caller, or other
+        commands the caller can use.
+
+        Args:
+            caller (Object or Player): the caller asking for help on the command.
+            cmdset (CmdSet): the command set (if you need additional commands).
+
+        Returns:
+            docstring (str): the help text to provide the caller for this command.
+
+        """
+        docstring = self.__doc__
+        channel = ChannelDB.objects.get_channel(self.key)
+        if channel and channel.access(caller, 'control'):
+            # Add in the command administration switches
+            docstring += HELP_COMM_ADMIN.format(lower_channelkey=self.key.lower())
+
+        return docstring
+
+
+# Help entry for command administrators
+HELP_COMM_ADMIN = r"""
+
+    Administrator switches:
+      {lower_channelkey}/kick <username>: kick a user from a channel.
+      {lower_channelkey}/desc [description]: see or change the channel description.
+      {lower_channelkey}/lock [lockstring]: see or change the channel permissions.
+      {lower_channelkey}/emit <message>: admin emit to the channel.
+      {lower_channelkey}/destroy: destroy the channel.
+"""
