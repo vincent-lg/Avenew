@@ -77,7 +77,9 @@ class Character(EventCharacter):
     def behaviors(self):
         """Return the list of active behaviors."""
         tags = self.tags.get(category="behavior")
-        if isinstance(tags, basestring):
+        if tags is None:
+            tags = []
+        elif isinstance(tags, basestring):
             tags = [tags]
 
         # Place the behaviors in a list
