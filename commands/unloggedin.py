@@ -36,16 +36,7 @@ from evennia import Command, CmdSet
 from evennia import syscmdkeys
 from evennia.utils.evmenu import EvMenu
 
-from menu.confirm_password import confirm_password
-from menu.create_account import create_account
-from menu.create_password import create_password
-from menu.create_username import create_username
-from menu.email_address import email_address
 from menu.generic import _formatter, _input_no_digit
-from menu.password import password
-from menu.start import start
-from menu.username import username
-from menu.validate_account import validate_account
 
 class UnloggedinCmdSet(CmdSet):
     "Cmdset for the unloggedin state"
@@ -69,18 +60,6 @@ class CmdUnloggedinLook(Command):
 
     def func(self):
         "Execute the menu"
-        nodes = {
-                "start": start,
-                "username": username,
-                "password": password,
-                "create_account": create_account,
-                "create_username": create_username,
-                "create_password": create_password,
-                "confirm_password": confirm_password,
-                "email_address": email_address,
-                "validate_account": validate_account,
-        }
-
-        menu = EvMenu(self.caller, nodes, startnode="start", auto_quit=False,
+        menu = EvMenu(self.caller, "menu.player", startnode="start", auto_quit=False,
                 cmd_on_exit=None, node_formatter=_formatter,
                 input_parser=_input_no_digit, persistent=True)

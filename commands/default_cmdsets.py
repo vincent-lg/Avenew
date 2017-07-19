@@ -67,6 +67,7 @@ class PlayerCmdSet(default_cmds.PlayerCmdSet):
         """
         super(PlayerCmdSet, self).at_cmdset_creation()
         # Remove all the default channel commands
+        self.remove(comms.CmdChannelCreate())
         self.remove(comms.CmdCBoot())
         self.remove(comms.CmdCdesc())
         self.remove(comms.CmdCdestroy())

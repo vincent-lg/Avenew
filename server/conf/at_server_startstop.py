@@ -22,7 +22,6 @@ import subprocess
 from evennia import TICKER_HANDLER as ticker_handler
 from evennia import ScriptDB, create_script
 
-from services import email
 import tickers
 from world.log import begin, end, main
 
@@ -33,9 +32,6 @@ def at_server_start():
     """
     # Start the main logger
     begin()
-
-    # Setup the email service
-    email.setup()
 
     # Launch the script if it's not running
     try:

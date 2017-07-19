@@ -226,10 +226,7 @@ class ChannelCommand(Command):
     key = "general"
     help_category = "Channel Names"
     obj = None
-
-    def __init__(self, **kwargs):
-        kwargs["arg_regex"] = ""
-        Command.__init__(self, **kwargs)
+    arg_regex = ""
 
     def parse(self):
         """

@@ -50,4 +50,3 @@ def _input_no_digit(menuobject, raw_string, caller):
     if not (menuobject.options or menuobject.default):
         # no options - we are at the end of the menu.
         menuobject.close_menu()
-
