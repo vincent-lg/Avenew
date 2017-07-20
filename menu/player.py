@@ -13,6 +13,7 @@ from hashlib import sha256
 from random import choice
 import re
 from smtplib import SMTPException
+import socket
 from textwrap import dedent
 
 from django.conf import settings
@@ -33,7 +34,7 @@ CONNECTION_SCREEN_MODULE = settings.CONNECTION_SCREEN_MODULE
 LEN_PASSWD = 6
 RE_VALID_USERNAME = re.compile(r"^[a-z0-9_.]{3,}$", re.I)
 
-# Connection nodes
+## Connection nodes
 def start(caller):
     """The user should enter his/her username or NEW to create one.
 
@@ -214,6 +215,14 @@ def password(caller, input):
             _login(caller, player)
             text = ""
             options = _options_choose_characters(player)
+            if not player.db._playable_characters:
+                options = (
+                    {
+                        "key": "_default",
+                        "desc": "Enter your new character's first name.",
+                        "goto": "create_first_name",
+                    },
+                )
 
     return text, options
 
@@ -417,7 +426,6 @@ def confirm_password(caller, input):
         else:
             caller.db._player = player
             del caller.db._password
-            _login(caller, player)
             text = "Your new account was successfully created!"
             text += "\n\n" + _text_email_address(player)
             options = (
@@ -498,16 +506,25 @@ def email_address(caller, input):
         player.db.validation_code = code
         try:
             send_mail(subject, body, "team@avenew.net", [recipent])
-        except SMTPException:
+        except (SMTPException, socket.error):
             # The email could not be sent
             player.db.valid = True
             player.attributes.remove("validation_code")
-            text = dedent("""
+            caller.msg(dedent("""
                 Avenew couldn't send your email containing your validation code to {}.
                 This is probably due to Avenew's failure to connect to the SMTP server.
                 Your account has been validated automatically.
-            """.strip("\n")).format(email_address)
-            options = _options_choose_characters(player)
+            """.strip("\n")).format(email_address))
+            caller.msg("-----  You will now create the first character of this account. -----")
+            _login(caller, player)
+            text = ""
+            options = (
+                {
+                    "key": "_default",
+                    "desc": "Enter your new character's first name.",
+                    "goto": "create_first_name",
+                },
+            )
         else:
             text = dedent("""
                 An email has been sent to {}.  It contains your validation code which you'll need in
@@ -560,12 +577,20 @@ def validate_account(caller, input):
     else:
         player.db.valid = True
         player.attributes.remove("validation_code")
+        caller.msg("-----  You will now create the first character of this account. -----")
+        _login(caller, player)
         text = ""
-        options = _options_choose_characters(player)
+        options = (
+            {
+                "key": "_default",
+                "desc": "Enter your new character's first name.",
+                "goto": "create_first_name",
+            },
+        )
 
     return text, options
 
-# Transition nodes
+## Transition nodes
 def pre_start(self):
     """Node to redirect to 'start'."""
     text = "Enter your username or |wNEW|n to create an account."
@@ -595,7 +620,7 @@ def pre_email_address(self):
     )
     return text, options
 
-# Private functions
+## Private functions
 def _create_player(session, playername, password, permissions, typeclass=None, email=None):
     """
     Helper function, creates a player of the specified typeclass.

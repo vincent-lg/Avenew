@@ -49,7 +49,7 @@ class TestMenu(CommandTest):
         self.session.execute_cmd("test")
         self.session.execute_cmd("mypass")
         prompt = self.menutree.nodetext
-        self.assertEqual(self.current_node, "choose_characters")
+        self.assertEqual(self.current_node, "create_first_name")
 
     def test_wrong_password(self):
         """Test to login to an existing player with a wrong password."""
@@ -136,5 +136,5 @@ class TestMenu(CommandTest):
         player = Player.objects.get(username="mark")
         validation_code = player.db.validation_code
         self.session.execute_cmd(validation_code)
-        self.assertEqual(self.current_node, "choose_characters")
+        self.assertEqual(self.current_node, "create_first_name")
         self.assertTrue(player.db.valid)
