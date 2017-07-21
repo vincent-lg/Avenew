@@ -505,7 +505,7 @@ def email_address(caller, input):
         player.db.valid = False
         player.db.validation_code = code
         try:
-            send_mail(subject, body, "team@avenew.net", [recipent])
+            send_mail(subject, body, "team@avenew.games", [recipent])
         except (SMTPException, socket.error):
             # The email could not be sent
             player.db.valid = True
