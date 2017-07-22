@@ -10,7 +10,7 @@ system), '@desc', enhanced '@' to edit the object and so on.
 """
 
 from evennia import DefaultObject
-from evennia.contrib.events.utils import register_events
+from evennia.contrib.ingame_python.utils import register_events
 from evennia.utils.create import create_object
 from evennia.utils.search import search_tag
 
