@@ -65,8 +65,41 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
 # Web
 INSTALLED_APPS += (
+        'django.contrib.humanize',
+        'django_nyt',
+        'mptt',
+        'sekizai',
+        'sorl.thumbnail',
+        'wiki',
+        'wiki.plugins.attachments',
+        'wiki.plugins.notifications',
+        'wiki.plugins.images',
+        'wiki.plugins.macros',
         "web.help_system",
 )
+
+SITE_ID = 1
+
+WIKI_ACCOUNT_HANDLING = True
+WIKI_ACCOUNT_SIGNUP_ALLOWED = True
+
+TEMPLATES[0]['OPTIONS']['context_processors'] += ['sekizai.context_processors.sekizai']
+
+def is_superuser(article, user):
+    """Return True if user is a superuser, False otherwise."""
+    return not user.is_anonymous() and user.is_superuser
+
+def is_builder(article, user):
+    """Return True if user is a builder, False otherwise."""
+    return not user.is_anonymous() and user.locks.check_lockstring(user, "perm(Builders)")
+
+WIKI_CAN_ASSIGN = is_superuser
+WIKI_CAN_ASSIGN_OWNER = is_superuser
+WIKI_CAN_CHANGE_PERMISSIONS = is_superuser
+WIKI_CAN_DELETE = is_builder
+WIKI_CAN_MODERATE = is_superuser
+WIKI_CAN_READ = is_builder
+WIKI_CAN_WRITE = is_builder
 
 try:
     from server.conf.secret_settings import *
