@@ -1,40 +1,26 @@
-# Welcome to Evennia!
+# Welcome to the Avenew game folder for Evennia
 
-This is your game directory, set up to let you start with
-your new game right away. An overview of this directory is found here:
-https://github.com/evennia/evennia/wiki/Directory-Overview#the-game-directory
+This is the free and open-source [Avenew game](https://github.com/vlegoff/avenew), providing most of the gameplay which ought to be used in the Avenew game.
 
-You can delete this readme file when you've read it and you can
-re-arrange things in this game-directory to suit your own sense of
-organisation (the only exception is the directory structure of the
-`server/` directory, which Evennia expects). If you change the structure
-you must however also edit/add to your settings file to tell Evennia
-where to look for things.
+## What is Avenew?
 
-Your game's main configuration file is found in
-`server/conf/settings.py` (but you don't need to change it to get
-started). If you just created this directory (which means you'll already
-have a `virtualenv` running if you followed the default instructions),
-`cd` to this directory then initialize a new database using
+Avenew is a MUD based on modern days (or slightly in the future), with a system of vehicles to drive, firearms, and a complete gang system.
 
-    evennia migrate
+## Installing
 
-To start the server, stand in this directory and run
+In order to have Avenew running on your local machine, you would need to install [Evennia](https://github.com/evennia/evennia/wiki/Evennia-Introduction).  You can find the [installation instructions for Evennia here](https://github.com/evennia/evennia/wiki/Getting-Started).
 
-    evennia start
+### Additional dependencies
 
-This will start the server, logging output to the console. Make
-sure to create a superuser when asked. By default you can now connect
-to your new game using a MUD client on `localhost`, port `4000`.  You can 
-also log into the web client by pointing a browser to
-`http://localhost:8000`.
+Avenew needs some more dependencies in order to run properly.
 
-# Getting started
+* [django-wiki](https://github.com/django-wiki/django-wiki): to support a wiki feature on the main website.  To install, run: `pip install wiki`
+* SSL support: Evennia provides a SSL support which is enabled on Avenew.  To install: `pip install pyopenssl`
+* You could turn SSL off by editing your `server/conf/secret_settings.py` file.  The settings in this file will overri8de these in `server/conf/settings.py`, so you could write something like:
 
-From here on you might want to look at one of the beginner tutorials:
-http://github.com/evennia/evennia/wiki/Tutorials.
+```python
+# Deactivate SSL protocol (SecureSocketLibrary)
+SSL_ENABLED = False
+```
 
-Evennia's documentation is here: 
-https://github.com/evennia/evennia/wiki.
-
-Enjoy!
+This will turn SSL off for the instance of Avenew that is running on your local system.

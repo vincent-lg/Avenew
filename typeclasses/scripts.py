@@ -134,6 +134,25 @@ class AvEventHandler(EventHandler):
 
     """Avenew version of the event handler."""
 
+    def get_events(self, obj):
+        """
+        Return a dictionary of the object's events.
+        """
+        events = EventHandler.get_events(self, obj)
+        others = {}
+
+        # If a character, look for a PChar
+        if inherits_from(obj, "typeclasses.characters.Character"):
+            if obj.db.prototype:
+                others = EventHandler.get_events(self, obj.db.prototype)
+
+        # Merge both dictionaries
+        for name, event in others.items():
+            if name not in events:
+                events[name] = event
+
+        return events
+
     def get_callbacks(self, obj):
         """
         Return a dictionary of the object's callbacks.
