@@ -23,11 +23,10 @@ from django.core.validators import validate_email
 from evennia import logger
 from evennia.server.models import ServerConfig
 from evennia.utils import create
-from evennia.utils.utils import random_string_from_module
+from evennia.utils.utils import delay, random_string_from_module
 
 from menu.character import _login, _options_choose_characters, _text_choose_characters
 from typeclasses.players import Player
-from typeclasses.scripts import WrongPassword
 
 ## Constants
 CONNECTION_SCREEN_MODULE = settings.CONNECTION_SCREEN_MODULE
@@ -100,10 +99,6 @@ def username(caller, input):
         # 3 seconds.
         if locked:
             text = "Please wait..."
-            scripts = player.scripts.get("wrong_password")
-            if scripts:
-                script = scripts[0]
-                script.db.session = caller
         else:
             text = "Enter the password for the account {}.".format(
                     player.name)
@@ -160,13 +155,9 @@ def password(caller, input):
                 Or wait 3 seconds before trying a new password.
         """.strip("\n"))
 
-        # Loops on the same node
-        player.scripts.add(WrongPassword)
-        scripts = player.scripts.get("wrong_password")
-        if scripts:
-            script = scripts[0]
-            script.db.session = caller
-
+        # Loops on the same node, lock for 3 seconds
+        player.db._locked = True
+        delay(3, _wrong_password, player)
         options = (
             {
                 "key": "b",
@@ -658,3 +649,9 @@ def _text_email_address(player):
     """.strip("\n")).format(player.name)
 
     return text
+
+def _wrong_password(player):
+    """Function called after the 3 seconds are up, when a wrong password has been supplied."""
+    player.db._locked = False
+    player.msg("Enter your password again.")
+

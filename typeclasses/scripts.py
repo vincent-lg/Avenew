@@ -92,44 +92,6 @@ class Script(DefaultScript):
     pass
 
 
-class WrongPassword(DefaultScript):
-
-    """This script is used to delay the input of a new password by 3 seconds.
-
-    When a wrong password is entered at login, the system
-    allows to enter a new password in 3 seconds, to avoid
-    brute-forcing.  This script is persistent, meaning even if
-    the server reloads or reboots, this script is still saved.
-    If the player disconnects, reconnects and tries again, he
-    has to wait the normal time.
-
-    """
-
-    def at_script_creation(self):
-        "Called once, during initial creation"
-        self.key = "wrong_password"
-        self.desc = "Delays entering password for 3 seconds."
-        self.interval = 3
-        self.start_delay = True
-        self.repeats = 1
-        self.persistent = True
-
-        # Change attributes of the player
-        self.obj.db._locked = True
-        self.db.session = None
-
-    def at_repeat(self):
-        """When the script repeats.
-
-        This method should be called only once per script (after the 3 seconds).
-
-
-        """
-        self.obj.db._locked = False
-        if self.db.session:
-            self.db.session.msg("Enter your password again.")
-
-
 class AvEventHandler(EventHandler):
 
     """Avenew version of the event handler."""
