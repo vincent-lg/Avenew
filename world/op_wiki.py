@@ -54,6 +54,7 @@ def create(path, title, content, user=None, message=""):
         is taken to be the article's new slug.
 
     """
+    print "Try to create a wiki page..."
     path = path.strip("/")
     if "/" in path:
         parent_path, slug = path.rsplit("/", 1)

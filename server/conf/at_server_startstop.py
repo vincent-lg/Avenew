@@ -21,11 +21,9 @@ import subprocess
 
 from evennia import TICKER_HANDLER as ticker_handler
 from evennia import ScriptDB, create_script
-from evennia.utils.utils import delay
 
 import tickers
 from world.log import begin, end, main
-from world.documentation import generate_documentation
 
 def at_server_start():
     """
@@ -44,10 +42,6 @@ def at_server_start():
 
     # Launch tickers
     ticker_handler.add(3, tickers.vehicles.move)
-
-    # Generate automatic documentation
-    # We have to call it in a slight delay for the script to be ready
-    delay(1, generate_documentation)
 
 
 
