@@ -101,6 +101,9 @@ WIKI_CAN_MODERATE = is_superuser
 WIKI_CAN_READ = is_builder
 WIKI_CAN_WRITE = is_builder
 
+# Temporarily disable websocket on the client
+wEBSOCKET_CLIENT_ENABLED = False
+
 try:
     from server.conf.secret_settings import *
 except ImportError:
