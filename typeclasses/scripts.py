@@ -18,8 +18,6 @@ from evennia import DefaultScript
 from evennia.contrib.ingame_python.scripts import EventHandler
 from evennia.utils.utils import class_from_module, inherits_from
 
-from world.op_wiki import *
-
 class Script(DefaultScript):
     """
     A script type is customized by redefining some or all of its hook
@@ -103,7 +101,7 @@ class AvEventHandler(EventHandler):
     def at_start(self):
         """Start the script and generate documentation."""
         super(AvEventHandler, self).at_start()
-        self.generate_documentation()
+        #self.generate_documentation()
 
     def generate_documentation(self):
         """Generate automatic documentation for the in-game Python system."""

@@ -17,7 +17,7 @@ class SmartCommand(Command):
     A SmartCommand is an evennia Command with additional
     features.  Its main purpose is to help parsing of parameters
     using an extended definition of expected arguments.  For
-    instance, the 'pk' command, to set the player-kill flag,
+    instance, the 'pk' command, to set the account-kill flag,
     could define a single parameter:  either 'on' or 'off'.
     More complex commands, like 'get', could require additional
     parameters:  first (optionally) a number, then an object

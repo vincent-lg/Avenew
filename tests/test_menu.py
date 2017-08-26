@@ -5,11 +5,11 @@ from evennia.commands.default.tests import CommandTest
 from evennia.utils import create
 
 from commands.unloggedin import UnloggedinCmdSet, CmdUnloggedinLook
-from typeclasses.players import Player
+from typeclasses.accounts import Account
 
 class TestMenu(CommandTest):
 
-    """Test the player/character login menu."""
+    """Test the account/character login menu."""
 
     def setUp(self):
         """Make sure to add the CmdSet to the session."""
@@ -18,9 +18,9 @@ class TestMenu(CommandTest):
         self.call(CmdUnloggedinLook(), "", caller=self.session)
         self.menutree = self.session.ndb._menutree
 
-        # Force a "test" player to be created
-        self.player2 = create.create_player("test", "", "mypass")
-        self.player2.db.valid = True
+        # Force a "test" account to be created
+        self.account2 = create.create_account("test", "", "mypass")
+        self.account2.db.valid = True
 
     @property
     def default_node(self):
@@ -40,23 +40,23 @@ class TestMenu(CommandTest):
 
     def test_wrong_username(self):
         """Test to login to a non-existent username."""
-        self.session.execute_cmd("some other player")
+        self.session.execute_cmd("some other account")
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "username")
 
     def test_password(self):
-        """Test to login to an existing player with correct password."""
+        """Test to login to an existing account with correct password."""
         self.session.execute_cmd("test")
         self.session.execute_cmd("mypass")
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "create_first_name")
 
     def test_wrong_password(self):
-        """Test to login to an existing player with a wrong password."""
+        """Test to login to an existing account with a wrong password."""
         self.session.execute_cmd("test")
         self.session.execute_cmd("notthat")
         self.assertEqual(self.default_node, "password")
-        self.assertTrue(self.player2.db._locked)
+        self.assertTrue(self.account2.db._locked)
 
         # And check that you cannot insist even providing the right password
         self.session.execute_cmd("mypass")
@@ -70,8 +70,8 @@ class TestMenu(CommandTest):
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "create_username")
 
-    def test_create_valid_player(self):
-        """Try to create a player."""
+    def test_create_valid_account(self):
+        """Try to create an account."""
         self.session.execute_cmd("NEW")
 
         # Ask to create the account named 'mark'
@@ -79,8 +79,8 @@ class TestMenu(CommandTest):
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "create_password")
 
-    def test_create_existing_player(self):
-        """Try to create a player with an already used name."""
+    def test_create_existing_account(self):
+        """Try to create an account with an already used name."""
         self.session.execute_cmd("NEW")
         self.session.execute_cmd("test")
         prompt = self.menutree.nodetext
@@ -103,8 +103,8 @@ class TestMenu(CommandTest):
         self.session.execute_cmd("MarksPassword")
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "email_address")
-        player = Player.objects.get(username="mark")
-        self.assertTrue(player.check_password("MarksPassword"))
+        account = Account.objects.get(username="mark")
+        self.assertTrue(account.check_password("MarksPassword"))
 
     def test_correct_email(self):
         """Test to send a correct validation emil."""
@@ -115,8 +115,8 @@ class TestMenu(CommandTest):
         self.session.execute_cmd("test@avenew.net")
         self.assertEqual(self.default_node, "validate_account")
         prompt = self.menutree.nodetext
-        player = Player.objects.get(username="mark")
-        validation_code = player.db.validation_code
+        account = Account.objects.get(username="mark")
+        validation_code = account.db.validation_code
         self.assertTrue(bool(validation_code))
 
         # Check that the email was correctly sent
@@ -133,8 +133,8 @@ class TestMenu(CommandTest):
         self.session.execute_cmd("MarksPassword")
         self.session.execute_cmd("MarksPassword")
         self.session.execute_cmd("test@avenew.net")
-        player = Player.objects.get(username="mark")
-        validation_code = player.db.validation_code
+        account = Account.objects.get(username="mark")
+        validation_code = account.db.validation_code
         self.session.execute_cmd(validation_code)
         self.assertEqual(self.default_node, "create_first_name")
-        self.assertTrue(player.db.valid)
+        self.assertTrue(account.db.valid)

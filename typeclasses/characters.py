@@ -1,7 +1,7 @@
 """
 Characters
 
-Characters are (by default) Objects setup to be puppeted by Players.
+Characters are (by default) Objects setup to be puppeted by Accounts.
 They are what you "see" in game. The Character class in this module
 is setup to be the "default" character type created by the default
 creation commands.
@@ -64,7 +64,7 @@ Variables you can use in this event:
 @register_events
 class Character(EventCharacter):
     """
-    The character, representing a player-character (connected) or
+    The character, representing an account-character (connected) or
     NPC (non-connected).
     """
 

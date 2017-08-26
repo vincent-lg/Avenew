@@ -6,7 +6,7 @@ operations to get, create and update wiki pages.
 
 """
 
-from evennia import PlayerDB
+from evennia import AccountDB
 from wiki.models import Article, ArticleRevision, URLPath
 
 def get_URI(uri):
@@ -38,14 +38,14 @@ def create(path, title, content, user=None, message=""):
         path (str): the page's new path (must be unusued).
         title (str): the title of the new page.
         content (str): the new page's content.
-        user (Player, optional): the new page's owner.
+        user (Account, optional): the new page's owner.
         message (str, optional): the new revision's message.
 
     Returns:
         article (Artidcle): the new article.
 
     Notes:
-        If `user` is unset, use Player #1 (the superuser).
+        If `user` is unset, use Account #1 (the superuser).
         If `slug` is unset, use the path.
 
         The provided path is an URL.  The parent is taken to be the
@@ -63,7 +63,7 @@ def create(path, title, content, user=None, message=""):
         slug = path
     parent = URLPath.get_by_path(parent_path)
 
-    user = user or PlayerDB.objects.get(id=1)
+    user = user or AccountDB.objects.get(id=1)
     newpath = URLPath.create_article(
         parent,
         slug,
@@ -89,16 +89,16 @@ def update(article, content, user=None, message="", title=None):
     Args:
         article (Article): the article object.
         content (str): the new content of the article.
-        user (Player, optional): the user responsible for the update.
+        user (Account, optional): the user responsible for the update.
         message (str, optional): the message of the update.
         title (str, optional): the new article's title.
 
     Note:
-        If `user` isn't set, get the player #1 (the superuser).
+        If `user` isn't set, get the account #1 (the superuser).
         If `title` is unset, will use the current article's title.
 
     """
-    user = user or PlayerDB.objects.get(id=1)
+    user = user or AccountDB.objects.get(id=1)
     current = article.current_revision
     title = title if title is not None else current.title
     revision = ArticleRevision()

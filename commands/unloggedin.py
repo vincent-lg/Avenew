@@ -9,7 +9,7 @@ uses EvMenu (hence the name).  This module contains the
 functions (nodes) of the menu, with the CmdSet and
 UnloggedCommand called when a user logs in.  In other words,
 instead of using the 'connect' or 'create' commands once on the
-login screen, players have to navigate through a simple menu
+login screen, accounts have to navigate through a simple menu
 asking them to enter their username (then password), or to type
 'new' to create one.  You may want to update your login screen
 if you use this system.
@@ -17,8 +17,8 @@ if you use this system.
 When you'll reload the server, new sessions will connect to the
 new login system, where they will be able to:
 
-* Enter their username, assuming they have an existing player.
-* Enter 'NEW' to create a new player.
+* Enter their username, assuming they have an existing account.
+* Enter 'NEW' to create a new account.
 
 The top-level functions in this file are menu nodes (as
 described in EvMenu).  Each one of these functions is
@@ -51,7 +51,7 @@ class UnloggedinCmdSet(CmdSet):
 class CmdUnloggedinLook(Command):
     """
     An unloggedin version of the look command. This is called by the server
-    when the player first connects. It sets up the menu before handing off
+    when the account first connects. It sets up the menu before handing off
     to the menu's own look command.
     """
     key = syscmdkeys.CMD_LOGINSTART
@@ -60,6 +60,6 @@ class CmdUnloggedinLook(Command):
 
     def func(self):
         "Execute the menu"
-        menu = EvMenu(self.caller, "menu.player", startnode="start", auto_quit=False,
+        menu = EvMenu(self.caller, "menu.account", startnode="start", auto_quit=False,
                 cmd_on_exit=None, node_formatter=_formatter,
                 input_parser=_input_no_digit, persistent=True)

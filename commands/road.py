@@ -336,7 +336,7 @@ class CmdRoad(Command):
     be the ID of the crossroad you want to connect to.  You have
     access to the ID when you use the |ycross|n command, or when you
     walk around in road building mode.  The third argument is the
-    name of the street to be created.  Players will see this name,
+    name of the street to be created.  Accounts will see this name,
     when turning onto this road or a little before, when deciding
     where to go.  It will also show on the control panel of the
     vehicle, as a constant reminder.

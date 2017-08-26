@@ -1,7 +1,7 @@
 """
 Commands
 
-Commands describe the input the player can do to the game.
+Commands describe the input the account can do to the game.
 
 """
 

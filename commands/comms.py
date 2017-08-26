@@ -2,9 +2,9 @@
 Comsystem command module.
 
 Contrary to the Evennia default comm system, channels in Avenew are
-available to logged-in characters only, not to players through the OOC
+available to logged-in characters only, not to accounts through the OOC
 mode (there's not much of an OOC mode in Avenew).  The default commands
-are therefore removed from the PlayerCmdSet, while the new commands are
+are therefore removed from the AccountCmdSet, while the new commands are
 added into the CharacterCmdSet.
 
 """
@@ -368,7 +368,7 @@ class ChannelCommand(Command):
         Let users know that this command is for communicating on a channel.
 
         Args:
-            caller (TypedObject): A Character or Player who has entered an ambiguous command.
+            caller (TypedObject): A Character or Account who has entered an ambiguous command.
 
         Returns:
             A string with identifying information to disambiguate the object, conventionally with a preceding space.
@@ -385,7 +385,7 @@ class ChannelCommand(Command):
         commands the caller can use.
 
         Args:
-            caller (Object or Player): the caller asking for help on the command.
+            caller (Object or Account): the caller asking for help on the command.
             cmdset (CmdSet): the command set (if you need additional commands).
 
         Returns:

@@ -14,14 +14,14 @@ does what you expect it to.
 
 """
 
-from evennia import PlayerDB
+from evennia import AccountDB
 
 def at_initial_setup():
     """
     Function called at initial_setup.
 
-    This function makes sure player#1 (the superuser) is valid.
+    This function makes sure account#1 (the superuser) is valid.
 
     """
-    player = PlayerDB.objects.get(id=1)
-    player.db.valid = True
+    account = AccountDB.objects.get(id=1)
+    account.db.valid = True

@@ -1,4 +1,4 @@
-﻿"""This module contains the player connexion/creation menu nodes.
+﻿"""This module contains the account connexion/creation menu nodes.
 
 start: First login, prompted for username
     'new': create_account
@@ -26,7 +26,7 @@ from evennia.utils import create
 from evennia.utils.utils import delay, random_string_from_module
 
 from menu.character import _login, _options_choose_characters, _text_choose_characters
-from typeclasses.players import Player
+from typeclasses.accounts import Account
 
 ## Constants
 CONNECTION_SCREEN_MODULE = settings.CONNECTION_SCREEN_MODULE
@@ -41,7 +41,7 @@ def start(caller):
     a session has been created OR if an error occurs further
     down the menu tree.  From there, users can either enter a
     username (if this username exists) or type NEW (capitalized
-    or not) to create a new player.
+    or not) to create a new account.
 
     """
     text = random_string_from_module(CONNECTION_SCREEN_MODULE)
@@ -61,7 +61,7 @@ def start(caller):
     return text, options
 
 def username(caller, input):
-    """Check that the username is an existing player.
+    """Check that the username is an existing account.
 
     Check that the specified username exists.  If the username doesn't
     exist, display an error message and ask the user to either
@@ -70,9 +70,9 @@ def username(caller, input):
 
     """
     input = input.strip()
-    players = Player.objects.filter(username__iexact=input)
-    player = players[0] if players else None
-    if player is None:
+    accounts = Account.objects.filter(username__iexact=input)
+    account = accounts[0] if accounts else None
+    if account is None:
         text = dedent("""
             |rThe username {} doesn't exist yet.  Have you created it?|n
                 Type |wb|n to go back to the login screen.
@@ -91,17 +91,17 @@ def username(caller, input):
             },
         )
     else:
-        caller.db._player = player
-        locked = player.db._locked
+        caller.db._account = account
+        locked = account.db._locked
 
-        # The player is temporarily locked when a wrong password
+        # The account is temporarily locked when a wrong password
         # has been supplied.  This lock shouldn't last more than
         # 3 seconds.
         if locked:
             text = "Please wait..."
         else:
             text = "Enter the password for the account {}.".format(
-                    player.name)
+                    account.name)
 
         # Disables echo for the password
         caller.msg(echo=False)
@@ -116,7 +116,7 @@ def username(caller, input):
     return text, options
 
 def password(caller, input):
-    """Ask the user to enter the password to this player.
+    """Ask the user to enter the password to this account.
 
     This is assuming the user exists (see 'create_username' and
     'create_password').  This node "loops" if needed:  if the
@@ -136,19 +136,19 @@ def password(caller, input):
     )
 
     # Check the password
-    player = caller.db._player
+    account = caller.db._account
 
     # If the account is locked, the user has to wait (maximum
     # 3 seconds) before retrying
-    if player.db._locked:
+    if account.db._locked:
         text = "|gPlease wait, you cannot enter your password yet.|n"
         return text, options
 
     bans = ServerConfig.objects.conf("server_bans")
-    banned = bans and (any(tup[0] == player.name.lower() for tup in bans) \
+    banned = bans and (any(tup[0] == account.name.lower() for tup in bans) \
             or any(tup[2].match(caller.address) for tup in bans if tup[2]))
 
-    if not player.check_password(input):
+    if not account.check_password(input):
         text = dedent("""
             |rIncorrect password.|n
                 Type |wb|n to go back to the login screen.
@@ -156,8 +156,8 @@ def password(caller, input):
         """.strip("\n"))
 
         # Loops on the same node, lock for 3 seconds
-        player.db._locked = True
-        delay(3, _wrong_password, player)
+        account.db._locked = True
+        delay(3, _wrong_password, account)
         options = (
             {
                 "key": "b",
@@ -180,11 +180,11 @@ def password(caller, input):
         caller.sessionhandler.disconnect(
                 caller, "Good bye!  Disconnecting...")
     else:
-        # The password is correct, we can log into the player.
+        # The password is correct, we can log into the account.
         caller.msg(echo=True)
-        if not player.email:
+        if not account.email:
             # Redirects to the node to set an email address
-            text = _text_email_address(player)
+            text = _text_email_address(account)
             options = (
                 {
                     "key": "_default",
@@ -192,7 +192,7 @@ def password(caller, input):
                     "goto": "email_address",
                 },
             )
-        elif not player.db.valid:
+        elif not account.db.valid:
             # Redirects to the node for the validation code
             text = "Enter your 4-digit validation code."
             options = (
@@ -203,10 +203,10 @@ def password(caller, input):
                 },
             )
         else:
-            _login(caller, player)
+            _login(caller, account)
             text = ""
-            options = _options_choose_characters(player)
-            if not player.db._playable_characters:
+            options = _options_choose_characters(account)
+            if not account.db._playable_characters:
                 options = (
                     {
                         "key": "_default",
@@ -217,7 +217,7 @@ def password(caller, input):
 
     return text, options
 
-# New account/player nodes
+# New account/account nodes
 def create_account(caller):
     """Create a new account.
 
@@ -251,8 +251,8 @@ def create_username(caller, input):
 
     """
     input = input.strip()
-    players = Player.objects.filter(username__iexact=input)
-    player = players[0] if players else None
+    accounts = Account.objects.filter(username__iexact=input)
+    account = accounts[0] if accounts else None
     options = (
         {
             "key": "_default",
@@ -261,8 +261,8 @@ def create_username(caller, input):
         },
     )
 
-    # If a player with that name exists, a new one will not be created
-    if player:
+    # If an account with that name exists, a new one will not be created
+    if account:
         text = dedent("""
             |rThe account {} already exists.|n
                 Type |wb|n to go back to the login screen.
@@ -304,8 +304,8 @@ def create_username(caller, input):
             },
         )
     else:
-        # We don't create the player right away, so we store its name
-        caller.db._playername = input
+        # We don't create the account right away, so we store its name
+        caller.db._accountname = input
 
         # Disables echo to enter the password
         caller.msg(echo=False)
@@ -345,7 +345,7 @@ def create_password(caller, input):
     )
 
     password = input.strip()
-    playername = caller.db._playername
+    accountname = caller.db._accountname
     if len(password) < LEN_PASSWD:
         # The password is too short
         text = dedent("""
@@ -372,7 +372,7 @@ def confirm_password(caller, input):
 
     The account's password has been saved in the session for the
     time being, as a hashed version.  If the hashed version of
-    the retyped password matches, then the player is created.
+    the retyped password matches, then the account is created.
     If not, ask for another password.
 
     """
@@ -387,7 +387,7 @@ def confirm_password(caller, input):
 
     password = input.strip()
 
-    playername = caller.db._playername
+    accountname = caller.db._accountname
     first_password = caller.db._password
     second_password = sha256(password).hexdigest()
     if first_password != second_password:
@@ -397,11 +397,11 @@ def confirm_password(caller, input):
             Enter a new password for this account.
         """.strip("\n"))
     else:
-        # Creates the new player.
+        # Creates the new account.
         caller.msg(echo=True)
         try:
-            permissions = settings.PERMISSION_PLAYER_DEFAULT
-            player = _create_player(caller, playername,
+            permissions = settings.PERMISSION_ACCOUNT_DEFAULT
+            account = _create_account(caller, accountname,
                     password, permissions)
         except Exception:
             # We are in the middle between logged in and -not, so we have
@@ -415,10 +415,10 @@ def confirm_password(caller, input):
             """.strip("\n")))
             logger.log_trace()
         else:
-            caller.db._player = player
+            caller.db._account = account
             del caller.db._password
             text = "Your new account was successfully created!"
-            text += "\n\n" + _text_email_address(player)
+            text += "\n\n" + _text_email_address(account)
             options = (
                 {
                     "key": "_default",
@@ -441,13 +441,13 @@ def email_address(caller, input):
     )
 
     email_address = input.strip()
-    player = caller.db._player
+    account = caller.db._account
 
-    # Search for players with an identical email address
-    identical = list(Player.objects.filter(email__iexact=email_address))
+    # Search for accounts with an identical email address
+    identical = list(Account.objects.filter(email__iexact=email_address))
 
-    if player in identical:
-        identical.remove(player)
+    if account in identical:
+        identical.remove(account)
 
     # Try to validate the email address
     try:
@@ -472,8 +472,8 @@ def email_address(caller, input):
             Please enter another email address.
         """.strip("\n"))
     else:
-        player.email = email_address
-        player.save()
+        account.email = email_address
+        account.save()
 
         # Generates the 4-digit validation code
         numbers = "012345678"
@@ -491,23 +491,23 @@ def email_address(caller, input):
             your account's name and password, the validation screen will appear.
 
             Four-digit code: {}
-        """.strip("\n")).format(player.name, code)
+        """.strip("\n")).format(account.name, code)
         recipent = email_address
-        player.db.valid = False
-        player.db.validation_code = code
+        account.db.valid = False
+        account.db.validation_code = code
         try:
             send_mail(subject, body, "team@avenew.one", [recipent])
         except (SMTPException, socket.error):
             # The email could not be sent
-            player.db.valid = True
-            player.attributes.remove("validation_code")
+            account.db.valid = True
+            account.attributes.remove("validation_code")
             caller.msg(dedent("""
                 Avenew couldn't send your email containing your validation code to {}.
                 This is probably due to Avenew's failure to connect to the SMTP server.
                 Your account has been validated automatically.
             """.strip("\n")).format(email_address))
             caller.msg("-----  You will now create the first character of this account. -----")
-            _login(caller, player)
+            _login(caller, account)
             text = ""
             options = (
                 {
@@ -558,18 +558,18 @@ def validate_account(caller, input):
         },
     )
 
-    player = caller.db._player
-    if player.db.validation_code != input.strip():
+    account = caller.db._account
+    if account.db.validation_code != input.strip():
         text = dedent("""
             |rSorry, the specified validation code {} doesn't match the one stored for this account.
             Is it the code you received by email?  You can try to enter it again,
             Or enter |wb|n to choose a different email address.
         """.strip("\n")).format(input.strip())
     else:
-        player.db.valid = True
-        player.attributes.remove("validation_code")
+        account.db.valid = True
+        account.attributes.remove("validation_code")
         caller.msg("-----  You will now create the first character of this account. -----")
-        _login(caller, player)
+        _login(caller, account)
         text = ""
         options = (
             {
@@ -612,30 +612,30 @@ def pre_email_address(self):
     return text, options
 
 ## Private functions
-def _create_player(session, playername, password, permissions, typeclass=None, email=None):
+def _create_account(session, accountname, password, permissions, typeclass=None, email=None):
     """
-    Helper function, creates a player of the specified typeclass.
+    Helper function, creates an account of the specified typeclass.
 
 
-    Contrary to the default `evennia.commands.default.unlogged._create_player`,
-    the player isn't connected to the public chaannel.
+    Contrary to the default `evennia.commands.default.unlogged._create_account`,
+    the account isn't connected to the public chaannel.
 
     """
     try:
-        new_player = create.create_player(playername, email, password, permissions=permissions, typeclass=typeclass)
+        new_account = create.create_account(accountname, email, password, permissions=permissions, typeclass=typeclass)
 
     except Exception as e:
-        session.msg("There was an error creating the Player:\n%s\n If this problem persists, contact an admin." % e)
+        session.msg("There was an error creating the Account:\n%s\n If this problem persists, contact an admin." % e)
         logger.log_trace()
         return False
 
-    # This needs to be set so the engine knows this player is
+    # This needs to be set so the engine knows this account is
     # logging in for the first time. (so it knows to call the right
     # hooks during login later)
-    new_player.db.FIRST_LOGIN = True
-    return new_player
+    new_account.db.FIRST_LOGIN = True
+    return new_account
 
-def _text_email_address(player):
+def _text_email_address(account):
     """Return the text for the email address menu node."""
     text = dedent("""
         Enter a valid email address for the account {}.
@@ -646,12 +646,12 @@ def _text_email_address(player):
         if desired.
 
         Enter your email address.
-    """.strip("\n")).format(player.name)
+    """.strip("\n")).format(account.name)
 
     return text
 
-def _wrong_password(player):
+def _wrong_password(account):
     """Function called after the 3 seconds are up, when a wrong password has been supplied."""
-    player.db._locked = False
-    player.msg("Enter your password again.")
+    account.db._locked = False
+    account.msg("Enter your password again.")
 

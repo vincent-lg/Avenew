@@ -156,7 +156,7 @@ class Room(EventRoom):
             key = con.get_display_name(looker)
             if con.destination:
                 exits.append(key)
-            elif con.has_player:
+            elif con.has_account:
                 users.append("{c%s{n" % key)
             else:
                 things.append(key)

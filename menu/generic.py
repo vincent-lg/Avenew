@@ -22,7 +22,7 @@ def _input_no_digit(menuobject, raw_string, caller):
         menuobject (EvMenu): The EvMenu instance
         raw_string (str): The incoming raw_string from the menu
             command.
-        caller (Object, Player or Session): The entity using
+        caller (Object, Account or Session): The entity using
             the menu.
     """
     cmd = raw_string.strip().lower()

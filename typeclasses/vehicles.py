@@ -22,13 +22,13 @@ class Crossroad(DefaultObject):
     """A crossroad, used to set up the route system.
 
     A crossroad is like a simplified room.  It can't be travelled or
-    seen by players, and is only used by the vehicle system to lead
+    seen by accounts, and is only used by the vehicle system to lead
     them, much like tracks for a train.  A crossroad is set at a given
     position (given its X, Y and Z coords) and can have several
     possible "exits" pointing to other crossroads.  These exits are
     fixed in direction, and must be straight (a road with turns
     would need a crossroad to map the turning point, even though
-    players may not be aware of it).
+    accounts may not be aware of it).
 
     """
 

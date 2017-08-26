@@ -1,4 +1,4 @@
-﻿"""Module dcontaining the menu nodes of logged in player.
+﻿"""Module dcontaining the menu nodes of logged in account.
 
 This menu allows to login to character, create a new one, delete
 one and so on.
@@ -21,8 +21,8 @@ RE_VALID_FIRST_NAME = re.compile(r"^[a-z -]{2,}$", re.I)
 RE_VALID_LAST_NAME = re.compile(r"^[a-z -]{2,}$", re.I)
 
 ## Menu nodes
-def choose_characters(player, command):
-    """Log into one of this player's characters."""
+def choose_characters(account, command):
+    """Log into one of this account's characters."""
     text = ""
     options = (
         {
@@ -35,19 +35,19 @@ def choose_characters(player, command):
     command = command.strip()
 
     # Search for a valid character
-    session = player.db._session
-    for i, character in enumerate(player.db._playable_characters):
+    session = account.db._session
+    for i, character in enumerate(account.db._playable_characters):
         if command == str(i + 1):
-            del player.db._session
-            player.puppet_object(session, character)
+            del account.db._session
+            account.puppet_object(session, character)
             return "", None
 
     text = "|rThis character cannot be found.  Try again.|n"
-    text += "\n" + _text_choose_characters(player)
-    options = _options_choose_characters(player)
+    text += "\n" + _text_choose_characters(account)
+    options = _options_choose_characters(account)
     return text, options
 
-def create_character(player):
+def create_character(account):
     """Display the introduction to the character creation."""
     text = dedent("""
         You find yourself driving at high speed on a highway.  Said high speed slowly begins to decrease, as
@@ -71,7 +71,7 @@ def create_character(player):
 
     return text, options
 
-def create_first_name(player, command):
+def create_first_name(account, command):
     """Prompt the new character for his/her first name."""
     command = command.strip()
     if not RE_VALID_FIRST_NAME.search(command):
@@ -96,7 +96,7 @@ def create_first_name(player, command):
         )
     else:
         first_name = " ".join(word.capitalize() for word in command.split(" "))
-        player.db._first_name = first_name
+        account.db._first_name = first_name
 
         # Redirects to the creation of the last name
         text = dedent("""
@@ -115,12 +115,12 @@ def create_first_name(player, command):
 
     return text, options
 
-def create_last_name(player, command):
+def create_last_name(account, command):
     """Prompt the new character for his/her last name."""
     command = command.strip()
 
     last_name = " ".join(word.capitalize() for word in command.split(" "))
-    first_name = player.db._first_name
+    first_name = account.db._first_name
     full_name = first_name + " " + last_name
 
     # Gets the characters with the same name
@@ -164,8 +164,8 @@ def create_last_name(player, command):
             },
         )
     else:
-        player.db._full_name = full_name
-        del player.db._first_name
+        account.db._full_name = full_name
+        del account.db._first_name
 
         # Redirects to the gender selection.
         text = dedent("""
@@ -184,7 +184,7 @@ def create_last_name(player, command):
 
     return text, options
 
-def select_gender(player, command):
+def select_gender(account, command):
     """Prompt the new character for his/her gender."""
     gender = command.strip().lower()
     if gender not in "mf":
@@ -204,7 +204,7 @@ def select_gender(player, command):
     else:
         female = True if gender == "f" else False
         title = "ma'am" if female else "sir"
-        player.db._female = female
+        account.db._female = female
 
         text = dedent("""
             The police officer nods and scribbles on his pad.
@@ -222,7 +222,7 @@ def select_gender(player, command):
 
     return text, options
 
-def select_age(player, command):
+def select_age(account, command):
     """Prompt the new character for his/her age."""
     age = command.strip()
 
@@ -246,8 +246,8 @@ def select_age(player, command):
             },
         )
     else:
-        full_name = player.db._full_name
-        female = player.db._female
+        full_name = account.db._full_name
+        female = account.db._female
         title = "ma'am" if female else "sir"
         options = (
             {
@@ -292,23 +292,23 @@ def select_age(player, command):
             """.strip("\n")).format(title=title)
 
             # Create the character
-            character = _create_character(full_name, player)
+            character = _create_character(full_name, account)
             character.db.female = female
             character.db.age = age
-            del player.db._full_name
-            del player.db._female
+            del account.db._full_name
+            del account.db._female
 
             # Connects on this character
-            player.msg(text)
-            session = player.db._session
-            del player.db._session
-            player.puppet_object(session, character)
+            account.msg(text)
+            session = account.db._session
+            del account.db._session
+            account.puppet_object(session, character)
             return "", None
 
     return text, options
 
 ## Transition nodes
-def display_characters(player):
+def display_characters(account):
     """This node simply displays the character list.
 
     The input will be redirected to the 'choose_characters' menu
@@ -316,11 +316,11 @@ def display_characters(player):
     between a node and the character menu.
 
     """
-    text = _text_choose_characters(player)
-    options = _options_choose_characters(player)
+    text = _text_choose_characters(account)
+    options = _options_choose_characters(account)
     return text, options
 
-def pre_first_name(player):
+def pre_first_name(account):
     """A menu node to pause before the choice of the first name."""
     text = dedent("""
         A police officer crosses out something on his pad:
@@ -339,19 +339,19 @@ def pre_first_name(player):
     return text, options
 
 ## Private functions
-def _create_character(name, player):
+def _create_character(name, account):
     """Create a new character.
 
     Args:
         name (str): the name of the character to be created.
-        player (Player): the player owning the character.
+        account (Account): the account owning the character.
 
     Returns:
         The newly-created character.
 
     """
     # Look for default values
-    permissions = settings.PERMISSION_PLAYER_DEFAULT
+    permissions = settings.PERMISSION_ACCOUNT_DEFAULT
     typeclass = settings.BASE_CHARACTER_TYPECLASS
     home = ObjectDB.objects.get_id(settings.DEFAULT_HOME)
 
@@ -360,18 +360,18 @@ def _create_character(name, player):
             permissions=permissions)
 
     # Set playable character list
-    player.db._playable_characters.append(character)
+    account.db._playable_characters.append(character)
 
-    # Allow only the character itself and the player to puppet it.
+    # Allow only the character itself and the account to puppet it.
     character.locks.add("puppet:id(%i) or pid(%i) or perm(Immortals) " \
-            "or pperm(Immortals)" % (character.id, player.id))
+            "or pperm(Immortals)" % (character.id, account.id))
 
     # If no description is set, set a default description
     if not character.db.desc:
         character.db.desc = ""
 
     # We need to set this to have @ic auto-connect to this character.
-    player.db._last_puppet = character
+    account.db._last_puppet = character
 
 
     # Join the new character to the public channel
@@ -382,10 +382,10 @@ def _create_character(name, player):
 
     return character
 
-def _text_choose_characters(player):
+def _text_choose_characters(account):
     """Display the menu to choose a character."""
     text = "Enter a valid number to log into that character.\n"
-    characters = player.db._playable_characters
+    characters = account.db._playable_characters
     if len(characters):
         for i, character in enumerate(characters):
             text += "\n  |y{}|n - Log into {}.".format(str(i + 1),
@@ -402,16 +402,16 @@ def _text_choose_characters(player):
 
     return text
 
-def _options_choose_characters(player):
+def _options_choose_characters(account):
     """Return the options for choosing a character.
 
     The first options must be the characters name (5 are allowed
-    by player).  The other nodes must be reached through letters:
+    by account).  The other nodes must be reached through letters:
     C to create, D to delete.
 
     """
     options = list()
-    characters = player.db._playable_characters
+    characters = account.db._playable_characters
     if len(characters) < 5:
         options.append(        {
                 "key": "c",
@@ -433,31 +433,31 @@ def _options_choose_characters(player):
     })
     return tuple(options)
 
-def _login(session, player, menu=True):
-    """Log the player into the session.
+def _login(session, account, menu=True):
+    """Log the account into the session.
 
     Args:
         session: the session to log to
-        player: the playter to be looged to.
+        account: the playter to be looged to.
 
     In addition, this function creates the login screen for that
-    player.
+    account.
 
     """
-    session.sessionhandler.login(session, player)
+    session.sessionhandler.login(session, account)
 
     # Keep track of the session, as it might become necessary
-    player.db._session = session
+    account.db._session = session
 
     if not menu:
         return
 
     # Create the EvMenu
-    if player.db._playable_characters:
+    if account.db._playable_characters:
         startnode = "display_characters"
     else:
         startnode = "create_character"
 
-    menu = EvMenu(player, "menu.character", startnode=startnode,
+    menu = EvMenu(account, "menu.character", startnode=startnode,
             auto_quit=False, cmd_on_exit=None, node_formatter=_formatter,
             input_parser=_input_no_digit, persistent=True)

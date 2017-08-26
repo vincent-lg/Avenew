@@ -18,7 +18,7 @@ class RoomRepr:
         Change a coordinate.
 
         Args:
-            caller (Character, Player or Session): the caller.
+            caller (Character, Account or Session): the caller.
             which (str): the coordinate to modify ("x", "y" or "z").
             value (int ot None): the new coordinate.
 
