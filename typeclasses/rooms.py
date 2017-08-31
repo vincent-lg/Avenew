@@ -162,7 +162,7 @@ class Room(EventRoom):
                 things.append(key)
 
         # Get description, build string
-        string = "{c%s{n" % self.get_display_name(looker)
+        string = "|c%s|n" % self.get_display_name(looker)
         desc = self.db.desc
         if desc:
             # Format the string
@@ -172,9 +172,9 @@ class Room(EventRoom):
                 string += "\n" + line
 
         if exits:
-            string += "\n{wExits:{n " + ", ".join(exits)
+            string += "\n|wExits:|n " + ", ".join(exits)
         if users or things:
-            string += "\n{wYou see:{n " + ", ".join(users + things)
+            string += "\n|wYou see:|n " + ", ".join(users + things)
         return string
 
     def add_address(self, number, name):

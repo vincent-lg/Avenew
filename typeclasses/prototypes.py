@@ -15,6 +15,7 @@ from evennia.utils.create import create_object
 from evennia.utils.search import search_tag
 
 from typeclasses.characters import Character
+from typeclasses.objects import Object
 
 @register_events
 class PChar(DefaultObject):
@@ -52,3 +53,39 @@ class PChar(DefaultObject):
         character.tags.add(self.key, category="pchar")
         character.db.prototype = self
         return character
+
+
+@register_events
+class PObj(DefaultObject):
+
+    """PObj (object prototype).
+
+    This prototype is used to create several objects based on a
+    similar prototype.  The 'prototype' attribute on the object allows
+    to identify of which prototype the object was created.
+    Extensive tags are used to quickly identify the characters created
+    on a PChar.
+
+    """
+
+    _events = Object._events.copy()
+    _events.update(Object.__bases__[0]._events)
+
+    @property
+    def objs(self):
+        """Return the list of objects with the PObj's key."""
+        return search_tag(self.key, category="pobj")
+
+    def at_rename(self, old_name, new_name):
+        """The key (name) of the prototype has changed."""
+        for obj in search_tag(old_name, category="pobj"):
+            obj.tags.remove(old_name, category="pobj")
+            obj.tags.add(new_name, category="pobj")
+
+    def create(self, location=None):
+        """Create an object on this prototype."""
+        obj = create_object("typeclasses.objects.Object",
+                key="something", location=location)
+        obj.tags.add(self.key, category="pobj")
+        obj.db.prototype = self
+        return obj
