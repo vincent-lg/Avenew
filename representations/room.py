@@ -1,6 +1,20 @@
 """Module containing the representation of the Room class."""
 
-class RoomRepr:
+from representations.base import BaseRepr
+
+FORM = """
+.-------------------------------------------------------------------------.
+| Name: xxxxxxxxxxxx1xxxxxxxxxxxxxxxxx               X=xx2x Y=xx3x Z=xx4x |
+|                                                                         |
+| Desc: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx |
+|       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx5xxxxxxxxxxxxxxxxxxxxxxxxxx |
+|       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx |
+|       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx |
+|                                                                         |
+.-------------------------------------------------------------------------.
+"""
+
+class RoomRepr(BaseRepr):
 
     """The room representation."""
 
@@ -9,9 +23,11 @@ class RoomRepr:
             "y": int,
             "z": int,
     }
+    to_display = ["name", "x", "y", "z", "desc"]
+    form = FORM
 
-    def __init__(self, room):
-        self.room = room
+    def get_desc(self, caller):
+        return self.obj.db.desc
 
     def _set_coordinate(self, caller, which, value):
         """

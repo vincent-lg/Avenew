@@ -70,29 +70,8 @@ class CmdEdit(MuxCommand):
 
         repr = class_from_module(repr)
         repr = repr(obj)
-        if self.rhs:
-            value = self.rhs
-            if hasattr(repr, "set_" + field_name):
-                getattr(repr, "set_" + field_name)(self.caller, value)
-            else:
-                self.msg("You cannot modify this field name {} in {}.".format(
-                        field_name, obj.get_display_name(self.caller)))
-        elif "del" in self.switches:
-            if hasattr(repr, "clear_" + field_name):
-                getattr(repr, "clear_" + field_name)(self.caller)
-            else:
-                self.msg("You cannot clear this field name {} in {}.".format(
-                        field_name, obj.get_display_name(self.caller)))
-        else:
-            if hasattr(repr, "get_" + field_name):
-                getattr(repr, "get_" + field_name)(self.caller)
-            elif field_name in repr.fields:
-                value = getattr(obj, field_name)
-                self.caller.msg("Current value {} = {} for {}.".format(
-                        field_name, value, obj.get_display_name(self.caller)))
-            else:
-                self.msg("You cannot see this field name {} in {}.".format(
-                        field_name, obj.get_display_name(self.caller)))
+        repr.process(self.caller, field_name, self.rhs)
+
 
 class CmdNew(UnixCommand):
 
