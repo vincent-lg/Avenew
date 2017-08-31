@@ -13,7 +13,9 @@ from evennia import DefaultObject
 from evennia.contrib.ingame_python.utils import register_events
 from evennia.utils.create import create_object
 from evennia.utils.search import search_tag
+from evennia.utils.utils import lazy_property
 
+from auto.types.typehandler import TypeHandler
 from typeclasses.characters import Character
 from typeclasses.objects import Object
 
@@ -71,6 +73,10 @@ class PObj(DefaultObject):
     _events = Object._events.copy()
     _events.update(Object.__bases__[0]._events)
 
+    @lazy_property
+    def types(self):
+        return TypeHandler(self)
+
     @property
     def objs(self):
         """Return the list of objects with the PObj's key."""
@@ -82,10 +88,17 @@ class PObj(DefaultObject):
             obj.tags.remove(old_name, category="pobj")
             obj.tags.add(new_name, category="pobj")
 
-    def create(self, location=None):
+    def create(self, location=None, key=None):
         """Create an object on this prototype."""
+        key = key or "something"
         obj = create_object("typeclasses.objects.Object",
-                key="something", location=location)
+                key=key, location=location)
         obj.tags.add(self.key, category="pobj")
         obj.db.prototype = self
+
+        # Add the types
+        for type_obj in self.types:
+            name = type(type_obj).name
+            obj.types.add(name)
+
         return obj

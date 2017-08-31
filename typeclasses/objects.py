@@ -14,6 +14,7 @@ inheritance.
 from evennia.contrib.ingame_python.typeclasses import EventObject
 from evennia.utils.utils import lazy_property
 
+from auto.types.typehandler import TypeHandler
 from typeclasses.shared import SharedAttributeHandler
 
 class Object(EventObject):
@@ -24,3 +25,7 @@ class Object(EventObject):
     @lazy_property
     def attributes(self):
         return SharedAttributeHandler(self)
+
+    @lazy_property
+    def types(self):
+        return TypeHandler(self)

@@ -126,7 +126,7 @@ class SharedAttributeHandler(AttributeHandler):
             # too complicated to handle individual checks.
             return ret
 
-        if not ret:
+        if ret is None:
             prototype = AttributeHandler.get(self, "prototype")
             if prototype:
                 return prototype.attributes.get(key=key, default=default, category=category,
