@@ -22,6 +22,7 @@ import subprocess
 from evennia import TICKER_HANDLER as ticker_handler
 from evennia import ScriptDB, create_script
 
+from auto.types.high_tech import load_apps
 import tickers
 from world.log import begin, end, main
 
@@ -43,7 +44,10 @@ def at_server_start():
     # Launch tickers
     ticker_handler.add(3, tickers.vehicles.move)
 
-
+    # Load the apps
+    errors = load_apps()
+    for name, error in errors:
+        main.warning("Error while loading {}: {}".format(name, error))
 
 def at_server_stop():
     """

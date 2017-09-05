@@ -8,10 +8,11 @@ several types.  The specific data is stored in the object (or prototype) attribu
 
 from collections import OrderedDict
 
-from auto.types.high_tech import Phone
+from auto.types.high_tech import Computer, Phone
 
 ## Constants
 TYPES = OrderedDict()
+TYPES["computer"] = Computer
 TYPES["phone"] = Phone
 
 ## Classes
@@ -59,12 +60,39 @@ class TypeHandler(object):
         types.sort(key=lambda type_obj: sorted_types.index(type(type_obj).name))
 
     def get(self, name):
-        """Return the type of this name or None."""
+        """Return the type of this specified name or None.
+        
+        Args:
+            name (str): the name of the type to find.
+
+        Returns:
+            type: the type or None if not found.
+        
+        """
         types = [obj_type for obj_type in self._types if type(obj_type).name == name]
         return types[0] if types else None
 
-    def add(self, name):
-        """Add a new type for this object."""
+    def add(self, name, recursive=True):
+        """Add a new type for this object.
+        
+        Args:
+            name (str): name of the type to add.
+            recursive (bool, optional): should the objects of this prototype
+                    have this type added too?
+
+        Note:
+            The `recursive` keyword argument is proably to keep untouched.
+            If you add a type to a prototype with objects, the same
+            type is added to these objects, but the recursivity should
+            stop here.
+
+            The type shouldn't be already present in this object's
+            (or prototype's) type list.
+
+        Raises:
+            KeyError: the type name couldn't be found.
+
+        """
         if name not in TYPES:
             raise KeyError("Unknown type: {}".format(name))
 
@@ -75,10 +103,22 @@ class TypeHandler(object):
             # If the object has a prototype, create the type consistently
             if self._obj.db.prototype:
                 new_type = self.get(name)
-                new_type.create()
+                new_type.at_type_creation()
+            elif recursive:
+                # This is probably a prototype, add the type to its objects
+                for obj in getattr(self._obj, "objs", []):
+                    obj.types.add(name, recursive=False)
 
     def remove(self, name):
-        """Remove a type."""
+        """Remove a type.
+        
+        Args:
+            name (str): name of the type to remove.
+
+        Raises:
+            KeyError: the type name isn't valid.
+
+        """
         if name not in TYPES:
             raise KeyError("Unknown type: {}".format(name))
 
@@ -112,3 +152,28 @@ class TypeHandler(object):
             storage[name] = {}
 
         return storage[name]
+
+    def can(self, name):
+        """
+        Return a list of types that can handle this behavior.
+
+        Args:
+            name (str): the name of the behavior.
+
+        Returns:
+            types (list): the list of types that support this behavior name.
+        
+        Note:
+            A type supports a behavior if it has a method with the same
+            name.  For instance, `obj.types.can("use")` will return
+            a list with the computer type if it is present on the
+            handler, since the computer type has a `use` method.
+        
+        """
+        types = []
+        for type in self._types:
+            if callable(getattr(type, name, None)):
+                types.append(type)
+
+        return types
+
