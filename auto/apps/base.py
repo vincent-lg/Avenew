@@ -90,7 +90,6 @@ class BaseScreen(object):
             for cmdset in self.user.cmdset.get():
                 if cmdset.key == "computer":
                     for cmd in type(self).commands:
-                        print "Adding", cmd
                         cmdset.add(cmd())
                     self.user.cmdset.remove(cmdset)
                     self.user.cmdset.add(cmdset)
@@ -102,7 +101,6 @@ class BaseScreen(object):
             for cmdset in self.user.cmdset.get():
                 if cmdset.key == "computer":
                     for cmd in type(self).commands:
-                        print "Removing", cmd
                         cmdset.remove(cmd)
                     break
 
@@ -134,7 +132,7 @@ class BaseScreen(object):
             self.user.msg(type(self).message)
         else:
             self.user.msg("This screen has nothing to display.")
-    
+
     def display_form(self, form, *fields):
         """
         Display a form to the user.
@@ -159,8 +157,13 @@ class BaseScreen(object):
                     "So are you coming tomorrow or not?")
 
         """
+        self.user.msg(self.get_form(form, *fields))
+
+    def get_form(self, form, *fields):
+        """Return the EvForm corresponding to a form."""
         cells = {i + 1: field for i, field in enumerate(fields)}
-        self.user.msg(EvForm(cells, form={"CELLCHAR": "x", "TABLECHAR": "c", "FORM": form}))
+        form = EvForm(cells=cells, form={"CELLCHAR": "x", "TABLECHAR": "c", "FORM": dedent("\n" + form.lstrip("\n"))})
+        return form
 
     def close(self):
         """Close the screen, erasing its storage."""
@@ -340,7 +343,7 @@ class MainScreen(BaseScreen):
             for app in self.type.apps:
                 if type(app).folder == "app" and type(app).app_name.lower().startswith(string):
                     matches.append(app)
-            
+
             # If only one match, just move there
             if len(matches) == 1:
                 app = matches[0]

@@ -66,6 +66,7 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 # Web
 INSTALLED_APPS += (
         "web.help_system",
+        "web.text",
 )
 
 # Temporarily disable websocket on the client

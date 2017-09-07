@@ -84,7 +84,7 @@ class Phone(BaseType):
 class Computer(BaseType):
 
     """The computer type.
-    
+
     A computer is an object that supports an interface with applications.
     A character with a computer can use it through the USE command,
     which will display an interface with the installed apps on this
@@ -104,7 +104,7 @@ class Computer(BaseType):
     def apps(self):
         """Return the application handler."""
         return ApplicationHandler(self.obj, self)
-    
+
     def at_type_creation(self):
         """The type has just been added.
 
@@ -146,7 +146,7 @@ class Computer(BaseType):
         else:
             # Add the CmdSet
             db["used"] = user
-            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
+            user.cmdset.add("commands.high_tech.ComputerCmdSet")
             self.apps.load(user)
             screen = MainScreen(self.obj, user, self)
             screen._save()
