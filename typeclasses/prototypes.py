@@ -44,7 +44,6 @@ class PChar(DefaultObject):
 
     def at_rename(self, old_name, new_name):
         """The key (name) of the prototype is changed."""
-        print "Changing the key", old_name, new_name
         for character in search_tag(old_name, category="pchar"):
             character.tags.remove(old_name, category="pchar")
             character.tags.add(new_name, category="pchar")

@@ -46,9 +46,15 @@ class CmdEdit(MuxCommand):
         """Main function for this command."""
         field_name, sep, obj_name = self.lhs.partition(" ")
         field_name = field_name.lower()
-        if field_name.endswith("/del"):
+        operation = "get"
+        if field_name.endswith("/add"):
             field_name = field_name[:-4]
-            self.switches = ["del"]
+            operation = "add"
+        elif field_name.endswith("/del"):
+            field_name = field_name[:-4]
+            operation = "del"
+        elif self.rhs:
+            operation = "set"
 
         if not obj_name:
             obj_name = field_name
@@ -59,9 +65,13 @@ class CmdEdit(MuxCommand):
             return
 
         # Search for the actual object
-        obj = self.caller.search(obj_name)
-        if not obj:
-            return
+        objs = self.caller.search(obj_name, quiet=True)
+        if not objs or len(objs) > 1:
+            obj = self.caller.search(obj_name, global_search=True)
+            if not obj:
+                return
+        else:
+            obj = objs[0]
 
         # Get the representation value for this object type
         repr = getattr(type(obj), "repr", None)
@@ -71,7 +81,7 @@ class CmdEdit(MuxCommand):
 
         repr = class_from_module(repr)
         repr = repr(obj)
-        repr.process(self.caller, field_name, self.rhs)
+        repr.process(self.caller, field_name, self.rhs, operation)
 
 
 class CmdNew(UnixCommand):

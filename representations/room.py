@@ -22,6 +22,7 @@ class RoomRepr(BaseRepr):
             "x": int,
             "y": int,
             "z": int,
+            "key": str,
     }
     to_display = ["name", "x", "y", "z", "desc"]
     form = FORM
@@ -39,7 +40,7 @@ class RoomRepr(BaseRepr):
             value (int ot None): the new coordinate.
 
         """
-        room = self.room
+        room = self.obj
         if which not in ("x", "y", "z"):
             raise ValueError("Invalid coordinate {}.".format(which))
 
@@ -67,35 +68,60 @@ class RoomRepr(BaseRepr):
             caller.msg("New value {} = {} for {}.".format(
                     which.upper(), value, room.get_display_name(caller)))
 
+    def add_address(self, caller, value):
+        """Add a new address.
+
+        The value should contain the number, road name, a colon and
+        the address name.
+
+        Example:
+            3 first street: The public library
+
+        """
+        if not value or ":" not in value:
+            caller.msg("Enter the number, road name, a colon and the address name.  For instance:")
+            caller.msg("@address/add here = 3 first street: The public library")
+            return
+
+        address, name = value.split(":", 1)
+        if " " not in address:
+            caller.msg("Enter the number, road name, a colon and the address name.  For instance:")
+            caller.msg("@address/add here = 3 first street: The public library")
+            return
+
+        number, address = address.split(" ", 1)
+        address = address.lower()
+        name = name.strip()
+
+        try:
+            number = int(number)
+        except ValueError:
+            caller.msg("{} is an invalid number.".format(number))
+            return
+
+        if address not in self.obj.db.addresses:
+            caller.msg("{} cannot be found here.".format(address))
+            return
+
+        addresses = self.obj.db.addresses[address]
+        if number not in addresses:
+            caller.msg("{} isn't present in {} at this location.".format(number, address))
+            return
+
+        addresses[number] = name
+        caller.msg("Address added: {} {}: {}".format(number, address, name))
+
     def set_x(self, caller, x):
         """Set the X value."""
-        try:
-            x = int(x)
-        except ValueError:
-            caller.msg("{} isn't a valid integer.".format(x))
-            return False
-        else:
-            self._set_coordinate(caller, "x", x)
+        self._set_coordinate(caller, "x", x)
 
     def set_y(self, caller, y):
         """Set the Y value."""
-        try:
-            y = int(y)
-        except ValueError:
-            caller.msg("{} isn't a valid integer.".format(y))
-            return False
-        else:
-            self._set_coordinate(caller, "y", y)
+        self._set_coordinate(caller, "y", y)
 
     def set_z(self, caller, z):
         """Set the Z value."""
-        try:
-            z = int(z)
-        except ValueError:
-            caller.msg("{} isn't a valid integer.".format(z))
-            return False
-        else:
-            self._set_coordinate(caller, "z", z)
+        self._set_coordinate(caller, "z", z)
 
     def clear_x(self, caller):
         """Clear the X value."""

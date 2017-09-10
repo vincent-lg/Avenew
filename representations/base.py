@@ -44,7 +44,40 @@ class BaseRepr(object):
                 return
 
         # Different operations
-        if operation == "get":
+        if operation == "set":
+            if hasattr(self, "set_{}".format(field)):
+                getattr(self, "set_{}".format(field))(caller, value)
+            else:
+                setattr(self.obj, field, value)
+                caller.msg("New value {} = {} for {}.".format(field, value, self.obj))
+        elif operation == "add":
+            if hasattr(self, "add_{}".format(field)):
+                getattr(self, "add_{}".format(field))(caller, value)
+            else:
+                old = getattr(self.obj, field)
+                if isinstance(old, list):
+                    old.append(value)
+                elif isinstance(old, tuple):
+                    setattr(self.obj, field, old + (value, ))
+                else:
+                    raise ValueError("I don't know what to make of this type.")
+                caller.msg("New value {} added to {} for {}.".format(value, field, self.obj))
+
+            operation = "get"
+        elif operation == "del":
+            if hasattr(self, "del_{}".format(field)):
+                getattr(self, "del_{}".format(field))(caller, value)
+            else:
+                old = getattr(self.obj, field)
+                if isinstance(old, list):
+                    setattr(self.obj, field, [e for e in old if e != value])
+                elif isinstance(old, tuple):
+                    setattr(self.obj, field, tuple(e for e in old if e != value))
+                else:
+                    raise ValueError("I don't know what to make of this type.")
+
+                caller.msg("Value {} removed from {} for {}.".format(value, field, self.obj))
+        elif operation == "get":
             if hasattr(self, "get_{}".format(field)):
                 value = getattr(self, "get_{}".format(field))(caller)
             else:

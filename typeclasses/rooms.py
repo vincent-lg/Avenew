@@ -213,9 +213,7 @@ class Room(EventRoom):
             match = RE_KEYWORD.search(description)
             while match:
                 keyword = match.group()[1:]
-                print "Trying to find", keyword
                 var = self.callbacks.get_variable(keyword)
-                print "found", var
                 start, end = match.span()
                 description = description[:start] + var + description[end:]
                 match = RE_KEYWORD.search(description)
