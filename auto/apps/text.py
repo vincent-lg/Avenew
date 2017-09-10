@@ -2,7 +2,7 @@
 Text application.
 """
 
-from textwrap import dedent
+from textwrap import dedent, wrap
 
 from evennia.utils.utils import crop
 
@@ -127,27 +127,23 @@ class NewTextScreen(BaseScreen):
     def display(self):
         """Display the new message screen."""
         number = get_phone_number(self.obj)
-        form = """
-            From: xxx1xxxx
-              To: xxx2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-            Content (type |hyour text|n here):
-                xxxxxxxxxxxxxxxxxxx3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-                xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-                xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-        """
-        db = self.db
-        recipients = list(db.get("recipients", []))
-        content = db.get("content", "")
-        recipients = ",  ".join(recipients)
-        form = self.get_form(form, number, recipients, content)
-        form = dedent("""
+        screen = dedent("""
             New message (|hBACK|n to go back)
 
-            {form}
+            From: {}
+              To: {}
 
-            |hSEND|n                                      |hCANCEL|n
-        """.lstrip("\n")).format(form=form)
-        self.user.msg(form)
+            Text message:
+                {}
+
+                |hSEND|n                                             |hCANCEL|n
+        """.lstrip("\n"))
+        db = self.db
+        recipients = list(db.get("recipients", []))
+        content = db.get("content", "(type your text here)")
+        content = "\n    ".join(wrap(content, 75))
+        recipients = ",  ".join(recipients)
+        self.user.msg(screen.format(number, recipients, content))
 
     def no_match(self, string):
         """Command no match, to write the text content."""
