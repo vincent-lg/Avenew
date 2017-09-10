@@ -9,6 +9,7 @@ from evennia.utils.utils import class_from_module, inherits_from
 
 from evennia.contrib.unixcommand import UnixCommand
 from logic.geo import NAME_DIRECTIONS, coords_in, coords, get_direction
+from typeclasses.prototypes import PRoom
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
 
@@ -107,6 +108,8 @@ class CmdNew(UnixCommand):
                 help="display the help")
         room.add_argument("-c", "--coordinates", type=coords,
                 help="the new room's coordinates (X Y Z)")
+        room.add_argument("-p", "--prototype", nargs="+", default=None,
+                help="the prototype key on which to build this room")
         room.add_argument("-r", "--road", default=["AUTO"], nargs="+",
                 help="the road name, AUTO to find it automatically or NONE")
         room.set_defaults(func=self.create_room)
@@ -146,6 +149,16 @@ class CmdNew(UnixCommand):
         # Default parameters are set to None and modified by the context of the caller
         exit = direction = x = y = z = n_x = n_y = n_z = origin = road = None
         road_name = " ".join(args.road)
+        prototype = None
+        if args.prototype:
+            prototype = " ".join(args.prototype)
+
+            # Try to find the prototype
+            try:
+                prototype = PRoom.objects.get(db_key=prototype)
+            except PRoom.DesNotExist:
+                self.msg("The prototype {} doesn't exist.".format(prototype))
+                return
 
         # Do some common checks
         info = {}
@@ -240,7 +253,10 @@ class CmdNew(UnixCommand):
             return
 
         # Create the new room
-        room = create_object("typeclasses.rooms.Room", "Nowhere")
+        if prototype:
+            room = prototype.create()
+        else:
+            room = create_object("typeclasses.rooms.Room", "Nowhere")
         room.x = n_x
         room.y = n_y
         room.z = n_z

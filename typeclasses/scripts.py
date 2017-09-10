@@ -190,7 +190,7 @@ class AvEventHandler(EventHandler):
         others = {}
 
         # If a character, look for a PChar
-        if not isinstance(obj, type) and inherits_from(obj, "typeclasses.characters.Character"):
+        if not isinstance(obj, type) and obj.attributes.has("prototype"):
             if obj.db.prototype:
                 others = EventHandler.get_events(self, obj.db.prototype)
 
@@ -220,7 +220,7 @@ class AvEventHandler(EventHandler):
         others = {}
 
         # If a character, look for a PChar
-        if inherits_from(obj, "typeclasses.characters.Character"):
+        if obj.attributes.has("prototype"):
             if obj.db.prototype:
                 others = EventHandler.get_callbacks(self, obj.db.prototype)
 
@@ -228,6 +228,9 @@ class AvEventHandler(EventHandler):
         for name, callback_list in others.items():
             if name not in callbacks:
                 callbacks[name] = []
-            callbacks[name].extend(callback_list)
+            if name == "describe":
+                callbacks[name][:] = callback_list + callbacks[name]
+            else:
+                callbacks[name].extend(callback_list)
 
         return callbacks

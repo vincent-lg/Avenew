@@ -18,6 +18,7 @@ from evennia.utils.utils import lazy_property
 from auto.types.typehandler import TypeHandler
 from typeclasses.characters import Character
 from typeclasses.objects import Object
+from typeclasses.rooms import Room
 
 @register_events
 class PChar(DefaultObject):
@@ -102,3 +103,44 @@ class PObj(DefaultObject):
             obj.types.add(name)
 
         return obj
+
+
+@register_events
+class PRoom(DefaultObject):
+
+    """PRoom (room prototype).
+
+    This prototype is used to create several rooms based on a
+    similar prototype.  The 'prototype' attribute on the room allows
+    to identify of which prototype the room was created.
+    Extensive tags are used to quickly identify the rooms created
+    on a PRoom.
+
+    Attributes are shared across rooms of the same prototype.  They
+    can override specific attributes, but if they don't, they will
+    just have the same as their prototype.  It also applies to
+    descriptions (since room descriptions are stored in an attribute).
+
+    """
+
+    _events = Room._events.copy()
+    _events.update(Room.__bases__[0]._events)
+
+    @property
+    def rooms(self):
+        """Return the list of rooms of this prototype."""
+        return search_tag(self.key, category="proom")
+
+    def at_rename(self, old_name, new_name):
+        """The key (name) of the prototype has changed."""
+        for room in search_tag(old_name, category="proom"):
+            room.tags.remove(old_name, category="proom")
+            room.tags.add(new_name, category="proom")
+
+    def create(self, key=None):
+        """Create a room on this prototype."""
+        key = key or self.key
+        room = create_object("typeclasses.rooms.Room", key=key)
+        room.tags.add(self.key, category="proom")
+        room.db.prototype = self
+        return room

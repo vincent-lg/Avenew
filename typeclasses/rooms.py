@@ -6,10 +6,39 @@ Rooms are simple containers that has no location of their own.
 """
 
 from math import sqrt
+import re
 from textwrap import wrap
 
 from evennia.contrib.ingame_python.typeclasses import EventRoom
+from evennia.contrib.ingame_python.utils import register_events
+from evennia.utils.utils import lazy_property
 
+from typeclasses.shared import SharedAttributeHandler
+
+# Constants
+RE_KEYWORD = re.compile(r"\B\$\w+")
+
+DESCRIBE = """
+Before the room description is displayed.
+This event is called on the room before it displays its description to
+a character looking at it.  This is a good moment to add dynamism to
+descriptions.  To do so, specify a keyword starting with a $ sign in
+the text description.  In this event, you will then need to create a
+variable with the same name, containing the text to be displayed.
+For instance, if you have in your description:
+    The terrain slopes to $slope.
+In the descrive event, you could have something like:
+    slope = "east"
+The final description will display:
+    The terrains slopes east.
+Obviously, using conditions in this event allows for more flexibility.
+
+Variables you can use in this event:
+    room: the room connected to this event.
+    character: the character looking at the description.
+"""
+
+@register_events
 class Room(EventRoom):
 
     """
@@ -22,6 +51,9 @@ class Room(EventRoom):
 
     """
 
+    _events = {
+        "describe": (["room", "character"], DESCRIBE),
+    }
     repr = "representations.room.RoomRepr"
 
     @classmethod
@@ -96,6 +128,10 @@ class Room(EventRoom):
         rooms.sort(key=lambda tup: tup[0])
         return rooms
 
+    @lazy_property
+    def attributes(self):
+        return SharedAttributeHandler(self)
+
     def _get_x(self):
         """Return the X coordinate or None."""
         x = self.tags.get(category="coordx")
@@ -157,7 +193,7 @@ class Room(EventRoom):
             if con.destination:
                 exits.append(key)
             elif con.has_account:
-                users.append("{c%s{n" % key)
+                users.append("|c%s|n" % key)
             else:
                 things.append(key)
 
@@ -166,10 +202,24 @@ class Room(EventRoom):
         desc = self.db.desc
         if desc:
             # Format the string
+            description = ""
             for line in desc.splitlines():
                 if len(line) >= 75:
                     line = "\n".join(wrap("   " + line, 75))
-                string += "\n" + line
+                description += "\n" + line
+
+            # Now process through the keywords
+            self.callbacks.call("describe", self, looker)
+            match = RE_KEYWORD.search(description)
+            while match:
+                keyword = match.group()[1:]
+                print "Trying to find", keyword
+                var = self.callbacks.get_variable(keyword)
+                print "found", var
+                start, end = match.span()
+                description = description[:start] + var + description[end:]
+                match = RE_KEYWORD.search(description)
+        string += description
 
         if exits:
             string += "\n|wExits:|n " + ", ".join(exits)
