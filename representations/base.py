@@ -1,6 +1,7 @@
 """Module containing the abstract representation."""
 
 from evennia.utils.evform import EvForm
+from evennia.utils.evtable import EvTable
 
 class BaseRepr(object):
 
@@ -87,6 +88,10 @@ class BaseRepr(object):
 
     def display(self, caller):
         """Display the object."""
+        self.caller.msg(self.get_form(caller))
+
+    def get_form(self, caller):
+        """Return the formatted form."""
         if type(self).form:
             to_display = {}
             for i, field in enumerate(type(self).to_display):
@@ -95,7 +100,7 @@ class BaseRepr(object):
                 else:
                     value = getattr(self.obj, field)
                 to_display[i + 1] = value
-            caller.msg(EvForm(form={"CELLCHAR": "x", "TABLECHAR": "c",
+            return unicode(EvForm(form={"CELLCHAR": "x", "TABLECHAR": "c",
                     "FORM": type(self).form}, cells=to_display))
         else:
-            caller.msg("No display method has been provided for this object.")
+            return "No display method has been provided for this object."

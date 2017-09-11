@@ -1,5 +1,7 @@
 """Module containing the representation of the Room class."""
 
+from evennia.utils.evtable import EvTable
+
 from representations.base import BaseRepr
 
 FORM = """
@@ -134,3 +136,18 @@ class RoomRepr(BaseRepr):
     def clear_z(self, caller):
         """Clear the Z value."""
         self._set_coordinate(caller, "z", None)
+
+    def display(self, caller):
+        """Display the object."""
+        form = self.get_form(caller)
+        numbers = []
+        for road, address in sorted(self.obj.db.addresses.items()):
+            for number, name in sorted(address.items()):
+                numbers.append("{} {}: {}".format(number, road, name))
+
+        if numbers:
+            lines = form.splitlines()
+            for number in numbers:
+                lines.insert(-1, "|     {:<67} |".format(number))
+            lines.insert(-1, "| " + " " * 72 + "|")
+        caller.msg("\n".join(lines))
