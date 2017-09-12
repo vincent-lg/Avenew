@@ -12,6 +12,8 @@ from evennia.web.urls import urlpatterns
 custom_patterns = [
     url(r'^help/', include('web.help_system.urls',
             namespace='help_system', app_name='help_system')),
+    url(r'^wiki/', include('evennia_wiki.urls',
+            namespace='wiki', app_name='wiki')),
 ]
 
 # this is required by Django.
