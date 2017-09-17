@@ -14,7 +14,8 @@ just overloads its hooks to have it perform its function.
 
 from textwrap import dedent
 
-from evennia import DefaultScript
+from evennia_wiki.models import Page
+from evennia import DefaultScript, AccountDB
 from evennia.contrib.ingame_python.scripts import EventHandler
 from evennia.utils.utils import class_from_module, inherits_from
 
@@ -101,7 +102,7 @@ class AvEventHandler(EventHandler):
     def at_start(self):
         """Start the script and generate documentation."""
         super(AvEventHandler, self).at_start()
-        #self.generate_documentation()
+        self.generate_documentation()
 
     def generate_documentation(self):
         """Generate automatic documentation for the in-game Python system."""
@@ -174,13 +175,10 @@ class AvEventHandler(EventHandler):
                 text += "\n\n**There is no event in this typeclass.**"
 
         # Create/update a wiki entry
-        page = get_URI("ingame_python")
-        if page is None:
-            create("ingame_python", title, text)
-        else:
-            # Only update if the content is different
-            if page.current_revision.content != text:
-                update(page, text, title=title, message="Automatic update")
+        superuser = AccountDB.objects.get(id=1)
+        page = Page.objects.create_or_update_content("ingame_python", superuser, text,  force_update=False)
+        page.title = title
+        page.save()
 
     def get_events(self, obj):
         """
