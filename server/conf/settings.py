@@ -65,12 +65,15 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
 # Web
 INSTALLED_APPS += (
+        "evennia_wiki",
         "web.help_system",
         "web.text",
 )
 
 # Temporarily disable websocket on the client
 WEBSOCKET_CLIENT_ENABLED = False
+
+SITE_ID = 1
 
 try:
     from server.conf.secret_settings import *
