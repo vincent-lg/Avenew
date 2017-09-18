@@ -1,8 +1,14 @@
 from __future__ import absolute_import, unicode_literals
+import datetime
 from collections import OrderedDict
 
 from django.db import models
 from django.db.models import Q
+from django.utils.timezone import make_aware
+
+# Global imports
+_GAMETIME = None
+_THREAD = None
 
 class TextManager(models.Manager):
 
@@ -13,8 +19,8 @@ class TextManager(models.Manager):
         if not number.isdigit() or len(number) != 7:
             raise ValueError("wrong phone number format: {}".format(number))
 
-        qset = self.filter(Q(sender=number) | Q(recipients__contains=",{},".format(number)))
-        return qset.order_by("-date_sent")
+        q = self.filter(Q(db_sender=number) | Q(db_recipients__contains=",{},".format(number)))
+        return q.order_by("-db_date_sent")
 
     def get_threads_for(self, number):
         """Return the thread messages for the given number.
@@ -27,7 +33,7 @@ class TextManager(models.Manager):
         """
         threads = OrderedDict()
         for text in self.get_texts_for(number):
-            thread = text.thread
+            thread = text.db_thread
             if thread and thread.id not in threads:
                 threads[thread.id] = text
 
@@ -40,6 +46,39 @@ class TextManager(models.Manager):
             attempts = list(numbers)
             attempts.remove(number)
             attempts.sort()
-            q |= Q(sender=number) & Q(recipients=",{},".format(",".join(attempts)))
+            q |= Q(db_sender=number) & Q(db_recipients=",{},".format(",".join(attempts)))
         q = self.filter(q)
-        return q.order_by("-date_sent")
+        return q.order_by("-db_date_sent")
+
+    def send(self, sender, recipients, content):
+        """Send a text message from `number` to `recipients`.
+
+        Args:
+            sender (str): the number (7-digit).
+            recipients (list of str): a list of 7-digit strings.
+            content (str): the text of the message.
+
+        Returns:
+            text (Text): the newly-sent text message.
+
+        """
+        global _GAMETIME, _THREAD
+        if not _GAMETIME:
+            from evennia.utils import gametime as _GAMETIME
+        if not _THREAD:
+            from web.text.models import Thread as _THREAD
+
+        gtime = datetime.datetime.fromtimestamp(_GAMETIME.gametime(absolute=True))
+        gtime = make_aware(gtime)
+
+        # Look for a thread or create one
+        texts = self.get_texts_with([sender] + recipients)
+        if texts:
+            thread = texts[0].thread
+        else:
+            thread = _THREAD()
+            thread.save()
+
+        recipients = ",{},".format(",".join(sorted(recipients)))
+        return thread.text_set.create(
+                db_sender=sender, db_recipients=recipients, db_content=content, db_date_sent=gtime)

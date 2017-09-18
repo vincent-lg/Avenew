@@ -31,10 +31,8 @@ class TestComputer(CommandTest):
         self.user = create_object("typeclasses.characters.Character", key="user", location=self.room1)
         self.smartphone.location = self.user
         return self.call(CmdUse(), "phone", caller=self.user)
-    
+
     def test_start_using(self):
         """Build and use a smart phone."""
-        print self.use()
-        print "smart", list(self.smartphone.types.get("computer").apps)
         self.assertTrue(len(list(self.smartphone.types)) == 2)
 
