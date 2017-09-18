@@ -48,3 +48,18 @@ class Text(SharedMemoryModel):
         seconds = (gtime - self.date_sent).total_seconds()
         ago = time_format(seconds, 4)
         return "{} ago".format(ago)
+
+    @property
+    def list_recipients(self):
+        """Return the recipients as a list of str."""
+        recipients = self.recipients
+        recipients = recipients[1:-1]
+        return recipients.split(",")
+
+    def exclude(self, number):
+        """Exclude a number from sender/recipients."""
+        matches = [self.sender] + self.list_recipients
+        if number in matches:
+            matches.remove(number)
+
+        return matches

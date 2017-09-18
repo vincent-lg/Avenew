@@ -210,7 +210,7 @@ class BaseScreen(object):
             return previous
         return None
 
-    def move_to(self, screen, app=None, folder=None):
+    def move_to(self, screen, app=None, folder=None, db=None):
         """
         Move to another screen, not adding it to the screen tree.
 
@@ -226,6 +226,7 @@ class BaseScreen(object):
             screen (Screen class or str): the new screen as a class or
                     path leading to it.
             app (App, optional): the screen app.
+            db (dict, optional): a dictionary of data to send to the new screen.
 
         Note:
             If `app` isn't specified, use the current screen's `app`.
@@ -240,10 +241,17 @@ class BaseScreen(object):
         self._delete_commands()
         new_screen = screen(self.obj, self.user, self.type, app)
         new_screen._save()
+
+        # Before displaying the screen, add the optional data
+        if db:
+            data = new_screen.db
+            for key, value in db.items():
+                data[key] = value
+
         new_screen.display()
         return new_screen
 
-    def next(self, screen, app=None):
+    def next(self, screen, app=None, db=None):
         """Go to a new screen and save it in the screen tree.
 
         This method is used to change the current screen while putting
@@ -259,6 +267,7 @@ class BaseScreen(object):
             screen (Screen class or str): the new screen as a class or
                     path leading to it.
             app (App, optional): the screen app.
+            db (dict, optional): a dictionary of data to send to the new screen.
 
         Note:
             If `app` isn't specified, use the current screen's `app`.
@@ -267,7 +276,7 @@ class BaseScreen(object):
             new_screen (Screen): the new screen object.
 
         """
-        new_screen = self.move_to(screen, app)
+        new_screen = self.move_to(screen, app, db=db)
         path = type(new_screen).__module__ + "." + type(new_screen).__name__
         db = self.type.db
         if "screen_tree"  not in db:

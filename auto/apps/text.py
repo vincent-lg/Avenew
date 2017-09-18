@@ -150,6 +150,71 @@ class NewTextScreen(BaseScreen):
         return True
 
 
+## Thread screen anc commands
+
+class ThreadScreen(BaseScreen):
+
+    """This screen appears to see a specific thread and allow to
+    write and reply right away.
+
+    """
+
+    commands = [CmdSend]
+
+    def display(self):
+        """Display the new message screen."""
+        db = self.db
+        thread = db["thread"]
+        if not thread:
+            self.user.msg("Can't display the thread, an error occurred.")
+            return
+
+        number = self.obj.tags.get(category="phone number")
+        screen = dedent("""
+            Messages with {} (|hBACK|n to go back)
+
+            {}
+
+            Text message:
+                {}
+
+                |hSEND|n
+        """.lstrip("\n"))
+        texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
+        if texts:
+            recipients = texts[0].exclude(number)
+            db["recipients"] = recipients
+
+        # Browse the list of texts in this thread
+        messages = []
+        for text in texts:
+            sender = text.sender
+            if sender == number:
+                sender = "You"
+
+            content = text.content + " (" + text.sent_ago + ")"
+            content = wrap(content, 75 - len(sender) - 3)
+            content = ("\n" + (len(sender) + 2) * " ").join(content)
+            messages.append(sender + ": " + content)
+
+        content = db.get("content", "(type your text here)")
+        content = "\n    ".join(wrap(content, 75))
+        recipients = ", ".join(recipients)
+        messages = "\n".join(messages)
+        self.user.msg(screen.format(recipients, messages, content))
+
+    def no_match(self, string):
+        """Command no match, to write the text content."""
+        db = self.db
+        old_content = db.get("content", "")
+        if old_content:
+            old_content += "\n"
+        content = old_content + string
+        db["content"] = content
+        self.display()
+        return True
+
+
 ## Main screen and commands
 
 class CmdNew(AppCommand):
@@ -187,19 +252,25 @@ class MainScreen(BaseScreen):
         threads = Text.objects.get_threads_for(number)
         string = "Texts for {} (|hBACK|n to go back)".format(number)
         string += "\n"
+        self.db["threads"] = {}
+        stored_threads = self.db["threads"]
         if threads:
             string += "  Create a |hNEW|n message.\n"
             i = 1
             for thread_id, text in threads.items():
                 thread = text.thread
-                sender = text.sender
+                stored_threads[i] = thread
+                senders = text.exclude(number)
+                sender = ", ".join(senders)
                 if thread.name:
                     sender = group.name
-                elif sender == number:
-                    sender = "you"
+                sender = crop(sender, 20)
 
-                content = crop(text.content, 35)
-                string += "\n  {{|h{:>2}|n}} From {:<20}: {:<35} ({}(".format(i, sender, content, text.sent_ago)
+                content = text.content
+                if text.sender == number:
+                    content = "]You] " + content
+                content = crop(content, 35)
+                string += "\n  {{|h{:>2}|n}} {:<20}: {:<35} ({}(".format(i, sender, content, text.sent_ago)
                 i += 1
             string += "\n\n(Type a number to open this text.)"
         else:
@@ -209,6 +280,30 @@ class MainScreen(BaseScreen):
         s = "" if count == 1 else "s"
         string += "\n\nText app: {} saved message{s}.".format(count, s=s)
         self.user.msg(string)
+
+    def no_match(self, string):
+        """Method called when no command matches the user input.
+
+        This allows us to redirect to the ThreadScreen if a number
+        has been entered.
+
+        """
+        if string.isdigit():
+            thread = int(string)
+            if thread not in self.db["threads"]:
+                self.user.msg("This is not a number in your current threads.")
+                self.display()
+            else:
+                thread = self.db["threads"][thread]
+                self.next(ThreadScreen, db=dict(thread=thread))
+
+            return True
+
+        return False
+
+    def wrong_input(self, string):
+        """A wrong input has been entered."""
+        self.suer.msg("Enter a thread number to oepn it.")
 
 
 class TextApp(BaseApp):
