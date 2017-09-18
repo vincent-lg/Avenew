@@ -35,7 +35,6 @@ class CmdSend(AppCommand):
         db = screen.db
         sender = screen.obj.tags.get(category="phone number")
         recipients = list(db.get("recipients", []))
-        recipients.sort()
         if not recipients:
             self.msg("You haven't specified at least one recipient.")
             screen.display()
@@ -47,14 +46,8 @@ class CmdSend(AppCommand):
             screen.display()
             return
 
-        # Create a new thread if necessary
-        texts = Text.objects.get_texts_with([sender] + recipients)
-        if texts:
-            thread = texts[0].thread
-        else:
-            thread = Thread()
-            thread.save()
-        thread.text_set.create(sender=sender, recipients=",{},".format(recipients), content=content)
+        # Send the new text
+        Text.objects.send(sender, recipients, content)
         self.msg("Thanks, your message has been sent successfully.")
         screen.back()
 
@@ -205,8 +198,8 @@ class MainScreen(BaseScreen):
                 elif sender == number:
                     sender = "you"
 
-                content = crop(text.content, 40)
-                string += "\n  {{|h{:>2}|n}} From {:<20}: {}".format(i, sender, content)
+                content = crop(text.content, 35)
+                string += "\n  {{|h{:>2}|n}} From {:<20}: {:<35} ({}(".format(i, sender, content, text.sent_ago)
                 i += 1
             string += "\n\n(Type a number to open this text.)"
         else:
