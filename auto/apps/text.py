@@ -4,7 +4,7 @@ Text application.
 
 from textwrap import dedent, wrap
 
-from evennia.utils.utils import crop
+from evennia.utils.utils import crop, lazy_property
 
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
 from web.text.models import Text, Thread
@@ -73,9 +73,9 @@ class CmdTo(AppCommand):
     Add or remove a recipient.
 
     Usage:
-        to <phone number>
+        to <phone number or contact>
 
-    If the phone number is already present, remove it.
+    If the phone number, or contact, is already present, remove it.
 
     """
 
@@ -87,8 +87,17 @@ class CmdTo(AppCommand):
         db = screen.db
         number = self.args.strip()
         if not number:
-            self.msg("Specify a phone number of a recipient, to add or remove him.")
+            self.msg("Specify a phone number or contact name of a recipient, to add or remove him.")
             return
+
+        # First of all, maybe it's a contact name
+        if screen.app.contact:
+            matches = screen.app.contact.search(number)
+            if len(matches) == 1:
+                number = matches[0].phone_number
+            elif len(matches) >= 2:
+                self.msg("This contact name isn't specific enough.  It could be:\n  {}\nPlease specify.".format("  ".join([contact.name for contact in matches])))
+                return
 
         number = number.replace("-", "")
         if not number.isdigit() or len(number) != 7:
@@ -133,9 +142,13 @@ class NewTextScreen(BaseScreen):
         """.lstrip("\n"))
         db = self.db
         recipients = list(db.get("recipients", []))
+        for i, recipient in enumerate(recipients):
+            if self.app.contact:
+                recipients[i] = self.app.contact.format(recipient)
+
         content = db.get("content", "(type your text here)")
         content = "\n    ".join(wrap(content, 75))
-        recipients = ",  ".join(recipients)
+        recipients = ", ".join(recipients)
         self.user.msg(screen.format(number, recipients, content))
 
     def no_match(self, string):
@@ -184,6 +197,8 @@ class ThreadScreen(BaseScreen):
         if texts:
             recipients = texts[0].exclude(number)
             db["recipients"] = recipients
+            if self.app.contact:
+                recipients = [self.app.contact.format(recipient) for recipient in recipients]
 
         # Browse the list of texts in this thread
         messages = []
@@ -191,6 +206,8 @@ class ThreadScreen(BaseScreen):
             sender = text.sender
             if sender == number:
                 sender = "You"
+            elif self.app.contact:
+                sender = self.app.contact.format(sender)
 
             content = text.content + " (" + text.sent_ago + ")"
             content = wrap(content, 75 - len(sender) - 3)
@@ -261,9 +278,12 @@ class MainScreen(BaseScreen):
                 thread = text.thread
                 stored_threads[i] = thread
                 senders = text.exclude(number)
+                if self.app.contact:
+                    senders = [self.app.contact.format(sender) for sender in senders]
+
                 sender = ", ".join(senders)
                 if thread.name:
-                    sender = group.name
+                    sender = thread.name
                 sender = crop(sender, 20)
 
                 content = text.content
@@ -303,7 +323,7 @@ class MainScreen(BaseScreen):
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
-        self.suer.msg("Enter a thread number to oepn it.")
+        self.user.msg("Enter a thread number to oepn it.")
 
 
 class TextApp(BaseApp):
@@ -315,3 +335,7 @@ class TextApp(BaseApp):
     app_name = "text"
     start_screen = MainScreen
 
+    @lazy_property
+    def contact(self):
+        """Return the contact app, if available."""
+        return self.type.apps.get("contact")

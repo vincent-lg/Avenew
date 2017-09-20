@@ -2,6 +2,8 @@
 Abstract type.
 """
 
+from evennia.utils.utils import lazy_property
+
 class BaseType(object):
 
     """
@@ -20,7 +22,7 @@ class BaseType(object):
         self.handler = handler
         self.obj = obj
 
-    @property
+    @lazy_property
     def db(self):
         """Return the storage (saver dict) for this type."""
         return self.handler.db(type(self).name)

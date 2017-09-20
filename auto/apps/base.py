@@ -6,7 +6,7 @@ from textwrap import dedent
 
 from evennia import Command
 from evennia.utils.evform import EvForm
-from evennia.utils.utils import class_from_module
+from evennia.utils.utils import class_from_module, lazy_property
 
 class BaseApp(object):
 
@@ -28,6 +28,20 @@ class BaseApp(object):
 
     def __repr__(self):
         return "<App {} ({} folder)>".format(type(self).app_name, type(self).folder)
+
+    @lazy_property
+    def db(self):
+        """Return an application-specific storage as a dict."""
+        type_db = self.type.db
+        if "app_storage" not in type_db:
+            type_db["app_storage"] = {}
+        storage = type_db["app_storage"]
+        if type(self).folder not in storage:
+            storage[type(self).folder] = {}
+        storage = storage[type(self).folder]
+        if self.app_name not in storage:
+            storage[type(self).app_name] = {}
+        return storage[self.app_name]
 
 
 class BaseScreen(object):
@@ -65,7 +79,7 @@ class BaseScreen(object):
         self.app = app
         self._add_commands()
 
-    @property
+    @lazy_property
     def db(self):
         """Return the screen-specific storage."""
         db = self.type.db
