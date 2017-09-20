@@ -1,5 +1,43 @@
 """
 Text application.
+
+This app allows to send text, and see what texts have been received.
+Texts are grouped by threads.  A thread is a list of messages sharing
+the same users participating in the conversation.  For instance, if
+A sends a message to B, and B a message to A, both messages will belong
+to the same thread.
+
+When a user enters into the text appl, she will see the list of threads
+(of conversations that she participated to).  She can open one of these
+threads by entering a number.  This will display the most recent messages
+in the thread (both that she sent and received).  It will also allow
+her to directly respond to the thread (all other users in the conversation
+will see this new message).
+
+Screens in this app:
+    MainScreen: the main screen, displaying the list of threads as
+            numbers.  The user can enter a number to open this thread
+            and reply to it.
+    ThreadScreen: the screen allowing to visualize a thread with its most
+            recent messages, and to reply to it.
+    NewTextScreen: the screen allowing to send a new text independent of any thread.
+
+Commands in this app:
+    MainScreen:
+        new: create a new message outside of a thread (CmdNew).
+    ThreadScreen:
+        send: send the content of the reply to the thread (CmdSend).
+    NewTextScreen:
+        to: add or remove a contact or phone number as recipient (CmdTo).
+        send: send the message (CmdSend).
+        cancel: cancel (CmdCancel).
+
+Note:
+    Texts aren't stored in the application itself.  To allow greater
+    speed in retrieving (and more advanced searching), texts are
+    saved in a specific model, along with threads.  To see the mechanism,
+    visit `web.text`.
+
 """
 
 from textwrap import dedent, wrap
@@ -24,7 +62,13 @@ def get_phone_number(obj):
 class CmdSend(AppCommand):
 
     """
-    Send  the current text message.
+    Send the current text message.
+
+    Usage:
+        send
+
+    This will send the text message on your screen to the selected
+    recipients, who might already be members of the conversation.
     """
 
     key = "send"
@@ -56,6 +100,9 @@ class CmdCancelSend(AppCommand):
 
     """
     Cancel and go back to the list of texts.
+
+    Usage:
+        cancel
     """
 
     key = "cancel"
@@ -77,6 +124,18 @@ class CmdTo(AppCommand):
 
     If the phone number, or contact, is already present, remove it.
 
+    Usage:
+        to 555-1234
+
+    If your device has access to a contact app, you can add and remove
+    recipients by their names:
+
+    Usage:
+        to Martin
+
+    You don't have to specify the full name of the contact.  If more than one
+    contact matches the letters you have specified, you will be given the list
+    of possibilities and will have to specify more letters next time.
     """
 
     key = "to"
@@ -120,7 +179,14 @@ class CmdTo(AppCommand):
 class NewTextScreen(BaseScreen):
 
     """This screen appears to write a new message, with possibly some
-    fields that are pre-loaded.
+    fields that are pre-loaded.  This screen will appear to create
+    a new message independent of any thread.  Note, however, that if
+    the list of recipients matches a previous conversation, the new
+    message will simply be appended to this previous thread.
+
+    Data attributes you can use (in screen.db):
+        recipients: a list of phone numbers representing the list of recipients.
+        content: the new text content as a string.
 
     """
 
@@ -163,12 +229,15 @@ class NewTextScreen(BaseScreen):
         return True
 
 
-## Thread screen anc commands
+## Thread screen and commands
 
 class ThreadScreen(BaseScreen):
 
     """This screen appears to see a specific thread and allow to
     write and reply right away.
+
+    Data attributes you can use (in screen.db):
+        thread: the thread object (`web.text.models.Thread`).
 
     """
 
@@ -238,6 +307,9 @@ class CmdNew(AppCommand):
 
     """
     Compose a new text message.
+
+    Usage:
+        new
     """
 
     key = "new"
@@ -251,8 +323,11 @@ class MainScreen(BaseScreen):
     """Main screen of the text app.
 
     This screen displays the text messages, both sent and received
-    by this phone.  It provides commands to create new messages, reply
-    to messages, and ...
+    by this phone, as a list of conversations (or threads).  It provides
+    commands to create new messages, and open them in a separate screen.
+
+    Data attributes you can use (in screen.db):
+        none
 
     """
 
@@ -329,6 +404,9 @@ class MainScreen(BaseScreen):
 class TextApp(BaseApp):
 
     """Text applicaiton.
+
+    This class defines the application for texting.  It doesn't contain
+    many things, as most features are defined in the screen themselves.
 
     """
 
