@@ -1,5 +1,34 @@
 """
 Contact application.
+
+This application allows to add and manage contacts.  Contacts are a
+useful link between identity (a name, usually) and a phone number.  They
+are available in other applications, like the text app.  Contacts
+are stored directly in the application, which has a few shortcuts to
+add, remove and edit contacts.  It can also easily format a phone number
+(retrieving the matching name if possible), and search a name for its
+matching phone number.  See the `ContactApp` for details.  From anywhere
+in another app, you could do something like this:
+
+    contact = self.type.apps.get("contact")
+    if contact: # Remember the contact app may not be installed
+        name = contact.format("555-1234")
+        # Will return 555-1234, or the contact name if found
+
+Screens in this app:
+    MainScreen: display the list of contacts in this device and allow
+            to edit one, or create a new one.
+    ContactScreen: edit an existing contact or do further operations on it.
+
+Commands in this app:
+    MainScreen:
+        new: create a new contact (CmdNew).
+    ContactScreen:
+        first: edit the contact's first name (CmdFirst).
+        last: edit the contact's last name (CmdLast).
+        number: edit the contact's phone number (CmdNumber).
+        done: save the modifications for this contact (CmdDone).
+
 """
 
 from textwrap import dedent, wrap
@@ -12,7 +41,7 @@ from auto.apps.base import BaseApp, BaseScreen, AppCommand
 
 class Contact(object):
 
-    """A cass to represent a contact with name and number.
+    """A class to represent a contact with name and number.
 
     Objects of this class aren't stored in the database.  However,
     through its methods, the contact app (see `ContactApp` in this
@@ -63,6 +92,7 @@ class Contact(object):
     def __repr__(self):
         return "<Contact {} (phone={})>".format(self.name, self.phone_number)
 
+
 ## Contact screen and commands
 
 class CmdFirst(AppCommand):
@@ -75,7 +105,6 @@ class CmdFirst(AppCommand):
 
     Don't forget you need to type the \hDONE\n command when your
     modifications have been done on the contact and you want to save them.
-
     """
 
     key = "first"
@@ -101,7 +130,6 @@ class CmdLast(AppCommand):
 
     Don't forget you need to type the \hDONE\n command when your
     modifications have been done on the contact and you want to save them.
-
     """
 
     key = "last"
@@ -127,7 +155,6 @@ class CmdNumber(AppCommand):
 
     Don't forget you need to type the \hDONE\n command when your
     modifications have been done on the contact and you want to save them.
-
     """
 
     key = "number"
@@ -153,7 +180,7 @@ class CmdDone(AppCommand):
     """
     Save the modifications and return to the contact list.
 
-    Syntax:
+    Usage:
         done
 
     In the screen allowing to edit a contact, if you make modifications
@@ -189,7 +216,7 @@ class ContactScreen(BaseScreen):
 
     """Contact screen to edit or add a contact.
 
-    This screen will be displayed if a contact uses NEW or a number
+    This screen will be displayed if a user types NEW or a number
     to edit an existing contact.
 
     """
@@ -228,7 +255,14 @@ class ContactScreen(BaseScreen):
 class CmdNew(AppCommand):
 
     """
-    Compose a new text message.
+    Create a new contact.
+
+    Usage:
+        new
+
+    This will create a new contact, prompting you to set its first name, last
+    name and phone number,  You will need to enter |hDONE|n after you have set
+    this information, in order to save the new contact.
     """
 
     key = "new"
@@ -317,6 +351,21 @@ class ContactApp(BaseApp):
 
     """Contact applicaiton.
 
+    This application supports several shortcut methods to manipulate
+    contacts.  Use these methods instead of directly creating and
+    manipulating the contact object in order to save into the database.
+
+    Methods in this class:
+        format: format a phone number, giving its contact name if possible.
+        add: add a new contact and store it in the database.
+        sort: sort the list of contacts alphabetically.
+        remove: remove a contact from the list and the database.
+        search: search a name and return its phone number if found.
+        update: update an existing contact and store it in the database.
+
+    This class also has a `contacts` property which will contain a
+    list of current Contact objects.
+
     """
 
     app_name = "contact"
@@ -378,6 +427,7 @@ class ContactApp(BaseApp):
         if "contacts" not in self.db:
             self.db["contacts"] = []
         self.db["contacts"].append(contact.info)
+        return contact
 
     def sort(self):
         """Sort the contact list."""
