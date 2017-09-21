@@ -61,20 +61,20 @@ class TypeHandler(object):
 
     def get(self, name):
         """Return the type of this specified name or None.
-        
+
         Args:
             name (str): the name of the type to find.
 
         Returns:
             type: the type or None if not found.
-        
+
         """
         types = [obj_type for obj_type in self._types if type(obj_type).name == name]
         return types[0] if types else None
 
     def add(self, name, recursive=True):
         """Add a new type for this object.
-        
+
         Args:
             name (str): name of the type to add.
             recursive (bool, optional): should the objects of this prototype
@@ -111,7 +111,7 @@ class TypeHandler(object):
 
     def remove(self, name):
         """Remove a type.
-        
+
         Args:
             name (str): name of the type to remove.
 
@@ -153,6 +153,28 @@ class TypeHandler(object):
 
         return storage[name]
 
+    def has(self, name):
+        """
+        Return a list of types that have this attribute/method name.
+
+        Args:
+            name (str): the name of the behavior.
+
+        Returns:
+            types (list): the list of types that support this behavior name.
+
+        Note:
+            A type supports a behavior if it has a method or attribute with
+            the same name.
+
+        """
+        types = []
+        for type in self._types:
+            if hasattr(type, name):
+                types.append(type)
+
+        return types
+
     def can(self, name):
         """
         Return a list of types that can handle this behavior.
@@ -162,13 +184,13 @@ class TypeHandler(object):
 
         Returns:
             types (list): the list of types that support this behavior name.
-        
+
         Note:
             A type supports a behavior if it has a method with the same
             name.  For instance, `obj.types.can("use")` will return
             a list with the computer type if it is present on the
             handler, since the computer type has a `use` method.
-        
+
         """
         types = []
         for type in self._types:
@@ -176,4 +198,3 @@ class TypeHandler(object):
                 types.append(type)
 
         return types
-

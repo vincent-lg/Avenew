@@ -42,6 +42,7 @@ Note:
 
 from textwrap import dedent, wrap
 
+from evennia import search_tag
 from evennia.utils.utils import crop, lazy_property
 
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
@@ -91,9 +92,28 @@ class CmdSend(AppCommand):
             return
 
         # Send the new text
-        Text.objects.send(sender, recipients, content)
+        text = Text.objects.send(sender, recipients, content)
+        for number in text.list_recipients:
+            devices = search_tag(number, category="phone number")
+            for device in devices:
+                types = device.types.has("notifications")
+                if types:
+                    name = sender
+                    computer = device.types.get("computer")
+                    if computer:
+                        contact = computer.apps.get("contact")
+                        if contact:
+                            name = contact.format(sender)
+
+                    types[0].notifications.add("New text from {}".format(name),
+                            "auto.apps.text.ThreadScreen", "text", content=content,
+                            db=dict(thread=text.thread), alert=True)
+
         self.msg("Thanks, your message has been sent successfully.")
-        screen.back()
+        if screen.db.get("go_back", True):
+            screen.back()
+        else:
+            screen.display()
 
 
 class CmdCancelSend(AppCommand):
@@ -191,12 +211,13 @@ class NewTextScreen(BaseScreen):
     """
 
     commands = [CmdSend, CmdCancelSend, CmdTo]
+    back_screen = "auto.apps.text.MainScreen"
 
     def display(self):
         """Display the new message screen."""
         number = get_phone_number(self.obj)
         screen = dedent("""
-            New message (|hBACK|n to go back)
+            New message (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)
 
             From: {}
               To: {}
@@ -204,7 +225,7 @@ class NewTextScreen(BaseScreen):
             Text message:
                 {}
 
-                |hSEND|n                                             |hCANCEL|n
+                |lcsend|ltSEND|le                                             |lccancel|ltCANCEL|le
         """.lstrip("\n"))
         db = self.db
         recipients = list(db.get("recipients", []))
@@ -231,6 +252,64 @@ class NewTextScreen(BaseScreen):
 
 ## Thread screen and commands
 
+class CmdContact(AppCommand):
+
+    """
+    Open the contact dialog for a recipient in this conversation.
+
+    Usage:
+        contact [number]
+
+    This command will open the contact dialog for the recipient in the current
+    conversation.  This will allow to create a new contact if the recipient has
+    none yet.  If more than one recipient are present in this conversation, the |hCONTACT|n
+    command will show you a list of possible contacts in a numbered list, and ask you to enter
+    |hCONTACT|n followed by the number of the contact you want to open.  For instance:
+
+        contact 2
+    """
+
+    key = "contact"
+
+    def func(self):
+        """Execute the command."""
+        screen = self.screen
+        recipients = list(screen.db.get("recipients", []))
+        if not recipients:
+            self.msg("There are no recipient in this conversation yet.  Use the |hTO|n command to add recipients.")
+            return
+
+        contact_app = screen.type.apps.get("contact")
+        if not contact_app:
+            self.msg("You do not have the contact application.")
+            return
+
+        if len(recipients) == 1:
+            recipient = recipients[0]
+            screen, db = contact_app.edit(recipient)
+            self.screen.next(screen, contact_app, db=db)
+            return
+
+        # Otherwise, choose a contact
+        args = self.args.strip()
+        if not args:
+            string = "Specify a contact number after |hCONTACT|n:\n"
+            for i, recipient in enumerate(recipients):
+                string += "\n{|: {}".format(i, contact_app.format(recipient, False))
+                self.msg(string)
+
+        # Try to get the recipient
+        try:
+            args = int(args)
+            assert args > 0
+            recipient = recipients[args]
+        except (ValueError, AssertionError, IndexError):
+            self.msg("Invalid contact number.")
+        else:
+            screen, db = contact_app.edit(recipient)
+            screen.next(screen, "contact", db=db)
+
+
 class ThreadScreen(BaseScreen):
 
     """This screen appears to see a specific thread and allow to
@@ -241,11 +320,13 @@ class ThreadScreen(BaseScreen):
 
     """
 
-    commands = [CmdSend]
+    commands = [CmdSend, CmdContact]
+    back_screen = "auto.apps.text.MainScreen"
 
     def display(self):
         """Display the new message screen."""
         db = self.db
+        db["go_back"] = False
         thread = db["thread"]
         if not thread:
             self.user.msg("Can't display the thread, an error occurred.")
@@ -253,14 +334,15 @@ class ThreadScreen(BaseScreen):
 
         number = self.obj.tags.get(category="phone number")
         screen = dedent("""
-            Messages with {} (|hBACK|n to go back)
+            Messages with {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)
+            |lccontact|ltCONTACT|le to edit the contact for this conversation.
 
             {}
 
             Text message:
                 {}
 
-                |hSEND|n
+                |lcsend|ltSEND|le
         """.lstrip("\n"))
         texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
         if texts:
@@ -332,6 +414,7 @@ class MainScreen(BaseScreen):
     """
 
     commands = [CmdNew]
+    back_screen = "auto.apps.base.MainScreen"
 
     def display(self):
         """Display the app."""
@@ -342,12 +425,12 @@ class MainScreen(BaseScreen):
             return
 
         threads = Text.objects.get_threads_for(number)
-        string = "Texts for {} (|hBACK|n to go back)".format(number)
+        string = "Texts for {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)".format(number)
         string += "\n"
         self.db["threads"] = {}
         stored_threads = self.db["threads"]
         if threads:
-            string += "  Create a |hNEW|n message.\n"
+            string += "  Create a |lcnew|ltNEW|le message.\n"
             i = 1
             for thread_id, text in threads.items():
                 thread = text.thread
@@ -365,11 +448,11 @@ class MainScreen(BaseScreen):
                 if text.sender == number:
                     content = "]You] " + content
                 content = crop(content, 35)
-                string += "\n  {{|h{:>2}|n}} {:<20}: {:<35} ({}(".format(i, sender, content, text.sent_ago)
+                string += "\n  {{|lc{i}|lt{i:>2}|le}} {:<20}: {:<35} ({}(".format(sender, content, text.sent_ago, i=i)
                 i += 1
             string += "\n\n(Type a number to open this text.)"
         else:
-            string += "\n  You have no texts yet.  Want to create a |hNEW|n one?"
+            string += "\n  You have no texts yet.  Want to create a |lcnew|ltNEW|le one?"
 
         count = Text.objects.get_texts_for(number).count()
         s = "" if count == 1 else "s"

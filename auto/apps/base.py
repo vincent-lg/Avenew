@@ -71,6 +71,7 @@ class BaseScreen(object):
     commands = []
     can_back = True # Can go back in the screen tree
     can_quit = True # Can quit the screen and close the interface
+    back_screen = None
 
     def __init__(self, obj, user, type, app=None):
         self.obj = obj
@@ -96,7 +97,13 @@ class BaseScreen(object):
         if tree and tree[-1][0] == path:
             del tree[-1]
 
-        return tree and tree[-1] or None
+        app_name = folder = None
+        if self.app:
+            app_name = type(self.app).app_name
+            folder = type(self.app).folder
+
+        back_screen = [type(self).back_screen, app_name, folder, None]
+        return tree and tree[-1] or back_screen
 
     def _add_commands(self):
         """Add the commands in the user CmdSet, if exist."""
@@ -206,10 +213,13 @@ class BaseScreen(object):
         previous = self.previous
         app = folder = None
         if previous:
-            previous, app, folder = previous
+            previous, app, folder, db = previous
             previous = class_from_module(previous)
             self._delete_commands()
             self.db.clear()
+            if db:
+                self.db.update(db)
+
             if app and folder:
                 app = self.type.apps.get(app, folder)
 
@@ -299,7 +309,7 @@ class BaseScreen(object):
         app = new_screen.app
         folder = app and type(app).folder or None
         app = app and type(app).app_name or None
-        tree.append((path, app, folder))
+        tree.append((path, app, folder, dict(self.db)))
 
     # Input methods
     def no_match(self, string):
@@ -349,7 +359,7 @@ class MainScreen(BaseScreen):
         for app in self.type.apps:
             if i > 0 and i % 3 == 0:
                 string += "\n" + " " * 4
-            string += app.app_name.ljust(15)
+            string += "|lc{name}|lt{name:<15}|le".format(name=app.app_name)
 
         string += "\n\n" + dedent("""
             Enter the first letters to open this app.  Type |hEXIT|n to quit the interface."

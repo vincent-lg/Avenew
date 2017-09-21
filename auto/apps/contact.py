@@ -238,16 +238,16 @@ class ContactScreen(BaseScreen):
         last = self.db.get("last_name", contact.last_name if contact else "")
         number = self.db.get("phone_number", contact.phone_number if contact else "")
         string = "Contact {}".format(contact.name) if contact else "New contact"
-        string += " (|hBACK|n to go back)\n"
-        string += "\n  |hFIRST|n name: {}".format(first)
-        string += "\n  |hLAST|n name: {}".format(last)
-        string += "\n  Phone |hNUMBER|n: {}".format(number)
-        string += "\n\n    |hDONE|n to save."
+        string += " (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)\n"
+        string += "\n  |wFIRST|n name: {}".format(first)
+        string += "\n  |wLAST|n name: {}".format(last)
+        string += "\n  Phone |wNUMBER|n: {}".format(number)
+        string += "\n\n    |lcdone|ltDONE|le to save."
         self.user.msg(string)
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
-        self.user.msg("Use the |hFIRST|n, |hLAST|hn, |hNUMBER|n, or |nDONE|n commands.")
+        self.user.msg("Use the |wFIRST|n, |wLAST|wn, |wNUMBER|n, or |nDONE|n commands.")
 
 
 ## Main screen and commands
@@ -261,7 +261,7 @@ class CmdNew(AppCommand):
         new
 
     This will create a new contact, prompting you to set its first name, last
-    name and phone number,  You will need to enter |hDONE|n after you have set
+    name and phone number,  You will need to enter |wDONE|n after you have set
     this information, in order to save the new contact.
     """
 
@@ -291,10 +291,10 @@ class MainScreen(BaseScreen):
             return
 
         contacts = self.app.contacts
-        string = "Contact list (|hBACK|n to go back)"
+        string = "Contact list (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)"
         string += "\n"
         if contacts:
-            string += "  Create a |hNEW|n contact.\n"
+            string += "  Create a |lcnew|ltNEW|le contact.\n"
             i = 1
             for contact in contacts:
                 name = contact.name
@@ -304,11 +304,11 @@ class MainScreen(BaseScreen):
                 else:
                     number = "|gnot set yet|n"
 
-                string += "\n  {{|h{:>2}|n}} {:<30} ({})".format(i, name, number)
+                string += "\n  {{|lc{i}|lt{i:>2}|le}} {:<30} ({})".format(name, number, i=i)
                 i += 1
             string += "\n\n(Type a number to open or edit this contact.)"
         else:
-            string += "\n  You have no contacts yet.  Want to create a |hNEW|n one?"
+            string += "\n  You have no contacts yet.  Want to create a |lcnew|ltNEW|le one?"
 
         count = len(contacts)
         s = "" if count == 1 else "s"
@@ -406,6 +406,28 @@ class ContactApp(BaseApp):
                     return contact.name
 
         return phone_number[:3] + "-" + phone_number[3:]
+
+    def edit(self, number):
+        """Edit the contact information for the specified number.
+
+        Args:
+            number (str): the phone number of the existing or new contact.
+
+        Returns:
+            screen, db: the information needed to move to this screen.
+
+        """
+        data = {}
+        for i, contact in enumerate(self.contacts):
+            if contact.phone_number == number:
+                data["first_name"] = contact.first_name
+                data["last_name"] = contact.last_name
+                data["phone_number"] = contact.phone_number
+                data["contact_id"] = i
+                return "auto.apps.contact.ContactScreen", data
+
+        data["phone_number"] = number
+        return "auto.apps.contact.ContactScreen", data
 
     def add(self, first_name="", last_name="", phone_number=""):
         """Add a new contact at the end of the list.

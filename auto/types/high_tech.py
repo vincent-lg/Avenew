@@ -2,9 +2,12 @@
 High-tech device types.
 """
 
+import datetime
 import os
 
-from evennia.utils.utils import all_from_module, lazy_property
+from django.utils.timezone import make_aware
+from evennia.utils import gametime
+from evennia.utils.utils import all_from_module, class_from_module, inherits_from, lazy_property, time_format
 from evennia.contrib.random_string_generator import RandomStringGenerator
 
 from auto.apps.base import BaseApp, MainScreen
@@ -72,6 +75,11 @@ class Phone(BaseType):
 
     name = "phone"
 
+    @lazy_property
+    def notifications(self):
+        """Return the application handler."""
+        return NotificationHandler(self.obj, self)
+
     def at_type_creation(self):
         """The type has just been added."""
         db = self.db
@@ -105,6 +113,11 @@ class Computer(BaseType):
         """Return the application handler."""
         return ApplicationHandler(self.obj, self)
 
+    @lazy_property
+    def notifications(self):
+        """Return the application handler."""
+        return NotificationHandler(self.obj, self)
+
     def at_type_creation(self):
         """The type has just been added.
 
@@ -118,6 +131,21 @@ class Computer(BaseType):
                 for app in apps:
                     self.apps.add(app, folder=folder)
 
+    def at_server_start(self):
+        """The server has restarted.
+
+        Override this hook to re-do some custom actions for this type
+        when the server restarts.  Notice that this hook will not be
+        called if the type is defined on a prototype.
+
+        """
+        used = self.db.get("used")
+        print "redo for", used
+        if used:
+            screen, app, folder, sdb = self.db.get("screen_tree", (None, None, None, None))
+            if screen:
+                self.use(used, screen, app, folder, sdb)
+
     def quit(self):
         """Quit the interface, removing the CmdSet if necessary."""
         db = self.db
@@ -128,15 +156,17 @@ class Computer(BaseType):
         if used:
             del db["used"]
 
-    def use(self, user):
+        if "screen_tree" in db:
+            del db["screen_tree"]
+
+    def use(self, user, screen=None, app_name=None, folder="app", db=None):
         """Use the computer.
 
         This method creates a CmdSet on the user, if the computer isn't
         already used.  It also prepares the first screen.
 
         """
-        db = self.db
-        used = db.get("used")
+        used = self.db.get("used")
         if used is user:
             user.msg("You already are using it.")
         elif used:
@@ -145,12 +175,23 @@ class Computer(BaseType):
             user.msg("It looks like you're already busy, isn't it?")
         else:
             # Add the CmdSet
-            db["used"] = user
-            user.cmdset.add("commands.high_tech.ComputerCmdSet")
             self.apps.load(user)
-            screen = MainScreen(self.obj, user, self)
+            if app_name:
+                app = self.apps.get(app_name, folder)
+            else:
+                app = None
+            if screen:
+                Screen = class_from_module(screen)
+            else:
+                Screen = MainScreen
+            self.db["used"] = user
+            user.cmdset.add("commands.high_tech.ComputerCmdSet")
+            screen = Screen(self.obj, user, self, app)
             screen._save()
-            self.db["screen_tree"] = [("auto.apps.base.MainScreen", None, None)]
+            if "screen_tree" not in self.db:
+                self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder), db]
+            if db:
+                screen.db.update(db)
             screen.display()
 
 
@@ -225,6 +266,9 @@ class ApplicationHandler(object):
 
     def load(self, user):
         """Load the apps, creating the App objects."""
+        # Delete all application objects
+        self._apps[:] = []
+
         db = self.type.db
         folders = db.get("apps", {})
         for folder, apps in folders.items():
@@ -233,3 +277,115 @@ class ApplicationHandler(object):
                 app = AppClass(self.obj, user, self.type)
                 self._apps.append(app)
 
+
+class NotificationHandler(object):
+
+    """Notification handler, to handle giving notifications."""
+
+    def __init__(self, obj, type):
+        self.obj = obj
+        self.type = type
+
+    @lazy_property
+    def db(self):
+        """Return the DB for the notificaiton handler."""
+        db = self.type.db
+        if "notifications" not in db:
+            db["notifications"] = []
+        return db["notifications"]
+
+    def all(self):
+        """Return all notifications."""
+        notifications = []
+        for info in self.db:
+            notification = Notification(**info)
+            notification.obj = self.obj
+            notification.handler = self
+            notifications.append(notification)
+
+        return notifications
+
+    def add(self, title, screen, app, folder="app", content="", db=None, alert=False):
+        """Add a new notificaiton.
+
+        Args:
+            title (str): title of the notification to add.
+            screen (str): screen path when addressing the notification.
+            app (str): app name that sent the application.
+            folder (str, optional): the folder containing the app.
+            content (str, optional): the content of the notification.
+            db (dict, optional): db attributes to give to the screen.
+            alert (bool, optional): should we alert the location?
+
+        """
+        timestamp = gametime.gametime(absolute=True)
+        kwargs = {
+                "title": title,
+                "screen": screen,
+                "app": app,
+                "folder": folder,
+                "content": content,
+                "db": db,
+                "timestamp": timestamp,
+        }
+        notification = Notification(**kwargs)
+        notification.obj = self.obj
+        notification.handler = self
+        self.db.append(kwargs)
+
+        # Alert the location
+        if alert:
+            obj = self.obj
+            location = obj.location
+            while location is not None:
+                if inherits_from(location, "typeclasses.rooms.Room"):
+                    break
+
+                location = location.location
+
+            location.msg_contents("{obj} emits a short beep.", mapping=dict(obj=obj))
+
+        return notification
+
+    def clear(self):
+        """Clear all notifications."""
+        while self.db:
+            del self.db[0]
+
+
+class Notification(object):
+
+    """A class to represent a notification."""
+
+    def __init__(self, title, screen, app, folder="app", content="", timestamp=None, db=None):
+        self.title = title
+        self.screen = screen
+        self.app = app
+        self.folder = folder
+        self.content = content
+        self.timestamp = timestamp
+        self.db = db
+        self.obj = None
+        self.handler = None
+
+    @property
+    def ago(self):
+        """Return the time since the notification was created."""
+        if self.timestamp is None:
+            return "now"
+
+        gtime = gametime.gametime(absolute=True)
+        seconds = gtime - self.timestamp
+        if seconds < 5:
+            return "a few seconds ago"
+
+        ago = time_format(seconds, 4)
+        return "{} ago".format(ago)
+
+    def address(self, user):
+        """Addresses the notification."""
+        if self.obj:
+            types = self.obj.types.can("use")
+            if types:
+                types[0].use(user, self.screen, self.app, self.folder, self.db)
+                self.handler.clear()

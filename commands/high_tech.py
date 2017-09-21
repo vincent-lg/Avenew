@@ -34,7 +34,7 @@ class CmdText(Command):
 class CmdNoMatch(Command):
 
     """No input has been found."""
-    
+
     key = CMD_NOMATCH
     locks = "cmd:all()"
 
@@ -81,7 +81,7 @@ class ComputerCmdSet(CmdSet):
 
     key = "computer"
     priority = 5
-    
+
     def at_cmdset_creation(self):
         """Populates the cmdset with commands."""
         self.add(CmdNoMatch())
