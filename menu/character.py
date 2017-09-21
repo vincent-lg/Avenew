@@ -49,13 +49,13 @@ def choose_characters(account, command):
 def create_character(account):
     """Display the introduction to the character creation."""
     text = dedent("""
-        You find yourself driving at high speed on a highway.  Said high speed slowly begins to decrease, as
+        You find yourself driving at high speed along a highway.  Said high speed slowly begins to decrease, as
         traffic becomes heavier.  You finally navigate through a wide exit ramp,
         to be stopped by a checkpoint before entering the city.
 
         A police officer walks toward your door and motions you to slide down the car window:
             'Sorry, just a few questions, it won't take more than a minute or so.
-            We need to keep track of visitors, we've had some trouble before.  Could you
+            We need to keep track of visitors, we've had some trouble recently.  Could you
             tell me your first name please?'
 
         Enter your new character's first name.
@@ -149,7 +149,7 @@ def create_last_name(account, command):
             |rA character named {} already exists.  You can:
                 Type |wb|n to go back to the first name selection.
                 Or enter this character's last name again.
-        """.strip("\n"))
+        """.format(full_name).strip("\n"))
         options = (
             {
                 "key": "b",
@@ -285,7 +285,9 @@ def select_age(account, command):
                 The police officer takes a final note on his pad:
                     'That will do!  Have a good stay with us, {title}.
 
-                The police officer steps back and waves your car through the checkpoint.  After a few minute
+                The police officer steps back and waves your car through the checkpoint.  You are now
+                free to enter Los Alfaques, a city built on the ocean shore, its high rises forming the
+                foreground of the city scape you discover as you speed up.  After a few minute
                 drive, you park in front of a large building.  You get off your car, lock the door behind you,
                 and walk toward the building, stopping a few feet away from the main entrance inside.
             """.strip("\n")).format(title=title)
