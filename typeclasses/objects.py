@@ -29,3 +29,9 @@ class Object(EventObject):
     @lazy_property
     def types(self):
         return TypeHandler(self)
+
+    def return_appearance(self, looker):
+        """Return the appearance depending on types."""
+        for type in self.types:
+            if hasattr(type, "return_appearance"):
+                return type.return_appearance(looker)

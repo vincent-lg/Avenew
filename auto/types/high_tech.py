@@ -4,10 +4,11 @@ High-tech device types.
 
 import datetime
 import os
+from textwrap import dedent, wrap
 
 from django.utils.timezone import make_aware
 from evennia.utils import gametime
-from evennia.utils.utils import all_from_module, class_from_module, inherits_from, lazy_property, time_format
+from evennia.utils.utils import all_from_module, class_from_module, crop, inherits_from, lazy_property, time_format
 from evennia.contrib.random_string_generator import RandomStringGenerator
 
 from auto.apps.base import BaseApp, MainScreen
@@ -55,7 +56,47 @@ def load_apps(path="auto.apps", errors=None):
 
     return errors
 
+def return_appearance(type, looker, number=False, header=""):
+    """Return the formatted appearance for a phone or computer."""
+    phone_number = type.obj.tags.get(category="phone number")
+    if not isinstance(phone_number, basestring):
+        phone_number = "|gunset|n"
+    else:
+        phone_number = phone_number[:3] + "-" + phone_number[3:]
+
+    date = datetime.datetime.fromtimestamp(gametime.gametime(absolute=True))
+    text = dedent("""
+        {header}
+
+
+                                             {time}
+
+                                 {date}
+        """.strip("\n")).format(header=header,
+                date=date.strftime("%A, %B {}, %Y".format(date.day)),
+                time=date.strftime("%I:%M %p"),)
+
+    # If a phone number, display it
+    if number:
+        text += "\n\n" + """
+                                                                     {number}
+        """.rstrip("\n").format(number=phone_number)
+
+    # Display the notifications
+    notifications = type.notifications.all()
+    if notifications:
+        text += "\n\n"
+        for notification in notifications:
+            title = crop(notification.title, 55, "...")
+            content = "\n    ".join(wrap(notification.content, 74))
+            text += "\n-   {:<55} ({})".format(title, notification.ago)
+            if content:
+                text += "\n    " + content
+
+    return text
+
 # Classes
+
 class Phone(BaseType):
 
     """
@@ -87,6 +128,11 @@ class Phone(BaseType):
             number = PHONE_GENERATOR.get()
             db["number"] = number
             self.obj.tags.add(number.replace("-", ""), category="phone number")
+
+    def return_appearance(self, looker):
+        """Return the appearance of the phone."""
+        header = "AvenOS light 12.4"
+        return return_appearance(self, looker, number=True, header=header)
 
 
 class Computer(BaseType):
@@ -145,6 +191,12 @@ class Computer(BaseType):
             screen, app, folder, sdb = self.db.get("screen_tree", (None, None, None, None))
             if screen:
                 self.use(used, screen, app, folder, sdb)
+
+    def return_appearance(self, looker):
+        """Return the appearance of the phone."""
+        header = "AvenOS 12.4            [6G]           [Bluetooth]           [96%}"
+        number = True if self.obj.types.get("phone") else False
+        return return_appearance(self, looker, number=number, header=header)
 
     def quit(self):
         """Quit the interface, removing the CmdSet if necessary."""
