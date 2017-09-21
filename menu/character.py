@@ -10,10 +10,9 @@ from textwrap import dedent
 
 from django.conf import settings
 from evennia import ChannelDB, ObjectDB
-from evennia.utils import create, logger
+from evennia.utils import create, evmenu, logger
 from evennia.utils.evmenu import EvMenu
 
-from menu.generic import _formatter, _input_no_digit
 from typeclasses.characters import Character
 
 ## Constants
@@ -458,6 +457,28 @@ def _login(session, account, menu=True):
     else:
         startnode = "create_character"
 
-    menu = EvMenu(account, "menu.character", startnode=startnode,
-            auto_quit=False, cmd_on_exit=None, node_formatter=_formatter,
-            input_parser=_input_no_digit, persistent=True)
+    menu = CharacterMenu(account, startnode=startnode)
+
+
+class CharacterMenu(evmenu.EvMenu):
+
+    """Menu for login into an account or creating an account."""
+
+    def __init__(self, caller, startnode="start"):
+        super(CharacterMenu, self).__init__(caller, "menu.character", startnode=startnode, auto_quit=False,
+                cmd_on_exit=None)
+
+    def node_formatter(self, nodetext, optionstext):
+        """
+        Formats the entirety of the node.
+
+        Args:
+            nodetext (str): The node text as returned by `self.nodetext_formatter`.
+            optionstext (str): The options display as returned by `self.options_formatter`.
+            caller (Object, Account or None, optional): The caller of the node.
+
+        Returns:
+            node (str): The formatted node to display.
+
+        """
+        return nodetext

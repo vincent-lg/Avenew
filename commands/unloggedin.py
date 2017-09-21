@@ -36,7 +36,7 @@ from evennia import Command, CmdSet
 from evennia import syscmdkeys
 from evennia.utils.evmenu import EvMenu
 
-from menu.generic import _formatter, _input_no_digit
+from menu.account import AccountMenu
 
 class UnloggedinCmdSet(CmdSet):
     "Cmdset for the unloggedin state"
@@ -60,6 +60,4 @@ class CmdUnloggedinLook(Command):
 
     def func(self):
         "Execute the menu"
-        menu = EvMenu(self.caller, "menu.account", startnode="start", auto_quit=False,
-                cmd_on_exit=None, node_formatter=_formatter,
-                input_parser=_input_no_digit, persistent=True)
+        menu = AccountMenu(self.caller)

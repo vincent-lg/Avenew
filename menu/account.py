@@ -22,7 +22,7 @@ from django.core.mail import send_mail
 from django.core.validators import validate_email
 from evennia import logger
 from evennia.server.models import ServerConfig
-from evennia.utils import create
+from evennia.utils import create, evmenu
 from evennia.utils.utils import delay, random_string_from_module
 
 from menu.character import _login, _options_choose_characters, _text_choose_characters
@@ -655,3 +655,26 @@ def _wrong_password(account):
     account.db._locked = False
     account.msg("Enter your password again.")
 
+
+class AccountMenu(evmenu.EvMenu):
+
+    """Menu for login into an account or creating an account."""
+
+    def __init__(self, caller):
+        super(AccountMenu, self).__init__(caller, "menu.account", startnode="start", auto_quit=False,
+                cmd_on_exit=None)
+
+    def node_formatter(self, nodetext, optionstext):
+        """
+        Formats the entirety of the node.
+
+        Args:
+            nodetext (str): The node text as returned by `self.nodetext_formatter`.
+            optionstext (str): The options display as returned by `self.options_formatter`.
+            caller (Object, Account or None, optional): The caller of the node.
+
+        Returns:
+            node (str): The formatted node to display.
+
+        """
+        return nodetext
