@@ -496,7 +496,24 @@ def email_address(caller, input):
         account.db.valid = False
         account.db.validation_code = code
         try:
+            assert not settings.TEST_SESSION
             send_mail(subject, body, "team@avenew.one", [recipent])
+        except AssertionError:
+            account.db.valid = True
+            account.attributes.remove("validation_code")
+            caller.msg(dedent("""
+                Avenew is in a test session mode, your account has been validated automatically.
+            """.strip("\n")).format(email_address))
+            caller.msg("-----  You will now create the first character of this account. -----")
+            _login(caller, account)
+            text = ""
+            options = (
+                {
+                    "key": "_default",
+                    "desc": "Enter your new character's first name.",
+                    "goto": "create_first_name",
+                },
+            )
         except (SMTPException, socket.error):
             # The email could not be sent
             account.db.valid = True

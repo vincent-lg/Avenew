@@ -73,7 +73,8 @@ INSTALLED_APPS += (
 # Temporarily disable websocket on the client
 WEBSOCKET_CLIENT_ENABLED = False
 
-SITE_ID = 1
+## Communication
+TEST_SESSION = False
 
 try:
     from server.conf.secret_settings import *
