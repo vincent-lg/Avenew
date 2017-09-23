@@ -48,357 +48,51 @@ from evennia.utils.utils import crop, lazy_property
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
 from web.text.models import Text, Thread
 
-## Helper functions
-def get_phone_number(obj):
-    """Return the phone number of this object, if found."""
-    number = obj.tags.get(category="phone number")
-    if not number or not isinstance(number, basestring):
-        raise ValueError("unknown or invalid phone number")
+## App class
 
-    number = number[:3] + "-" + number[3:]
-    return number
+class TextApp(BaseApp):
 
-## New text screen and commands
+    """Text applicaiton.
 
-class CmdSend(AppCommand):
-
-    """
-    Send the current text message.
-
-    Usage:
-        send
-
-    This will send the text message on your screen to the selected
-    recipients, who might already be members of the conversation.
-    """
-
-    key = "send"
-
-    def func(self):
-        """Execute the command."""
-        screen = self.screen
-        db = screen.db
-        sender = screen.obj.tags.get(category="phone number")
-        recipients = list(db.get("recipients", []))
-        if not recipients:
-            self.msg("You haven't specified at least one recipient.")
-            screen.display()
-            return
-
-        content = db["content"]
-        if not content:
-            self.msg("This text is empty, write something before sending it.")
-            screen.display()
-            return
-
-        # Send the new text
-        text = Text.objects.send(sender, recipients, content)
-        for number in text.list_recipients:
-            devices = search_tag(number, category="phone number")
-            for device in devices:
-                types = device.types.has("notifications")
-                if types:
-                    name = sender
-                    computer = device.types.get("computer")
-                    if computer:
-                        contact = computer.apps.get("contact")
-                        if contact:
-                            name = contact.format(sender)
-
-                    types[0].notifications.add("New text from {}".format(name),
-                            "auto.apps.text.ThreadScreen", "text", content=content,
-                            db=dict(thread=text.thread), alert=True)
-
-        self.msg("Thanks, your message has been sent successfully.")
-        if screen.db.get("go_back", True):
-            screen.back()
-        else:
-            screen.display()
-
-
-class CmdCancelSend(AppCommand):
-
-    """
-    Cancel and go back to the list of texts.
-
-    Usage:
-        cancel
-    """
-
-    key = "cancel"
-
-    def func(self):
-        """Execute the command."""
-        screen = self.screen
-        self.msg("Your text was cancelled.  Going back to the list of texts.")
-        screen.back()
-
-
-class CmdTo(AppCommand):
-
-    """
-    Add or remove a recipient.
-
-    Usage:
-        to <phone number or contact>
-
-    If the phone number, or contact, is already present, remove it.
-
-    Usage:
-        to 555-1234
-
-    If your device has access to a contact app, you can add and remove
-    recipients by their names:
-
-    Usage:
-        to Martin
-
-    You don't have to specify the full name of the contact.  If more than one
-    contact matches the letters you have specified, you will be given the list
-    of possibilities and will have to specify more letters next time.
-    """
-
-    key = "to"
-
-    def func(self):
-        """Execute the command."""
-        screen = self.screen
-        db = screen.db
-        number = self.args.strip()
-        if not number:
-            self.msg("Specify a phone number or contact name of a recipient, to add or remove him.")
-            return
-
-        # First of all, maybe it's a contact name
-        if screen.app.contact:
-            matches = screen.app.contact.search(number)
-            if len(matches) == 1:
-                number = matches[0].phone_number
-            elif len(matches) >= 2:
-                self.msg("This contact name isn't specific enough.  It could be:\n  {}\nPlease specify.".format("  ".join([contact.name for contact in matches])))
-                return
-
-        number = number.replace("-", "")
-        if not number.isdigit() or len(number) != 7:
-            self.msg("This is not a valid phone number.")
-            return
-
-        # Add or remove
-        if "recipients" not in db:
-            db["recipients"] = []
-        recipients = db["recipients"]
-        if number in recipients:
-            recipients.remove(recipient)
-            self.msg("This phone number was removed from the list of recipients.")
-        else:
-            recipients.append(number)
-            self.msg("This phone number was added to the list of recipients.")
-        screen.display()
-
-
-class NewTextScreen(BaseScreen):
-
-    """This screen appears to write a new message, with possibly some
-    fields that are pre-loaded.  This screen will appear to create
-    a new message independent of any thread.  Note, however, that if
-    the list of recipients matches a previous conversation, the new
-    message will simply be appended to this previous thread.
-
-    Data attributes you can use (in screen.db):
-        recipients: a list of phone numbers representing the list of recipients.
-        content: the new text content as a string.
+    This class defines the application for texting.  It doesn't contain
+    many things, as most features are defined in the screen themselves.
 
     """
 
-    commands = [CmdSend, CmdCancelSend, CmdTo]
-    back_screen = "auto.apps.text.MainScreen"
+    app_name = "text"
+    display_name = "Text"
+    start_screen = "MainScreen"
 
-    def display(self):
-        """Display the new message screen."""
-        number = get_phone_number(self.obj)
-        screen = dedent("""
-            New message (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)
+    @lazy_property
+    def contact(self):
+        """Return the contact app, if available."""
+        return self.type.apps.get("contact")
 
-            From: {}
-              To: {}
+    @classmethod
+    def get_phone_number(cls, obj, pretty=False):
+        """Return the phone number of this object, if found.
 
-            Text message:
-                {}
+        Args:
+            obj (Object): the object (phone) to query.
+            pretty (bool, optional): add a dash after the third number.
 
-                |lcsend|ltSEND|le                                             |lccancel|ltCANCEL|le
-        """.lstrip("\n"))
-        db = self.db
-        recipients = list(db.get("recipients", []))
-        for i, recipient in enumerate(recipients):
-            if self.app.contact:
-                recipients[i] = self.app.contact.format(recipient)
+        Returns:
+            number (str): the phone number.
 
-        content = db.get("content", "(type your text here)")
-        content = "\n    ".join(wrap(content, 75))
-        recipients = ", ".join(recipients)
-        self.user.msg(screen.format(number, recipients, content))
+        Raises:
+            ValueError: the specified object has no phone number.
 
-    def no_match(self, string):
-        """Command no match, to write the text content."""
-        db = self.db
-        old_content = db.get("content", "")
-        if old_content:
-            old_content += "\n"
-        content = old_content + string
-        db["content"] = content
-        self.display()
-        return True
+        """
+        number = obj.tags.get(category="phone number")
+        if not number or not isinstance(number, basestring):
+            raise ValueError("unknown or invalid phone number")
 
+        if pretty:
+            number = number[:3] + "-" + number[3:]
 
-## Thread screen and commands
-
-class CmdContact(AppCommand):
-
-    """
-    Open the contact dialog for a recipient in this conversation.
-
-    Usage:
-        contact [number]
-
-    This command will open the contact dialog for the recipient in the current
-    conversation.  This will allow to create a new contact if the recipient has
-    none yet.  If more than one recipient are present in this conversation, the |hCONTACT|n
-    command will show you a list of possible contacts in a numbered list, and ask you to enter
-    |hCONTACT|n followed by the number of the contact you want to open.  For instance:
-
-        contact 2
-    """
-
-    key = "contact"
-
-    def func(self):
-        """Execute the command."""
-        screen = self.screen
-        recipients = list(screen.db.get("recipients", []))
-        if not recipients:
-            self.msg("There are no recipient in this conversation yet.  Use the |hTO|n command to add recipients.")
-            return
-
-        contact_app = screen.type.apps.get("contact")
-        if not contact_app:
-            self.msg("You do not have the contact application.")
-            return
-
-        if len(recipients) == 1:
-            recipient = recipients[0]
-            screen, db = contact_app.edit(recipient)
-            self.screen.next(screen, contact_app, db=db)
-            return
-
-        # Otherwise, choose a contact
-        args = self.args.strip()
-        if not args:
-            string = "Specify a contact number after |hCONTACT|n:\n"
-            for i, recipient in enumerate(recipients):
-                string += "\n{|: {}".format(i, contact_app.format(recipient, False))
-                self.msg(string)
-
-        # Try to get the recipient
-        try:
-            args = int(args)
-            assert args > 0
-            recipient = recipients[args]
-        except (ValueError, AssertionError, IndexError):
-            self.msg("Invalid contact number.")
-        else:
-            screen, db = contact_app.edit(recipient)
-            screen.next(screen, "contact", db=db)
-
-
-class ThreadScreen(BaseScreen):
-
-    """This screen appears to see a specific thread and allow to
-    write and reply right away.
-
-    Data attributes you can use (in screen.db):
-        thread: the thread object (`web.text.models.Thread`).
-
-    """
-
-    commands = [CmdSend, CmdContact]
-    back_screen = "auto.apps.text.MainScreen"
-
-    def display(self):
-        """Display the new message screen."""
-        db = self.db
-        db["go_back"] = False
-        thread = db["thread"]
-        if not thread:
-            self.user.msg("Can't display the thread, an error occurred.")
-            return
-
-        number = self.obj.tags.get(category="phone number")
-        screen = dedent("""
-            Messages with {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)
-            |lccontact|ltCONTACT|le to edit the contact for this conversation.
-
-            {}
-
-            Text message:
-                {}
-
-                |lcsend|ltSEND|le
-        """.lstrip("\n"))
-        texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
-        if texts:
-            recipients = texts[0].exclude(number)
-            db["recipients"] = recipients
-            if self.app.contact:
-                recipients = [self.app.contact.format(recipient) for recipient in recipients]
-
-        # Browse the list of texts in this thread
-        messages = []
-        for text in texts:
-            sender = text.sender
-            if sender == number:
-                sender = "You"
-            elif self.app.contact:
-                sender = self.app.contact.format(sender)
-
-            content = text.content + " (" + text.sent_ago + ")"
-            content = wrap(content, 75 - len(sender) - 3)
-            content = ("\n" + (len(sender) + 2) * " ").join(content)
-            messages.append(sender + ": " + content)
-
-        content = db.get("content", "(type your text here)")
-        content = "\n    ".join(wrap(content, 75))
-        recipients = ", ".join(recipients)
-        messages = "\n".join(messages)
-        self.user.msg(screen.format(recipients, messages, content))
-
-    def no_match(self, string):
-        """Command no match, to write the text content."""
-        db = self.db
-        old_content = db.get("content", "")
-        if old_content:
-            old_content += "\n"
-        content = old_content + string
-        db["content"] = content
-        self.display()
-        return True
-
+        return number
 
 ## Main screen and commands
-
-class CmdNew(AppCommand):
-
-    """
-    Compose a new text message.
-
-    Usage:
-        new
-    """
-
-    key = "new"
-
-    def func(self):
-        self.screen.next(NewTextScreen)
-
 
 class MainScreen(BaseScreen):
 
@@ -409,23 +103,26 @@ class MainScreen(BaseScreen):
     commands to create new messages, and open them in a separate screen.
 
     Data attributes you can use (in screen.db):
-        none
+        None
 
     """
 
-    commands = [CmdNew]
+    commands = ["CmdNew"]
     back_screen = "auto.apps.base.MainScreen"
 
     def display(self):
         """Display the app."""
-        number = self.obj.tags.get(category="phone number")
-        if not number or not isinstance(number, basestring):
+        try:
+            number = self.app.get_phone_number(self.obj)
+            pretty_number = self.app.get_phone_number(self.obj, pretty=True)
+        except ValueError:
             self.msg("Your phone number couldn't be found.")
             self.back()
             return
 
+        # Load the threads (conversations) to which "number" participated
         threads = Text.objects.get_threads_for(number)
-        string = "Texts for {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)".format(number)
+        string = "Texts for {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit, |lchelp|ltHELP|le to get help)".format(pretty_number)
         string += "\n"
         self.db["threads"] = {}
         stored_threads = self.db["threads"]
@@ -473,7 +170,7 @@ class MainScreen(BaseScreen):
                 self.display()
             else:
                 thread = self.db["threads"][thread]
-                self.next(ThreadScreen, db=dict(thread=thread))
+                self.next("ThreadScreen", db=dict(thread=thread))
 
             return True
 
@@ -484,19 +181,340 @@ class MainScreen(BaseScreen):
         self.user.msg("Enter a thread number to oepn it.")
 
 
-class TextApp(BaseApp):
+class NewTextScreen(BaseScreen):
 
-    """Text applicaiton.
+    """This screen appears to write a new message, with possibly some
+    fields that are pre-loaded.  This screen will appear to create
+    a new message independent of any thread.  Note, however, that if
+    the list of recipients matches a previous conversation, the new
+    message will simply be appended to this previous thread.
 
-    This class defines the application for texting.  It doesn't contain
-    many things, as most features are defined in the screen themselves.
+    Data attributes you can use (in screen.db):
+        recipients: a list of phone numbers representing the list of recipients.
+        content: the new text content as a string.
 
     """
 
-    app_name = "text"
-    start_screen = MainScreen
+    commands = ["CmdSend", "CmdCancel", "CmdTo"]
+    back_screen = MainScreen
 
-    @lazy_property
-    def contact(self):
-        """Return the contact app, if available."""
-        return self.type.apps.get("contact")
+    def display(self):
+        """Display the new message screen."""
+        number = self.app.get_phone_number(self.obj)
+        pretty_number = self.app.get_phone_number(self.obj, pretty=True)
+        screen = dedent("""
+            New message (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit, |lchelp|ltHELP|le to get help)
+
+            From: {}
+              To: {}
+
+            Text message:
+                {}
+
+                |lcsend|ltSEND|le                                             |lccancel|ltCANCEL|le
+        """.lstrip("\n"))
+        recipients = list(self.db.get("recipients", []))
+        for i, recipient in enumerate(recipients):
+            if self.app.contact:
+                recipients[i] = self.app.contact.format(recipient)
+
+        content = self.db.get("content", "(type your text here)")
+        content = "\n    ".join(wrap(content, 75))
+        recipients = ", ".join(recipients)
+        self.user.msg(screen.format(number, recipients, content))
+
+    def no_match(self, string):
+        """Command no match, to write the text content."""
+        old_content = self.db.get("content", "")
+        if old_content:
+            old_content += "\n"
+        content = old_content + string
+        self.db["content"] = content
+        self.display()
+        return True
+
+
+## Thread screen
+
+class ThreadScreen(BaseScreen):
+
+    """This screen appears to see a specific thread and allow to
+    write and reply right away.
+
+    Data attributes you can use (in screen.db):
+        thread: the thread object (`web.text.models.Thread`).
+
+    """
+
+    commands = ["CmdSend", "CmdContact"]
+    back_screen = MainScreen
+
+    def display(self):
+        """Display the new message screen."""
+        self.db["go_back"] = False
+        thread = self.db.get("thread")
+        if not thread:
+            self.user.msg("Can't display the thread, an error occurred.")
+            return
+
+        number = self.app.get_phone_number(self.obj)
+        screen = dedent("""
+            Messages with {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit, |lchelp|ltHELP|le to get help)
+            |lccontact|ltCONTACT|le to edit the contact for this conversation.
+
+            {}
+
+            Text message:
+                {}
+
+                |lcsend|ltSEND|le
+        """.lstrip("\n"))
+        texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
+        if texts:
+            recipients = texts[0].exclude(number)
+            self.db["recipients"] = recipients
+            if self.app.contact:
+                recipients = [self.app.contact.format(recipient) for recipient in recipients]
+
+        # Browse the list of texts in this thread
+        messages = []
+        for text in texts:
+            sender = text.sender
+            if sender == number:
+                sender = "You"
+            elif self.app.contact:
+                sender = self.app.contact.format(sender)
+
+            content = text.content + " (" + text.sent_ago + ")"
+            content = wrap(content, 75 - len(sender) - 3)
+            content = ("\n" + (len(sender) + 2) * " ").join(content)
+            messages.append(sender + ": " + content)
+
+        content = self.db.get("content", "(type your text here)")
+        content = "\n    ".join(wrap(content, 75))
+        recipients = ", ".join(recipients)
+        messages = "\n".join(messages)
+        self.user.msg(screen.format(recipients, messages, content))
+
+    def no_match(self, string):
+        """Command no match, to write the text content."""
+        old_content = self.db.get("content", "")
+        if old_content:
+            old_content += "\n"
+        content = old_content + string
+        self.db["content"] = content
+        self.display()
+        return True
+
+
+## Commands
+
+class CmdNew(AppCommand):
+
+    """
+    Compose a new text message.
+
+    Usage:
+        new
+    """
+
+    key = "new"
+
+    def func(self):
+        self.screen.next(NewTextScreen)
+
+
+class CmdSend(AppCommand):
+
+    """
+    Send the current text message.
+
+    Usage:
+        send
+
+    This will send the text message on your screen to the selected
+    recipients, who might already be members of the conversation.
+    """
+
+    key = "send"
+
+    def func(self):
+        """Execute the command."""
+        screen = self.screen
+        sender = screen.app.get_phone_number(screen.obj)
+        recipients = list(screen.db.get("recipients", []))
+        if not recipients:
+            self.msg("You haven't specified at least one recipient.")
+            screen.display()
+            return
+
+        content = screen.db["content"]
+        if not content:
+            self.msg("This text is empty, write something before sending it.")
+            screen.display()
+            return
+
+        # Send the new text
+        text = Text.objects.send(sender, recipients, content)
+        self.msg("Thanks, your message has been sent successfully.")
+        if screen.db.get("go_back", True):
+            screen.back()
+        else:
+            screen.db["content"] = ""
+            screen.display()
+
+        # Notify the recipients
+        for number in text.list_recipients:
+            devices = search_tag(number, category="phone number")
+            for device in devices:
+                types = device.types.has("notifications")
+                if types:
+                    name = sender
+                    computer = device.types.get("computer")
+                    if computer:
+                        contact = computer.apps.get("contact")
+                        if contact:
+                            name = contact.format(sender)
+
+                    types[0].notifications.add("New text from {}".format(name),
+                            "auto.apps.text.ThreadScreen", "text", content=content,
+                            db=dict(thread=text.thread), alert=True)
+
+
+
+class CmdCancel(AppCommand):
+
+    """
+    Cancel and go back to the list of texts.
+
+    Usage:
+        cancel
+    """
+
+    key = "cancel"
+
+    def func(self):
+        """Execute the command."""
+        screen = self.screen
+        self.msg("Your text was cancelled.  Going back to the previous screen.")
+        screen.back()
+
+
+class CmdTo(AppCommand):
+
+    """
+    Add or remove a recipient.
+
+    Usage:
+        to <phone number or contact>
+
+    If the phone number, or contact, is already present, remove it.
+
+    Usage:
+        to 555-1234
+
+    If your device has access to a contact app, you can add and remove
+    recipients by their names:
+
+    Usage:
+        to Martin
+
+    You don't have to specify the full name of the contact.  If more than one
+    contact matches the letters you have specified, you will be given the list
+    of possibilities and will have to specify more letters next time.
+    """
+
+    key = "to"
+
+    def func(self):
+        """Execute the command."""
+        screen = self.screen
+        number = self.args.strip()
+        if not number:
+            self.msg("Specify a phone number or contact name of a recipient, to add or remove him.")
+            return
+
+        # First of all, maybe it's a contact name
+        if screen.app.contact:
+            matches = screen.app.contact.search(number)
+            if len(matches) == 1:
+                number = matches[0].phone_number
+            elif len(matches) >= 2:
+                self.msg("This contact name isn't specific enough.  It could be:\n  {}\nPlease specify.".format("\n  ".join([contact.name for contact in matches])))
+                return
+
+        number = number.replace("-", "")
+        if not number.isdigit() or len(number) != 7:
+            self.msg("This is not a valid phone number.")
+            return
+
+        # Add or remove
+        if "recipients" not in screen.db:
+            screen.db["recipients"] = []
+        recipients = screen.db["recipients"]
+        if number in recipients:
+            recipients.remove(number)
+            self.msg("This contact was removed from the list of recipients.")
+        else:
+            recipients.append(number)
+            self.msg("This contact was added to the list of recipients.")
+        screen.display()
+
+
+class CmdContact(AppCommand):
+
+    """
+    Open the contact dialog for a recipient in this conversation.
+
+    Usage:
+        contact [number]
+
+    This command will open the contact dialog for the recipient in the current
+    conversation.  This will allow to create a new contact if the recipient has
+    none yet.  If more than one recipient are present in this conversation, the |hCONTACT|n
+    command will show you a list of possible contacts in a numbered list, and ask you to enter
+    |hCONTACT|n followed by the number of the contact you want to open.  For instance:
+
+        contact 2
+    """
+
+    key = "contact"
+
+    def func(self):
+        """Execute the command."""
+        screen = self.screen
+        recipients = list(screen.db.get("recipients", []))
+        if not recipients:
+            self.msg("There are no recipient in this conversation yet.  Use the |hTO|n command to add recipients.")
+            return
+
+        contact_app = screen.app.contact
+        if not contact_app:
+            self.msg("You do not have the contact application.")
+            return
+
+        if len(recipients) == 1:
+            recipient = recipients[0]
+            screen, db = contact_app.edit(recipient)
+            self.screen.next(screen, contact_app, db=db)
+            return
+
+        # Otherwise, choose a contact
+        args = self.args.strip()
+        if not args:
+            string = "Specify a contact number after |hCONTACT|n:\n"
+            for i, recipient in enumerate(recipients):
+                string += "\n{:>2}: {}".format(i + 1, contact_app.format(recipient))
+            self.msg(string)
+            return
+
+        # Try to get the recipient
+        try:
+            args = int(args)
+            assert args > 0
+            recipient = recipients[args - 1]
+        except (ValueError, AssertionError, IndexError):
+            self.msg("Invalid contact number.")
+        else:
+            screen, db = contact_app.edit(recipient)
+            self.screen.next(screen, contact_app, db=db)

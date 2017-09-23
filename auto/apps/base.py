@@ -107,10 +107,19 @@ class BaseScreen(object):
 
     def _add_commands(self):
         """Add the commands in the user CmdSet, if exist."""
+        # If strings are used in commands, load the classes
+        for i, cmd in enumerate(type(self).commands):
+            if isinstance(cmd, basestring):
+                if "." not in cmd:
+                    cmd = type(self).__module__ + "." + cmd
+                type(self).commands[i] = class_from_module(cmd)
+
+        # Add to the CmdSet
         if self.user and self.user.cmdset.has("computer"):
             for cmdset in self.user.cmdset.get():
                 if cmdset.key == "computer":
                     for cmd in type(self).commands:
+
                         cmdset.add(cmd())
                     self.user.cmdset.remove(cmdset)
                     self.user.cmdset.add(cmdset)
@@ -259,9 +268,12 @@ class BaseScreen(object):
             new_screen (Screen): the new screen object.
 
         """
-        if isinstance(screen, basestring):
-            screen = class_from_module(screen)
         app = app or self.app
+        if isinstance(screen, basestring):
+            if "." not in screen: # We assume it means a relative import in the current module
+                screen = type(app).__module__ + "." + screen
+
+            screen = class_from_module(screen)
         self._delete_commands()
         new_screen = screen(self.obj, self.user, self.type, app)
         new_screen._save()
@@ -300,16 +312,16 @@ class BaseScreen(object):
             new_screen (Screen): the new screen object.
 
         """
+        db = db or {}
         new_screen = self.move_to(screen, app, db=db)
         path = type(new_screen).__module__ + "." + type(new_screen).__name__
-        db = self.type.db
-        if "screen_tree"  not in db:
-            db["screen_tree"] = []
-        tree = db["screen_tree"]
+        if "screen_tree"  not in self.type.db:
+            self.type.db["screen_tree"] = []
+        tree = self.type.db["screen_tree"]
         app = new_screen.app
         folder = app and type(app).folder or None
         app = app and type(app).app_name or None
-        tree.append((path, app, folder, dict(self.db)))
+        tree.append((path, app, folder, dict(db)))
 
     # Input methods
     def no_match(self, string):
