@@ -37,315 +37,7 @@ from evennia.utils.utils import crop, lazy_property
 
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
 
-## Contact class (used throughout all the screens)
-
-class Contact(object):
-
-    """A class to represent a contact with name and number.
-
-    Objects of this class aren't stored in the database.  However,
-    through its methods, the contact app (see `ContactApp` in this
-    file) offers shortcuts to add, sort and delete contacts.  These
-    shortcut methods will create an entry in the database and a
-    `Contact` object to manipulate more easily.
-
-    """
-
-    def __init__(self, first_name="", last_name="", phone_number=""):
-        """Create a new contact.
-
-        Use the `ContactApp.add` method instead, which has the same
-        signature but will make sure the contact is also saved in
-        the database.
-
-        Args:
-            first_name 9str, optional): the first name of the new contact.
-            last_name (str, optional): the last name of the new contact.
-            phone_number (str, optional): the phone number of the new contact.
-
-        """
-        self.first_name = first_name
-        self.last_name = last_name
-        self.phone_number = phone_number
-
-    @property
-    def info(self):
-        """Return the contact information as a dictionary."""
-        return {
-                "first_name": self.first_name,
-                "last_name": self.last_name,
-                "phone_number": self.phone_number,
-        }
-        return info
-
-    @property
-    def name(self):
-        """Return the first name and last name when known."""
-        first = self.first_name
-        last = self.last_name
-        name = first
-        if name:
-            name += " "
-        name += last
-        return name
-
-    def __repr__(self):
-        return "<Contact {} (phone={})>".format(self.name, self.phone_number)
-
-
-## Contact screen and commands
-
-class CmdFirst(AppCommand):
-
-    """
-    Change the first name of this contact.
-
-    Example:
-        first James
-
-    Don't forget you need to type the \hDONE\n command when your
-    modifications have been done on the contact and you want to save them.
-    """
-
-    key = "first"
-
-    def func(self):
-        screen = self.screen
-        name = self.args.strip()
-        if not name:
-            self.msg("Specify the first name of this contact to change it.")
-            return
-
-        screen.db["first_name"] = name
-        screen.display()
-
-
-class CmdLast(AppCommand):
-
-    """
-    Change the last name of this contact.
-
-    Example:
-        last Bangles
-
-    Don't forget you need to type the \hDONE\n command when your
-    modifications have been done on the contact and you want to save them.
-    """
-
-    key = "last"
-
-    def func(self):
-        screen = self.screen
-        name = self.args.strip()
-        if not name:
-            self.msg("Specify the last name of this contact to change it.")
-            return
-
-        screen.db["last_name"] = name
-        screen.display()
-
-
-class CmdNumber(AppCommand):
-
-    """
-    Change the phone number of this contact.
-
-    Example:
-        number 555-1234
-
-    Don't forget you need to type the \hDONE\n command when your
-    modifications have been done on the contact and you want to save them.
-    """
-
-    key = "number"
-
-    def func(self):
-        screen = self.screen
-        number = self.args.strip()
-        if not number:
-            self.msg("Specify the phone number of this contact to change it.")
-            return
-
-        number = number.replace("-", "")
-        if len(number) != 7 or not number.isdigit():
-            self.msg("This is not a valid phone number.")
-            return
-
-        screen.db["phone_number"] = number
-        screen.display()
-
-
-class CmdDone(AppCommand):
-
-    """
-    Save the modifications and return to the contact list.
-
-    Usage:
-        done
-
-    In the screen allowing to edit a contact, if you make modifications
-    and quit the screen, your modifications will be lost.  Remember
-    to use this command to save them.
-
-    """
-
-    key = "done"
-    aliases = ["save"]
-
-    def func(self):
-        screen = self.screen
-        contact = screen.contact
-        first = screen.db.get("first_name", "")
-        last = screen.db.get("last_name", "")
-        if not first and not last:
-            self.msg("You should set at least a first name or last name before saving.")
-            return
-
-        number = screen.db.get("phone_number", "")
-        if contact:
-            screen.app.update(contact, first, last, number)
-            self.msg("Your modifications have been successfully saved.")
-        else:
-            screen.app.add(first, last, number)
-            self.msg("Your contact has just been added.")
-        screen.app.sort()
-        screen.back()
-
-
-class ContactScreen(BaseScreen):
-
-    """Contact screen to edit or add a contact.
-
-    This screen will be displayed if a user types NEW or a number
-    to edit an existing contact.
-
-    """
-
-    commands = [CmdFirst, CmdLast, CmdNumber, CmdDone]
-
-    @property
-    def contact(self):
-        """Return the contact or None."""
-        if "contact_id" in self.db:
-            return self.app.contacts[self.db["contact_id"]]
-
-        return None
-
-    def get_text(self):
-        """Display the app."""
-        contact = self.contact
-        first = self.db.get("first_name", contact.first_name if contact else "")
-        last = self.db.get("last_name", contact.last_name if contact else "")
-        number = self.db.get("phone_number", contact.phone_number if contact else "")
-        string = "Contact {}".format(contact.name) if contact else "New contact"
-        string += " (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)\n"
-        string += "\n  |wFIRST|n name: {}".format(first)
-        string += "\n  |wLAST|n name: {}".format(last)
-        string += "\n  Phone |wNUMBER|n: {}".format(number)
-        string += "\n\n    |lcdone|ltDONE|le to save."
-        return string
-
-    def wrong_input(self, string):
-        """A wrong input has been entered."""
-        self.user.msg("Use the |wFIRST|n, |wLAST|wn, |wNUMBER|n, or |nDONE|n commands.")
-
-
-## Main screen and commands
-
-class CmdNew(AppCommand):
-
-    """
-    Create a new contact.
-
-    Usage:
-        new
-
-    This will create a new contact, prompting you to set its first name, last
-    name and phone number,  You will need to enter |wDONE|n after you have set
-    this information, in order to save the new contact.
-    """
-
-    key = "new"
-
-    def func(self):
-        self.screen.next(ContactScreen)
-
-
-class MainScreen(BaseScreen):
-
-    """Main screen of the contact app.
-
-    This screen displays the contact list, allowing to edit one.
-    It also has a new command to create a new contact.
-
-    """
-
-    commands = [CmdNew]
-
-    def get_text(self):
-        """Display the app."""
-        number = self.obj.tags.get(category="phone number")
-        if not number or not isinstance(number, basestring):
-            self.msg("Your phone number couldn't be found.")
-            self.back()
-            return
-
-        contacts = self.app.contacts
-        string = "Contact list (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)"
-        string += "\n"
-        if contacts:
-            string += "  Create a |lcnew|ltNEW|le contact.\n"
-            i = 1
-            for contact in contacts:
-                name = contact.name
-                number = contact.phone_number
-                if number:
-                    number = self.app.format(number, False)
-                else:
-                    number = "|gnot set yet|n"
-
-                string += "\n  {{|lc{i}|lt{i:>2}|le}} {:<30} ({})".format(name, number, i=i)
-                i += 1
-            string += "\n\n(Type a number to open or edit this contact.)"
-        else:
-            string += "\n  You have no contacts yet.  Want to create a |lcnew|ltNEW|le one?"
-
-        count = len(contacts)
-        s = "" if count == 1 else "s"
-        string += "\n\nContact app: {} saved contact{s}.".format(count, s=s)
-        return string
-
-    def no_match(self, string):
-        """Method called when no command matches the user input.
-
-        This allows us to redirect to the ContactScreen if a number
-        has been entered.
-
-        """
-        contacts = self.app.contacts
-        if string.isdigit():
-            contact = int(string)
-            try:
-                assert contact > 0
-                contact = contacts[contact - 1]
-            except (AssertionError, IndexError):
-                self.user.msg("This is not a number in your current contacts.")
-                self.display()
-            else:
-                self.next(ContactScreen, db=dict(
-                        contact_id=contacts.index(contact),
-                        first_name=contact.first_name,
-                        last_name=contact.last_name,
-                        phone_number=contact.phone_number))
-
-            return True
-
-        return False
-
-    def wrong_input(self, string):
-        """A wrong input has been entered."""
-        self.user.msg("Enter a contact number to oepn it.")
-
+## Application class
 
 class ContactApp(BaseApp):
 
@@ -369,7 +61,7 @@ class ContactApp(BaseApp):
     """
 
     app_name = "contact"
-    start_screen = MainScreen
+    start_screen = "MainScreen"
 
     @lazy_property
     def contacts(self):
@@ -523,3 +215,313 @@ class ContactApp(BaseApp):
         if info in self.db.get("contacts", []):
             index = self.db["contacts"].index(info)
             self.db["contacts"][index].update(contact.info)
+
+
+## Contact class (used throughout all the screens)
+
+class Contact(object):
+
+    """A class to represent a contact with name and number.
+
+    Objects of this class aren't stored in the database.  However,
+    through its methods, the contact app (see `ContactApp` in this
+    file) offers shortcuts to add, sort and delete contacts.  These
+    shortcut methods will create an entry in the database and a
+    `Contact` object to manipulate more easily.
+
+    """
+
+    def __init__(self, first_name="", last_name="", phone_number=""):
+        """Create a new contact.
+
+        Use the `ContactApp.add` method instead, which has the same
+        signature but will make sure the contact is also saved in
+        the database.
+
+        Args:
+            first_name 9str, optional): the first name of the new contact.
+            last_name (str, optional): the last name of the new contact.
+            phone_number (str, optional): the phone number of the new contact.
+
+        """
+        self.first_name = first_name
+        self.last_name = last_name
+        self.phone_number = phone_number
+
+    @property
+    def info(self):
+        """Return the contact information as a dictionary."""
+        return {
+                "first_name": self.first_name,
+                "last_name": self.last_name,
+                "phone_number": self.phone_number,
+        }
+        return info
+
+    @property
+    def name(self):
+        """Return the first name and last name when known."""
+        first = self.first_name
+        last = self.last_name
+        name = first
+        if name:
+            name += " "
+        name += last
+        return name
+
+    def __repr__(self):
+        return "<Contact {} (phone={})>".format(self.name, self.phone_number)
+
+
+## Screens
+
+class MainScreen(BaseScreen):
+
+    """Main screen of the contact app.
+
+    This screen displays the contact list, allowing to edit one.
+    It also has a new command to create a new contact.
+
+    """
+
+    commands = ["CmdNew"]
+
+    def get_text(self):
+        """Display the app."""
+        number = self.obj.tags.get(category="phone number")
+        if not number or not isinstance(number, basestring):
+            self.msg("Your phone number couldn't be found.")
+            self.back()
+            return
+
+        contacts = self.app.contacts
+        string = "Contact list (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)"
+        string += "\n"
+        if contacts:
+            string += "  Create a |lcnew|ltNEW|le contact.\n"
+            i = 1
+            for contact in contacts:
+                name = contact.name
+                number = contact.phone_number
+                if number:
+                    number = self.app.format(number, False)
+                else:
+                    number = "|gnot set yet|n"
+
+                string += "\n  {{|lc{i}|lt{i:>2}|le}} {:<30} ({})".format(name, number, i=i)
+                i += 1
+            string += "\n\n(Type a number to open or edit this contact.)"
+        else:
+            string += "\n  You have no contacts yet.  Want to create a |lcnew|ltNEW|le one?"
+
+        count = len(contacts)
+        s = "" if count == 1 else "s"
+        string += "\n\nContact app: {} saved contact{s}.".format(count, s=s)
+        return string
+
+    def no_match(self, string):
+        """Method called when no command matches the user input.
+
+        This allows us to redirect to the ContactScreen if a number
+        has been entered.
+
+        """
+        contacts = self.app.contacts
+        if string.isdigit():
+            contact = int(string)
+            try:
+                assert contact > 0
+                contact = contacts[contact - 1]
+            except (AssertionError, IndexError):
+                self.user.msg("This is not a number in your current contacts.")
+                self.display()
+            else:
+                self.next(ContactScreen, db=dict(
+                        contact_id=contacts.index(contact),
+                        first_name=contact.first_name,
+                        last_name=contact.last_name,
+                        phone_number=contact.phone_number))
+
+            return True
+
+        return False
+
+    def wrong_input(self, string):
+        """A wrong input has been entered."""
+        self.user.msg("Enter a contact number to oepn it.")
+
+
+class ContactScreen(BaseScreen):
+
+    """Contact screen to edit or add a contact.
+
+    This screen will be displayed if a user types NEW or a number
+    to edit an existing contact.
+
+    """
+
+    commands = ["CmdFirst", "CmdLast", "CmdNumber", "CmdDone"]
+
+    @property
+    def contact(self):
+        """Return the contact or None."""
+        if "contact_id" in self.db:
+            return self.app.contacts[self.db["contact_id"]]
+
+        return None
+
+    def get_text(self):
+        """Display the app."""
+        contact = self.contact
+        first = self.db.get("first_name", contact.first_name if contact else "")
+        last = self.db.get("last_name", contact.last_name if contact else "")
+        number = self.db.get("phone_number", contact.phone_number if contact else "")
+        string = "Contact {}".format(contact.name) if contact else "New contact"
+        string += " (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)\n"
+        string += "\n  |wFIRST|n name: {}".format(first)
+        string += "\n  |wLAST|n name: {}".format(last)
+        string += "\n  Phone |wNUMBER|n: {}".format(number)
+        string += "\n\n    |lcdone|ltDONE|le to save."
+        return string
+
+    def wrong_input(self, string):
+        """A wrong input has been entered."""
+        self.user.msg("Use the |wFIRST|n, |wLAST|wn, |wNUMBER|n, or |nDONE|n commands.")
+
+
+## Commands
+
+class CmdNew(AppCommand):
+
+    """
+    Create a new contact.
+
+    Usage:
+        new
+
+    This will create a new contact, prompting you to set its first name, last
+    name and phone number,  You will need to enter |wDONE|n after you have set
+    this information, in order to save the new contact.
+    """
+
+    key = "new"
+
+    def func(self):
+        self.screen.next(ContactScreen)
+
+
+class CmdFirst(AppCommand):
+
+    """
+    Change the first name of this contact.
+
+    Example:
+        first James
+
+    Don't forget you need to type the \hDONE\n command when your
+    modifications have been done on the contact and you want to save them.
+    """
+
+    key = "first"
+
+    def func(self):
+        screen = self.screen
+        name = self.args.strip()
+        if not name:
+            self.msg("Specify the first name of this contact to change it.")
+            return
+
+        screen.db["first_name"] = name
+        screen.display()
+
+
+class CmdLast(AppCommand):
+
+    """
+    Change the last name of this contact.
+
+    Example:
+        last Bangles
+
+    Don't forget you need to type the \hDONE\n command when your
+    modifications have been done on the contact and you want to save them.
+    """
+
+    key = "last"
+
+    def func(self):
+        screen = self.screen
+        name = self.args.strip()
+        if not name:
+            self.msg("Specify the last name of this contact to change it.")
+            return
+
+        screen.db["last_name"] = name
+        screen.display()
+
+
+class CmdNumber(AppCommand):
+
+    """
+    Change the phone number of this contact.
+
+    Example:
+        number 555-1234
+
+    Don't forget you need to type the \hDONE\n command when your
+    modifications have been done on the contact and you want to save them.
+    """
+
+    key = "number"
+
+    def func(self):
+        screen = self.screen
+        number = self.args.strip()
+        if not number:
+            self.msg("Specify the phone number of this contact to change it.")
+            return
+
+        number = number.replace("-", "")
+        if len(number) != 7 or not number.isdigit():
+            self.msg("This is not a valid phone number.")
+            return
+
+        screen.db["phone_number"] = number
+        screen.display()
+
+
+class CmdDone(AppCommand):
+
+    """
+    Save the modifications and return to the contact list.
+
+    Usage:
+        done
+
+    In the screen allowing to edit a contact, if you make modifications
+    and quit the screen, your modifications will be lost.  Remember
+    to use this command to save them.
+
+    """
+
+    key = "done"
+    aliases = ["save"]
+
+    def func(self):
+        screen = self.screen
+        contact = screen.contact
+        first = screen.db.get("first_name", "")
+        last = screen.db.get("last_name", "")
+        if not first and not last:
+            self.msg("You should set at least a first name or last name before saving.")
+            return
+
+        number = screen.db.get("phone_number", "")
+        if contact:
+            screen.app.update(contact, first, last, number)
+            self.msg("Your modifications have been successfully saved.")
+        else:
+            screen.app.add(first, last, number)
+            self.msg("Your contact has just been added.")
+        screen.app.sort()
+        screen.back()

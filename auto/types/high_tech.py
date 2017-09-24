@@ -259,7 +259,7 @@ class Computer(BaseType):
             screen = Screen(self.obj, user, self, app)
             screen._save()
             if "screen_tree" not in self.db:
-                self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder), db]
+                self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, db)]
             if db:
                 screen.db.update(db)
             screen.display()
