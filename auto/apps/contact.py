@@ -231,7 +231,7 @@ class ContactScreen(BaseScreen):
 
         return None
 
-    def display(self):
+    def get_text(self):
         """Display the app."""
         contact = self.contact
         first = self.db.get("first_name", contact.first_name if contact else "")
@@ -243,7 +243,7 @@ class ContactScreen(BaseScreen):
         string += "\n  |wLAST|n name: {}".format(last)
         string += "\n  Phone |wNUMBER|n: {}".format(number)
         string += "\n\n    |lcdone|ltDONE|le to save."
-        self.user.msg(string)
+        return string
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
@@ -282,7 +282,7 @@ class MainScreen(BaseScreen):
 
     commands = [CmdNew]
 
-    def display(self):
+    def get_text(self):
         """Display the app."""
         number = self.obj.tags.get(category="phone number")
         if not number or not isinstance(number, basestring):
@@ -313,7 +313,7 @@ class MainScreen(BaseScreen):
         count = len(contacts)
         s = "" if count == 1 else "s"
         string += "\n\nContact app: {} saved contact{s}.".format(count, s=s)
-        self.user.msg(string)
+        return string
 
     def no_match(self, string):
         """Method called when no command matches the user input.

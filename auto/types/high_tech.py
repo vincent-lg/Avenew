@@ -121,6 +121,24 @@ class Phone(BaseType):
         """Return the application handler."""
         return NotificationHandler(self.obj, self)
 
+    @property
+    def number(self):
+        """Return the phone number of this object or None."""
+        number = self.obj.tags.get(category="phone number")
+        if not number or not isinstance(number, basestring):
+            return None
+
+        return number
+
+    @property
+    def prettu_number(self):
+        """Return the pretty phone number (with the dash)."""
+        number = self.number
+        if number:
+            number = number[:3] + "-" + number[3:]
+
+        return number
+
     def at_type_creation(self):
         """The type has just been added."""
         db = self.db

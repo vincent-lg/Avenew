@@ -1,11 +1,15 @@
 """Test the login menu system."""
 
+from django.conf import settings
 from django.core import mail
 from evennia.commands.default.tests import CommandTest
 from evennia.utils import create
 
 from commands.unloggedin import UnloggedinCmdSet, CmdUnloggedinLook
 from typeclasses.accounts import Account
+
+# Force the TEST_SESSION to False
+settings.TEST_SESSION = False
 
 class TestMenu(CommandTest):
 

@@ -19,12 +19,14 @@ class TestComputer(CommandTest):
     def setUp(self):
         """Create the prototype and smart phone."""
         super(TestComputer, self).setUp()
+        type(__import__("auto").types.high_tech.PHONE_GENERATOR).script = None
         self.prototype = create_object("typeclasses.prototypes.PObj", key="smartphone")
         self.prototype.types.add("phone")
         self.prototype.types.add("computer")
         load_apps()
         self.prototype.types.get("computer").apps.add("text")
-        self.smartphone = self.prototype.create(key="phone")
+        #import pdb,sys;m = pdb.Pdb(stdout=sys.__stdout__);m.set_trace()
+        self.smartphone = self.prototype.create(key="phone", location=self.char1)
 
     def use(self):
         """Put the smart phone object in use."""

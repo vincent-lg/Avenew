@@ -110,7 +110,7 @@ class MainScreen(BaseScreen):
     commands = ["CmdNew"]
     back_screen = "auto.apps.base.MainScreen"
 
-    def display(self):
+    def get_text(self):
         """Display the app."""
         try:
             number = self.app.get_phone_number(self.obj)
@@ -154,7 +154,7 @@ class MainScreen(BaseScreen):
         count = Text.objects.get_texts_for(number).count()
         s = "" if count == 1 else "s"
         string += "\n\nText app: {} saved message{s}.".format(count, s=s)
-        self.user.msg(string)
+        return string
 
     def no_match(self, string):
         """Method called when no command matches the user input.
@@ -198,7 +198,7 @@ class NewTextScreen(BaseScreen):
     commands = ["CmdSend", "CmdCancel", "CmdTo"]
     back_screen = MainScreen
 
-    def display(self):
+    def get_text(self):
         """Display the new message screen."""
         number = self.app.get_phone_number(self.obj)
         pretty_number = self.app.get_phone_number(self.obj, pretty=True)
@@ -221,7 +221,7 @@ class NewTextScreen(BaseScreen):
         content = self.db.get("content", "(type your text here)")
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
-        self.user.msg(screen.format(number, recipients, content))
+        return screen.format(number, recipients, content)
 
     def no_match(self, string):
         """Command no match, to write the text content."""
@@ -249,7 +249,7 @@ class ThreadScreen(BaseScreen):
     commands = ["CmdSend", "CmdContact"]
     back_screen = MainScreen
 
-    def display(self):
+    def get_text(self):
         """Display the new message screen."""
         self.db["go_back"] = False
         thread = self.db.get("thread")
@@ -294,7 +294,7 @@ class ThreadScreen(BaseScreen):
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
         messages = "\n".join(messages)
-        self.user.msg(screen.format(recipients, messages, content))
+        return screen.format(recipients, messages, content)
 
     def no_match(self, string):
         """Command no match, to write the text content."""
@@ -348,7 +348,7 @@ class CmdSend(AppCommand):
             screen.display()
             return
 
-        content = screen.db["content"]
+        content = screen.db.get("content")
         if not content:
             self.msg("This text is empty, write something before sending it.")
             screen.display()
@@ -360,7 +360,7 @@ class CmdSend(AppCommand):
         if screen.db.get("go_back", True):
             screen.back()
         else:
-            screen.db["content"] = ""
+            del screen.db["content"]
             screen.display()
 
         # Notify the recipients

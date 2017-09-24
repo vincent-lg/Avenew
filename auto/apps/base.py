@@ -140,12 +140,14 @@ class BaseScreen(object):
                 type(self).__module__ + "." + type(self).__name__,
                 self.app and type(self.app).app_name or None,
                 self.app and type(self.app).folder or None,
+                dict(self.db),
         )
 
         # Save the screen in the users' CmdSet
         if self.user and self.user.cmdset.has("computer"):
             for cmdset in self.user.cmdset.get():
                 if cmdset.key == "computer":
+                    cmdset.screen = self
                     for cmd in cmdset.commands:
                         cmd.screen = self
                     break
@@ -158,10 +160,9 @@ class BaseScreen(object):
         the object currently using the phone/computer.
 
         """
-        if type(self).message:
-            self.user.msg(type(self).message)
-        else:
-            self.user.msg("This screen has nothing to display.")
+        text = self.get_text()
+        if text:
+            self.user.msg(text)
 
     def display_form(self, form, *fields):
         """
@@ -362,7 +363,7 @@ class MainScreen(BaseScreen):
 
     can_back = False # At this point we shouldn't try to get back
 
-    def display(self):
+    def get_text(self):
         """Display the installed apps."""
         string = dedent("""
             AvenOS 12.0            [6G]           [Bluetooth]           [96%}
@@ -376,7 +377,7 @@ class MainScreen(BaseScreen):
         string += "\n\n" + dedent("""
             Enter the first letters to open this app.  Type |hEXIT|n to quit the interface."
         """.lstrip("\n"))
-        self.user.msg(string)
+        return string
 
     def no_match(self, string):
         """A no match has been entered, perhaps an application name."""
