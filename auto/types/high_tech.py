@@ -206,7 +206,7 @@ class Computer(BaseType):
         db = self.db
         used = db.get("used")
         if used and used.cmdset.has("computer"):
-            used.cmdset.delete("commands.high_tech.ComputerCmdSet")
+            used.cmdset.remove("commands.high_tech.ComputerCmdSet")
             del used.db._aven_using
 
         if used:

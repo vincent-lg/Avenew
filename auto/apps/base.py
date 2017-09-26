@@ -189,7 +189,7 @@ class BaseScreen(object):
 
                         cmdset.add(cmd())
                     self.user.cmdset.remove(cmdset)
-                    self.user.cmdset.add(cmdset)
+                    self.user.cmdset.add(cmdset, permanent=True)
                     break
 
     def _delete_commands(self):
