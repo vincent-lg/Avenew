@@ -295,10 +295,10 @@ class MainScreen(BaseScreen):
             return
 
         contacts = self.app.contacts
-        string = "Contact list (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)"
+        string = "Contact list"
         string += "\n"
         if contacts:
-            string += "  Create a |lcnew|ltNEW|le contact.\n"
+            string += "  Create a {new} contact.\n".format(new=self.format_cmd("new"))
             i = 1
             for contact in contacts:
                 name = contact.name
@@ -308,11 +308,11 @@ class MainScreen(BaseScreen):
                 else:
                     number = "|gnot set yet|n"
 
-                string += "\n  {{|lc{i}|lt{i:>2}|le}} {:<30} ({})".format(name, number, i=i)
+                string += "\n  {{{i}}} {:<30} ({})".format(name, number, i=self.format_cmd(str(i), str(i).rjust(2)))
                 i += 1
             string += "\n\n(Type a number to open or edit this contact.)"
         else:
-            string += "\n  You have no contacts yet.  Want to create a |lcnew|ltNEW|le one?"
+            string += "\n  You have no contacts yet.  Want to create a {new| one?".format(new=self.format_cmd("new"))
 
         count = len(contacts)
         s = "" if count == 1 else "s"
@@ -377,11 +377,11 @@ class ContactScreen(BaseScreen):
         last = self.db.get("last_name", contact.last_name if contact else "")
         number = self.db.get("phone_number", contact.phone_number if contact else "")
         string = "Contact {}".format(contact.name) if contact else "New contact"
-        string += " (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit)\n"
+        string += "\n"
         string += "\n  |wFIRST|n name: {}".format(first)
         string += "\n  |wLAST|n name: {}".format(last)
         string += "\n  Phone |wNUMBER|n: {}".format(number)
-        string += "\n\n    |lcdone|ltDONE|le to save."
+        string += "\n\n    {done} to save.".format(done=self.format_cmd("done"))
         return string
 
     def wrong_input(self, string):

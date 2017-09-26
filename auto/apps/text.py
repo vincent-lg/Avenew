@@ -152,12 +152,12 @@ class MainScreen(BaseScreen):
 
         # Load the threads (conversations) to which "number" participated
         threads = Text.objects.get_threads_for(number)
-        string = "Texts for {} (|y|lcback|ltBACK|le|n to go back, |y|lcexit|ltEXIT|le|n to exit, |y|lchelp|ltHELP|le|n to get help)".format(pretty_number)
+        string = "Texts for {}".format(pretty_number)
         string += "\n"
         self.db["threads"] = {}
         stored_threads = self.db["threads"]
         if threads:
-            string += "  Create a |lcnew|ltNEW|le message.\n"
+            string += "  Create a {new} message.\n".format(new=self.format_cmd("new"))
             i = 1
             for thread_id, text in threads.items():
                 thread = text.thread
@@ -171,15 +171,15 @@ class MainScreen(BaseScreen):
                     sender = thread.name
                 sender = crop(sender, 20)
 
-                content = text.content
+                content = text.content.replace("\n", "  ")
                 if text.sender == number:
                     content = "]You] " + content
                 content = crop(content, 35)
-                string += "\n  {{|lc{i}|lt{i:>2}|le}} {:<20}: {:<35} ({}(".format(sender, content, text.sent_ago, i=i)
+                string += "\n  {i} {:<20}: {:<35} ({}(".format(sender, content, text.sent_ago, i=self.format_cmd(str(i)))
                 i += 1
             string += "\n\n(Type a number to open this text.)"
         else:
-            string += "\n  You have no texts yet.  Want to create a |lcnew|ltNEW|le one?"
+            string += "\n  You have no texts yet.  Want to create a {new} one?".format(new=self.format_cmd("new"))
 
         count = Text.objects.get_texts_for(number).count()
         s = "" if count == 1 else "s"
@@ -232,8 +232,8 @@ class NewTextScreen(BaseScreen):
         """Display the new message screen."""
         number = self.app.get_phone_number(self.obj)
         pretty_number = self.app.get_phone_number(self.obj, pretty=True)
-        screen = dedent("""
-            New message (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit, |lchelp|ltHELP|le to get help)
+        screen = """
+            New message
 
             From: {}
               To: {}
@@ -241,8 +241,8 @@ class NewTextScreen(BaseScreen):
             Text message:
                 {}
 
-                |lcsend|ltSEND|le                                             |lccancel|ltCANCEL|le
-        """.lstrip("\n"))
+                {send}                                             {cancel}
+        """
         recipients = list(self.db.get("recipients", []))
         for i, recipient in enumerate(recipients):
             if self.app.contact:
@@ -251,7 +251,7 @@ class NewTextScreen(BaseScreen):
         content = self.db.get("content", "(type your text here)")
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
-        return screen.format(number, recipients, content)
+        return screen.format(number, recipients, content, send=self.format_cmd("send"), cancel=self.format_cmd("cancel"))
 
     def no_match(self, string):
         """Command no match, to write the text content."""
@@ -311,7 +311,7 @@ class ThreadScreen(BaseScreen):
 
         number = self.app.get_phone_number(self.obj)
         screen = dedent("""
-            Messages with {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit, |lchelp|ltHELP|le to get help)
+            Messages with {}
             |lccontact|ltCONTACT|le to edit the contact for this conversation.
 
             {}
@@ -319,8 +319,8 @@ class ThreadScreen(BaseScreen):
             Text message:
                 {}
 
-                |lcsend|ltSEND|le
-        """.lstrip("\n"))
+                {send}
+        """.strip("\n"))
         texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
         if texts:
             recipients = texts[0].exclude(number)
@@ -336,6 +336,7 @@ class ThreadScreen(BaseScreen):
                 sender = "You"
             elif self.app.contact:
                 sender = self.app.contact.format(sender)
+            sender = "|c" + sender + "|n"
 
             content = text.content + " (" + text.sent_ago + ")"
             content = wrap(content, 75 - len(sender) - 3)
@@ -346,7 +347,7 @@ class ThreadScreen(BaseScreen):
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
         messages = "\n".join(messages)
-        return screen.format(recipients, messages, content)
+        return screen.format(recipients, messages, content, send=self.format_cmd("send"))
 
     def no_match(self, string):
         """Command no match, to write the text content."""

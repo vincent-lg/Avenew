@@ -134,6 +134,7 @@ class BaseScreen(object):
     can_back = True # Can go back in the screen tree
     can_quit = True # Can quit the screen and close the interface
     back_screen = None
+    show_header = True
 
     def __init__(self, obj, user, type, app=None):
         self.obj = obj
@@ -214,6 +215,19 @@ class BaseScreen(object):
                         cmd.screen = self
                     break
 
+    def format_cmd(self, text, key=None):
+        """Format the command as a colored, clickable link.
+
+        Args:
+            text (str): the text of the command/clickable link.
+            key (str, optional): the key of the command to enter
+                    (`text` by default).
+
+        """
+        key = key or text
+        text = text.upper()
+        return "|y|lc{key}|lt{text}|le|n".format(key=key, text=text)
+
     def display(self):
         """
         Display the screen.
@@ -221,9 +235,22 @@ class BaseScreen(object):
         This method should send a message to `self.user`, which contains
         the object currently using the phone/computer.
 
+        Note:
+            More often than not, you will not override this method.
+            Override `get_text` instead, which should return the text
+            to display.  Doing so allows ease of testing the app
+            afterward.
+
         """
         text = self.get_text()
         if text:
+            text = dedent(text.strip("\n"))
+            if type(self).show_header:
+                lines = text.splitlines()
+                lines[0] = lines[0] + " ({back} to go back, {exit} to exit, {help} to get help)".format(
+                        back=self.format_cmd("back"), exit=self.format_cmd("exit"), help=self.format_cmd("help"))
+                text = "\n".join(lines)
+
             self.user.msg(text)
 
     def display_form(self, form, *fields):
@@ -424,6 +451,7 @@ class MainScreen(BaseScreen):
     """
 
     can_back = False # At this point we shouldn't try to get back
+    show_header = False
 
     def get_text(self):
         """Display the installed apps."""
