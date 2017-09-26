@@ -375,7 +375,7 @@ class NotificationHandler(object):
 
         return notifications
 
-    def add(self, title, screen, app, folder="app", content="", db=None, alert=False):
+    def add(self, title, screen, app, folder="app", content="", db=None):
         """Add a new notificaiton.
 
         Args:
@@ -402,19 +402,6 @@ class NotificationHandler(object):
         notification.obj = self.obj
         notification.handler = self
         self.db.append(kwargs)
-
-        # Alert the location
-        if alert:
-            obj = self.obj
-            location = obj.location
-            while location is not None:
-                if inherits_from(location, "typeclasses.rooms.Room"):
-                    break
-
-                location = location.location
-
-            location.msg_contents("{obj} emits a short beep.", mapping=dict(obj=obj))
-
         return notification
 
     def clear(self):

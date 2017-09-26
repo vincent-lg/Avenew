@@ -2,11 +2,11 @@
 Module containing abstract classes for applications.
 """
 
-from textwrap import dedent
+from textwrap import dedent, wrap
 
 from evennia import Command
 from evennia.utils.evform import EvForm
-from evennia.utils.utils import class_from_module, lazy_property
+from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
 class BaseApp(object):
 
@@ -42,6 +42,68 @@ class BaseApp(object):
         if self.app_name not in storage:
             storage[type(self).app_name] = {}
         return storage[self.app_name]
+
+    @classmethod
+    def notify(cls, obj, title, message="", content="", screen=None, db=None):
+        """Send a message to the owner of the app if needed.
+
+        This method is called when a notificaiton has to be sent.
+        It can do 3 things, depending on context:
+
+        1. Send the message to the object location (room).
+        2. Alert the user of the object (if one).
+        3. Create a notification for the object (if no one is using it).
+
+        Args:
+            obj (Object): the object being notified.
+            title (str): the title of the notification to be displayed.
+            content (str): the content of the notification (can be an empty string).
+            message (str, optional): the message to be displayed by the location.
+            screen (str or Screen, optional): the screen's path (default to the app's start screen).
+            db (dict, optional): the optional arguments to give to the screen.
+
+        Note:
+            Notifications are defined in the app because it might be
+            useful to override this method.  However, the common use
+            case is to write a static method on the screen itself that calls
+            the application's `notify` method.  The reason for doing it
+            this way is, a screen usually has only one notification process,
+            but it can easily change message this way, so it doesn't need as
+            many arguments.  See other applications for examples.
+
+        """
+        screen = screen or cls.start_screen
+        if isinstance(screen, basestring):
+            if "." not in screen:
+                screen = cls.__module__ + "." + screen
+        else:
+            screen = type(screen).__module__ + "." + type(screen).__name__
+        app = cls.app_name
+        folder = cls.folder
+        types = obj.types.has("notifications")
+        type = types and types[0] or None
+
+        # Try to locate the room
+        location = obj.location
+        while not inherits_from(location, "typeclasses.rooms.Room"):
+            if location is None:
+                break
+
+            location = location.location
+
+        # If a room has been found and a message is to be sent
+        user = type and type.db.get("used", None) or None
+        if message and location:
+            location.msg_contents(message, exclude=[user], mapping=dict(obj=obj))
+
+        # Send to the user, if any
+        if user and user.has_account:
+            to_send = title + ": " + content
+            to_send = "\n    ".join(wrap(to_send, 74))
+            user.msg(to_send)
+        else:
+            # If no current user, add a notification
+            type.notifications.add(title, screen, app, folder, content=content, db=db)
 
 
 class BaseScreen(object):

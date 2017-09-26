@@ -92,6 +92,36 @@ class TextApp(BaseApp):
 
         return number
 
+    @classmethod
+    def format(cls, obj, number):
+        """Return the formatted contact or phone number for obj.
+
+        Args:
+            obj (Object): the object for whom to display the phone number or contact.
+            number (str): the number in question.
+
+        """
+        number = number.replace("-", "")
+        storage = obj.attributes.get("_type_storage", {})
+        type = storage.get("computer", {})
+        app_storage = type.get("app_storage", {})
+        contact = app_storage.get("app", {})
+        contact = contact.get("contact", {})
+        contacts = contact.get("contacts", [])
+        for contact in contacts:
+            if contact.get("phone_number") == number:
+                first = contact.get("first_name", "")
+                last = contact.get("last_name", "")
+                full = first
+                if first and last:
+                    full += " "
+                full += last
+                return full
+
+        # The contact couldn't be found, return the formatted number
+        return number[:3] + "-" + number[3:]
+
+
 ## Main screen and commands
 
 class MainScreen(BaseScreen):
@@ -122,7 +152,7 @@ class MainScreen(BaseScreen):
 
         # Load the threads (conversations) to which "number" participated
         threads = Text.objects.get_threads_for(number)
-        string = "Texts for {} (|lcback|ltBACK|le to go back, |lcexit|ltEXIT|le to exit, |lchelp|ltHELP|le to get help)".format(pretty_number)
+        string = "Texts for {} (|y|lcback|ltBACK|le|n to go back, |y|lcexit|ltEXIT|le|n to exit, |y|lchelp|ltHELP|le|n to get help)".format(pretty_number)
         string += "\n"
         self.db["threads"] = {}
         stored_threads = self.db["threads"]
@@ -232,6 +262,28 @@ class NewTextScreen(BaseScreen):
         self.db["content"] = content
         self.display()
         return True
+
+    @staticmethod
+    def notify(obj, text):
+        """Notify obj of a new text message.
+
+        This is a shortcut to specifically send a "new message" notification
+        to the object.  It uses the app's `notify` which calls the
+        notification handler in time, doing just a bit of wrapping.
+
+        Args:
+            obj (Object): the object being notified.
+            text (Text): the text message.
+
+        """
+        # Try to get the sender's phone number
+        sender = TextApp.format(obj, text.sender)
+        message = "{obj} emits a short beep."
+        title = "New message from {}".format(sender)
+        content = text.content
+        screen = "auto.apps.text.ThreadScreen"
+        db = {"thread": text.thread}
+        TextApp.notify(obj, title, message, content, screen, db)
 
 
 ## Thread screen
@@ -367,18 +419,7 @@ class CmdSend(AppCommand):
         for number in text.list_recipients:
             devices = search_tag(number, category="phone number")
             for device in devices:
-                types = device.types.has("notifications")
-                if types:
-                    name = sender
-                    computer = device.types.get("computer")
-                    if computer:
-                        contact = computer.apps.get("contact")
-                        if contact:
-                            name = contact.format(sender)
-
-                    types[0].notifications.add("New text from {}".format(name),
-                            "auto.apps.text.ThreadScreen", "text", content=content,
-                            db=dict(thread=text.thread), alert=True)
+                NewTextScreen.notify(device, text)
 
 
 
