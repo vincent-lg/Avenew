@@ -312,7 +312,7 @@ class MainScreen(BaseScreen):
                 i += 1
             string += "\n\n(Type a number to open or edit this contact.)"
         else:
-            string += "\n  You have no contacts yet.  Want to create a {new| one?".format(new=self.format_cmd("new"))
+            string += "\n  You have no contacts yet.  Want to create a {new} one?".format(new=self.format_cmd("new"))
 
         count = len(contacts)
         s = "" if count == 1 else "s"

@@ -4,6 +4,7 @@ High-tech command set and commands.
 
 from evennia import CmdSet
 from evennia.commands.cmdhandler import CMD_NOMATCH
+from evennia.utils.utils import class_from_module, delay
 
 from commands.command import Command
 from world.log import main
@@ -84,5 +85,29 @@ class ComputerCmdSet(CmdSet):
 
     def at_cmdset_creation(self):
         """Populates the cmdset with commands."""
-        self.add(CmdNoMatch())
+        # If someone is already using it, restore
+        obj = self.cmdsetobj.db._aven_using
+        screen = None
+        if obj:
+            type = obj.types.get("computer")
+            type.apps.load(self.cmdsetobj)
+            screen, app_name, folder, db = type.db["screen_tree"][-1]
+            app = None
+            if app_name:
+                app = type.apps.get(app_name, folder)
 
+            Screen = class_from_module(screen)
+            screen = Screen(obj, self.cmdsetobj, type, app, add_commands=False)
+            if db:
+                screen.db.update(db)
+            self.screen = screen
+            screen._load_commands()
+            for cmd in screen.commands:
+                cmd = cmd()
+                cmd.screen = screen
+                self.add(cmd)
+
+        cmd = CmdNoMatch()
+        if screen:
+            cmd.screen = screen
+        self.add(cmd)

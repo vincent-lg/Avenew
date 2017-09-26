@@ -195,21 +195,6 @@ class Computer(BaseType):
                 for app in apps:
                     self.apps.add(app, folder=folder)
 
-    def at_server_start(self):
-        """The server has restarted.
-
-        Override this hook to re-do some custom actions for this type
-        when the server restarts.  Notice that this hook will not be
-        called if the type is defined on a prototype.
-
-        """
-        used = self.db.get("used")
-        print "redo for", used
-        if used:
-            screen, app, folder, sdb = self.db.get("screen_tree", (None, None, None, None))
-            if screen:
-                self.use(used, screen, app, folder, sdb)
-
     def return_appearance(self, looker):
         """Return the appearance of the phone."""
         header = "AvenOS 12.4            [6G]           [Bluetooth]           [96%}"
@@ -222,6 +207,7 @@ class Computer(BaseType):
         used = db.get("used")
         if used and used.cmdset.has("computer"):
             used.cmdset.delete("commands.high_tech.ComputerCmdSet")
+            del used.db._aven_using
 
         if used:
             del db["used"]
@@ -255,14 +241,15 @@ class Computer(BaseType):
             else:
                 Screen = MainScreen
             self.db["used"] = user
-            user.cmdset.add("commands.high_tech.ComputerCmdSet")
+            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
             screen = Screen(self.obj, user, self, app)
-            screen._save()
             if "screen_tree" not in self.db:
                 self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, db)]
             if db:
                 screen.db.update(db)
+            screen._save()
             screen.display()
+            user.db._aven_using = self.obj
 
 
 class ApplicationHandler(object):

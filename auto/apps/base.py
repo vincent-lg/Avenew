@@ -136,12 +136,14 @@ class BaseScreen(object):
     back_screen = None
     show_header = True
 
-    def __init__(self, obj, user, type, app=None):
+    def __init__(self, obj, user, type, app=None, add_commands=True):
         self.obj = obj
         self.user = user
         self.type = type
         self.app = app
-        self._add_commands()
+
+        if add_commands:
+            self._add_commands()
 
     @lazy_property
     def db(self):
@@ -168,15 +170,17 @@ class BaseScreen(object):
         back_screen = [type(self).back_screen, app_name, folder, None]
         return tree and tree[-1] or back_screen
 
-    def _add_commands(self):
-        """Add the commands in the user CmdSet, if exist."""
-        # If strings are used in commands, load the classes
+    def _load_commands(self):
+        """Load the required commands."""
         for i, cmd in enumerate(type(self).commands):
             if isinstance(cmd, basestring):
                 if "." not in cmd:
                     cmd = type(self).__module__ + "." + cmd
                 type(self).commands[i] = class_from_module(cmd)
 
+    def _add_commands(self):
+        """Add the commands in the user CmdSet, if exist."""
+        self._load_commands()
         # Add to the CmdSet
         if self.user and self.user.cmdset.has("computer"):
             for cmdset in self.user.cmdset.get():
