@@ -17,6 +17,7 @@ class Thread(SharedMemoryModel):
     """A thread to group messages."""
 
     db_name = models.CharField(max_length=30, default="")
+    db_read = models.TextField(default="")
 
 
 class Text(SharedMemoryModel):
