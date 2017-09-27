@@ -244,7 +244,7 @@ class Computer(BaseType):
             user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
             screen = Screen(self.obj, user, self, app)
             if "screen_tree" not in self.db:
-                self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, db)]
+                self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, None)]
             if db:
                 screen.db.update(db)
             screen._save()

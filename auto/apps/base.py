@@ -174,7 +174,7 @@ class BaseScreen(object):
             folder = type(self.app).folder
 
         back_screen = [type(self).back_screen, app_name, folder, None]
-        return tree and tree[-1] or back_screen
+        return tree and tree[-1] or (back_screen, app_name, folder, None)
 
     def _load_commands(self):
         """Load the required commands."""
@@ -194,7 +194,7 @@ class BaseScreen(object):
                     for cmd in type(self).commands:
 
                         cmdset.add(cmd())
-                    self.user.cmdset.remove(cmdset)
+                    self.user.cmdset.remove("commands.high_tech.ComputerCmdSet")
                     self.user.cmdset.add(cmdset, permanent=True)
                     break
 
@@ -212,8 +212,7 @@ class BaseScreen(object):
         self.type.db["current_screen"] = (
                 type(self).__module__ + "." + type(self).__name__,
                 self.app and type(self.app).app_name or None,
-                self.app and type(self.app).folder or None,
-                dict(self.db),
+                self.app and type(self.app).folder or None
         )
 
         # Save the screen in the users' CmdSet
@@ -335,9 +334,12 @@ class BaseScreen(object):
                 app = self.type.apps.get(app, folder)
 
             previous = previous(self.obj, self.user, self.type, app)
+            previous.db.clear()
+            if db:
+                previous.db.update(db)
+
             path = type(self).__module__ + "." + type(self).__name__
-            db = self.type.db
-            tree = db.get("screen_tree", [])
+            tree = self.type.db.get("screen_tree", [])
             if tree and tree[-1][0] == path:
                 del tree[-1]
             previous._save()
@@ -378,13 +380,12 @@ class BaseScreen(object):
             screen = class_from_module(screen)
         self._delete_commands()
         new_screen = screen(self.obj, self.user, self.type, app)
+        new_screen.db.clear()
         new_screen._save()
 
         # Before displaying the screen, add the optional data
         if db:
-            data = new_screen.db
-            for key, value in db.items():
-                data[key] = value
+            new_screen.db.update(db)
 
         new_screen.display()
         return new_screen
@@ -423,7 +424,7 @@ class BaseScreen(object):
         app = new_screen.app
         folder = app and type(app).folder or None
         app = app and type(app).app_name or None
-        tree.append((path, app, folder, dict(db)))
+        tree.append((path, app, folder, dict(new_screen.db)))
 
     # Input methods
     def no_match(self, string):

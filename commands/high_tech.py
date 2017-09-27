@@ -20,16 +20,13 @@ class CmdText(Command):
     help_category = "Comms"
 
     def access(self, srcobj, access_type="cmd", default=False):
-        print "checking access", srcobj
         if srcobj.cmdset.has("computer"):
-            print "Computer, return False"
             return False
         return super(CmdText, self).access(srcobj, access_type, default)
 
     def func(self):
         """Execute the command."""
         self.caller.msg("That was some text here!")
-        self.caller.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
 
 
 class CmdNoMatch(Command):
@@ -91,15 +88,13 @@ class ComputerCmdSet(CmdSet):
         if obj:
             type = obj.types.get("computer")
             type.apps.load(self.cmdsetobj)
-            screen, app_name, folder, db = type.db["screen_tree"][-1]
+            screen, app_name, folder = type.db["current_screen"]
             app = None
             if app_name:
                 app = type.apps.get(app_name, folder)
 
             Screen = class_from_module(screen)
             screen = Screen(obj, self.cmdsetobj, type, app, add_commands=False)
-            if db:
-                screen.db.update(db)
             self.screen = screen
             screen._load_commands()
             for cmd in screen.commands:
