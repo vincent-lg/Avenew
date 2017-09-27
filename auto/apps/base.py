@@ -174,7 +174,7 @@ class BaseScreen(object):
             folder = type(self.app).folder
 
         back_screen = [type(self).back_screen, app_name, folder, None]
-        return tree and tree[-1] or (back_screen, app_name, folder, None)
+        return tree and tree[-1] or back_screen
 
     def _load_commands(self):
         """Load the required commands."""
@@ -324,12 +324,10 @@ class BaseScreen(object):
         app = folder = None
         if previous:
             previous, app, folder, db = previous
-            previous = class_from_module(previous)
-            self._delete_commands()
-            self.db.clear()
-            if db:
-                self.db.update(db)
+            if isinstance(previous, basestring):
+                previous = class_from_module(previous)
 
+            self._delete_commands()
             if app and folder:
                 app = self.type.apps.get(app, folder)
 
