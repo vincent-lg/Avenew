@@ -3,7 +3,7 @@ High-tech command set and commands.
 """
 
 from evennia import CmdSet
-from evennia.commands.cmdhandler import CMD_NOMATCH
+from evennia.commands.cmdhandler import CMD_NOINPUT, CMD_NOMATCH
 from evennia.utils.utils import class_from_module, delay
 
 from commands.command import Command
@@ -27,6 +27,25 @@ class CmdText(Command):
     def func(self):
         """Execute the command."""
         self.caller.msg("That was some text here!")
+
+
+class CmdNoInput(Command):
+
+    """No input has been found."""
+
+    key = CMD_NOINPUT
+    locks = "cmd:all()"
+
+    def func(self):
+        """Redisplay the screen, if any."""
+        if getattr(self, "screen", None) is None:
+            main.error("The CmdSet doesn't have a screen attribute.")
+            self.msg("An error occurred.  Closing the interface...")
+            self.caller.cmdset.delete(ComputerCmdSet)
+            return
+
+        screen = self.screen
+        screen.display()
 
 
 class CmdNoMatch(Command):
@@ -102,7 +121,8 @@ class ComputerCmdSet(CmdSet):
                 cmd.screen = screen
                 self.add(cmd)
 
-        cmd = CmdNoMatch()
-        if screen:
-            cmd.screen = screen
-        self.add(cmd)
+        cmds = [CmdNoInput(), CmdNoMatch()]
+        for cmd in cmds:
+            if screen:
+                cmd.screen = screen
+            self.add(cmd)
