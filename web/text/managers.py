@@ -67,7 +67,6 @@ class TextManager(models.Manager):
                 threads.append(text.thread)
                 nb += 1
 
-        print q.query
         return nb
 
     def send(self, sender, recipients, content):

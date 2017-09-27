@@ -9,6 +9,8 @@ from evennia.utils.ansi import strip_ansi
 from evennia.utils.evform import EvForm
 from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
+from commands.high_tech import ComputerCmdSet
+
 class BaseApp(object):
 
     """
@@ -189,14 +191,11 @@ class BaseScreen(object):
         self._load_commands()
         # Add to the CmdSet
         if self.user and self.user.cmdset.has("computer"):
-            for cmdset in self.user.cmdset.get():
-                if cmdset.key == "computer":
-                    for cmd in type(self).commands:
-
-                        cmdset.add(cmd())
-                    self.user.cmdset.remove("commands.high_tech.ComputerCmdSet")
-                    self.user.cmdset.add(cmdset, permanent=True)
-                    break
+            self.user.cmdset.remove("commands.high_tech.ComputerCmdSet")
+            cmdset = ComputerCmdSet(self.user, "computer")
+            for cmd in type(self).commands:
+                cmdset.add(cmd())
+            self.user.cmdset.add(cmdset, permanent=True)
 
     def _delete_commands(self):
         """Remvoe this screen's commands."""
