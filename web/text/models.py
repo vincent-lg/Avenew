@@ -19,6 +19,39 @@ class Thread(SharedMemoryModel):
     db_name = models.CharField(max_length=30, default="")
     db_read = models.TextField(default="")
 
+    def has_read(self, number):
+        """Return True if the number has read this thread, False otherwise."""
+        return ",{},".format(number) in self.db_read
+
+    def mark_as_read(self, number):
+        """Mark the thread as read for this number."""
+        read = self.db_read
+        if read:
+            read = read[1:-1].split(",")
+        else:
+            read = []
+
+        number = number.replace("-", "")
+        if number not in read:
+            read.append(number)
+            read.sort()
+            self.db_read = ",{},".format(",".join(read))
+            self.save()
+
+    def mark_as_unread(self, number):
+        """Mark the thread as unread for this number."""
+        read = self.db_read
+        if read:
+            read = read[1:-1].split(",")
+        else:
+            read = []
+
+        number = number.replace("-", "")
+        if number in read:
+            read.remove(number)
+            read.sort()
+            self.db_read = ",{},".format(",".join(read))
+            self.save()
 
 class Text(SharedMemoryModel):
 

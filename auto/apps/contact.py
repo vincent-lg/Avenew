@@ -61,6 +61,7 @@ class ContactApp(BaseApp):
     """
 
     app_name = "contact"
+    display_name = "Contact"
     start_screen = "MainScreen"
 
     @lazy_property

@@ -5,6 +5,7 @@ Module containing abstract classes for applications.
 from textwrap import dedent, wrap
 
 from evennia import Command
+from evennia.utils.ansi import strip_ansi
 from evennia.utils.evform import EvForm
 from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
@@ -18,6 +19,7 @@ class BaseApp(object):
     """
 
     app_name = "" # Application name
+    display_name = ""
     folder = "app"
     start_screen = None
 
@@ -104,6 +106,10 @@ class BaseApp(object):
         else:
             # If no current user, add a notification
             type.notifications.add(title, screen, app, folder, content=content, db=db)
+
+    def get_display_name(self):
+        """Return the display name."""
+        return type(self).display_name
 
 
 class BaseScreen(object):
@@ -219,17 +225,19 @@ class BaseScreen(object):
                         cmd.screen = self
                     break
 
-    def format_cmd(self, text, key=None):
+    def format_cmd(self, text, key=None, upper=True):
         """Format the command as a colored, clickable link.
 
         Args:
             text (str): the text of the command/clickable link.
             key (str, optional): the key of the command to enter
                     (`text` by default).
+            upper (bool, optional): put the text in capital to indicate a command.
 
         """
         key = key or text
-        text = text.upper()
+        if upper:
+            text = text.upper()
         return "|y|lc{key}|lt{text}|le|n".format(key=key, text=text)
 
     def display(self):
@@ -461,14 +469,17 @@ class MainScreen(BaseScreen):
         """Display the installed apps."""
         string = dedent("""
             AvenOS 12.0            [6G]           [Bluetooth]           [96%}
-        """.lstrip("\n")) + "\n"
+        """.lstrip("\n")) + "\n    "
         i = 0
         for app in self.type.apps:
-            if i > 0 and i % 3 == 0:
-                string += "\n" + " " * 4
-            string += "|lc{name}|lt{name:<15}|le".format(name=app.app_name)
+            if i > 0 and i % 4 == 0:
+                string = string.rstrip(" ") + "\n" + " " * 4
+            text = app.get_display_name()
+            no_ansi_text = strip_ansi(text)
+            string += "{name}".format(name=self.format_cmd(text, strip_ansi(app.display_name).lower(), upper=False))
+            string += " " * (15 - len(no_ansi_text))
 
-        string += "\n\n" + dedent("""
+        string = string.rstrip(" ") + "\n\n" + dedent("""
             Enter the first letters to open this app.  Type |hEXIT|n to quit the interface."
         """.lstrip("\n"))
         return string
@@ -481,16 +492,19 @@ class MainScreen(BaseScreen):
             string = string.lower()
             matches = []
             for app in self.type.apps:
-                if type(app).folder == "app" and type(app).app_name.lower().startswith(string):
+                if type(app).folder == "app" and strip_ansi(app.display_name).lower().startswith(string):
                     matches.append(app)
 
             # If only one match, just move there
             if len(matches) == 1:
                 app = matches[0]
+            elif len(matches) == 0:
+                self.user.msg("|gNo app name matches these letters.|n")
+                return True
             else:
-                names = [type(app).app_name for app in matches]
+                names = [type(app).display_name for app in matches]
                 names.sort(key=lambda name: name.lower())
-                self.msg("Which app do you want to open? {}".format(", ".join(names)))
+                self.user.msg("Which app do you want to open? {}".format(", ".join(names)))
                 return True
 
         screen = type(app).start_screen

@@ -50,6 +50,26 @@ class TextManager(models.Manager):
         q = self.filter(q)
         return q.order_by("-db_date_sent")
 
+    def get_nb_unread(self, number):
+        """Get the number of unread threads for number.
+
+        Args:
+            number (str): the number in question.
+
+        """
+        number = number.replace("-", "")
+        q = self.get_texts_for(number)
+        q = q.exclude(db_thread__db_read__contains=",{},".format(number))
+        nb = 0
+        threads = []
+        for text in q:
+            if text.thread not in threads:
+                threads.append(text.thread)
+                nb += 1
+
+        print q.query
+        return nb
+
     def send(self, sender, recipients, content):
         """Send a text message from `number` to `recipients`.
 

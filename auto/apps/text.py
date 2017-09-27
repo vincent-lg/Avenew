@@ -68,6 +68,15 @@ class TextApp(BaseApp):
         """Return the contact app, if available."""
         return self.type.apps.get("contact")
 
+    def get_display_name(self):
+        """Return the display name for this app."""
+        number = self.get_phone_number(self.obj)
+        unread = Text.objects.get_nb_unread(number)
+        if unread:
+            return "Text({})".format(unread)
+
+        return "Text"
+
     @classmethod
     def get_phone_number(cls, obj, pretty=False):
         """Return the phone number of this object, if found.
@@ -175,7 +184,8 @@ class MainScreen(BaseScreen):
                 if text.sender == number:
                     content = "]You] " + content
                 content = crop(content, 35)
-                string += "\n  {i} {:<20}: {:<35} ({}(".format(sender, content, text.sent_ago, i=self.format_cmd(str(i)))
+                status = " " if thread.has_read(number) else "|rU|n"
+                string += "\n{} {i} {:<20}: {:<35} ({}(".format(status, sender, content, text.sent_ago, i=self.format_cmd(str(i)))
                 i += 1
             string += "\n\n(Type a number to open this text.)"
         else:
@@ -193,6 +203,7 @@ class MainScreen(BaseScreen):
         has been entered.
 
         """
+        number = self.app.get_phone_number(self.obj)
         if string.isdigit():
             thread = int(string)
             if thread not in self.db["threads"]:
@@ -200,6 +211,7 @@ class MainScreen(BaseScreen):
                 self.display()
             else:
                 thread = self.db["threads"][thread]
+                thread.mark_as_read(number)
                 self.next("ThreadScreen", db=dict(thread=thread))
 
             return True
@@ -409,6 +421,9 @@ class CmdSend(AppCommand):
 
         # Send the new text
         text = Text.objects.send(sender, recipients, content)
+        thread = text.thread
+        thread.read = ""
+        thread.mark_as_read(sender)
         self.msg("Thanks, your message has been sent successfully.")
         if screen.db.get("go_back", True):
             screen.back()
