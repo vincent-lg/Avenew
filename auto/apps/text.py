@@ -21,6 +21,7 @@ Screens in this app:
     ThreadScreen: the screen allowing to visualize a thread with its most
             recent messages, and to reply to it.
     NewTextScreen: the screen allowing to send a new text independent of any thread.
+    SettingsScreen: the screen to change the settings of the text app for this device.
 
 Commands in this app:
     MainScreen:
@@ -146,7 +147,7 @@ class MainScreen(BaseScreen):
 
     """
 
-    commands = ["CmdNew"]
+    commands = ["CmdNew", "CmdSettings"]
     back_screen = "auto.apps.base.MainScreen"
 
     def get_text(self):
@@ -191,6 +192,7 @@ class MainScreen(BaseScreen):
         else:
             string += "\n  You have no texts yet.  Want to create a {new} one?".format(new=self.format_cmd("new"))
 
+        string += "\n\n(Enter {settings} to edit the app settings).".format(settings=self.format_cmd("settings"))
         count = Text.objects.get_texts_for(number).count()
         s = "" if count == 1 else "s"
         string += "\n\nText app: {} saved message{s}.".format(count, s=s)
@@ -237,7 +239,7 @@ class NewTextScreen(BaseScreen):
 
     """
 
-    commands = ["CmdSend", "CmdCancel", "CmdTo"]
+    commands = ["CmdSend", "CmdCancel", "CmdTo", "CmdClear"]
     back_screen = MainScreen
 
     def get_text(self):
@@ -250,7 +252,7 @@ class NewTextScreen(BaseScreen):
             From: {}
               To: {}
 
-            Text message:
+            Text message (use {clear} to clear your current text):
                 {}
 
                 {send}                                             {cancel}
@@ -263,7 +265,7 @@ class NewTextScreen(BaseScreen):
         content = self.db.get("content", "(type your text here)")
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
-        return screen.format(number, recipients, content, send=self.format_cmd("send"), cancel=self.format_cmd("cancel"))
+        return screen.format(number, recipients, content, clear=self.format_cmd("clear"), send=self.format_cmd("send"), cancel=self.format_cmd("cancel"))
 
     def no_match(self, string):
         """Command no match, to write the text content."""
@@ -272,7 +274,13 @@ class NewTextScreen(BaseScreen):
             old_content += "\n"
         content = old_content + string
         self.db["content"] = content
-        self.display()
+
+        # If autosend, send the text right away
+        if self.app.db.get("autosend", False):
+            self.user.execute_cmd("send")
+        else:
+            self.display()
+
         return True
 
     @staticmethod
@@ -310,7 +318,7 @@ class ThreadScreen(BaseScreen):
 
     """
 
-    commands = ["CmdSend", "CmdContact"]
+    commands = ["CmdSend", "CmdClear", "CmdContact"]
     back_screen = MainScreen
 
     def get_text(self):
@@ -328,7 +336,7 @@ class ThreadScreen(BaseScreen):
 
             {}
 
-            Text message:
+            Text message (use {clear} to clear your current text):
                 {}
 
                 {send}
@@ -359,7 +367,7 @@ class ThreadScreen(BaseScreen):
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
         messages = "\n".join(messages)
-        return screen.format(recipients, messages, content, send=self.format_cmd("send"))
+        return screen.format(recipients, messages, content, clear=self.format_cmd("clear"), send=self.format_cmd("send"))
 
     def no_match(self, string):
         """Command no match, to write the text content."""
@@ -368,11 +376,78 @@ class ThreadScreen(BaseScreen):
             old_content += "\n"
         content = old_content + string
         self.db["content"] = content
-        self.display()
+        if self.app.db.get("autosend", False):
+            self.user.execute_cmd("send")
+        else:
+            self.display()
         return True
 
 
+class SettingsScreen(BaseScreen):
+
+    """Setting screen, to edit text settings.
+
+    Data attributes you can use (in screen.db):
+        None
+
+    """
+
+    commands = []
+    back_screen = "auto.apps.text.MainScreen"
+
+    def get_text(self):
+        """Display the app."""
+        string = """
+            Text settings
+
+            {autosend}          :                                          {autosend_value}
+                                  If turned on, when you type in a new message and press the |wRETURN|n
+                                  key, the text will be sent automatically, instead
+                                  of you having to type |ySEND|n.
+
+            You can customize some settings of the text app here.  Just enter the name
+            (or the beginning of the name) of the setting to toggle it.  Sometimes, you will
+            have to specify an argument after a space to change the settings.
+        """.format(
+                autosend=self.format_cmd("autosend"),
+                autosend_value="yes" if self.app.db.get("autosend", False) else "no",
+        )
+        return string
+
+    def no_match(self, string):
+        """Method called when no command matches the user input."""
+        string = string.strip().lower()
+        settings = ["autosend"]
+        for setting in settings:
+            if setting.startswith(string):
+                self.app.db[setting] = not self.app.db.get(setting, False)
+                self.display()
+                return True
+
+        return False
+
+    def wrong_input(self, string):
+        """A wrong input has been entered."""
+        self.user.msg("Enter a setting name to change it.")
+
+
 ## Commands
+
+class CmdSettings(AppCommand):
+
+    """
+    Open the text app settings.
+
+    Usage:
+        settings
+    """
+
+    key = "settings"
+    aliases = ["set", "setting"]
+
+    def func(self):
+        self.screen.next(SettingsScreen)
+
 
 class CmdNew(AppCommand):
 
@@ -429,14 +504,12 @@ class CmdSend(AppCommand):
             screen.back()
         else:
             del screen.db["content"]
-            screen.display()
 
         # Notify the recipients
         for number in text.list_recipients:
             devices = search_tag(number, category="phone number")
             for device in devices:
                 NewTextScreen.notify(device, text)
-
 
 
 class CmdCancel(AppCommand):
@@ -515,6 +588,29 @@ class CmdTo(AppCommand):
         else:
             recipients.append(number)
             self.msg("This contact was added to the list of recipients.")
+        screen.display()
+
+
+class CmdClear(AppCommand):
+
+    """
+    Erases your current text message and start over.
+
+    Usage:
+        clear
+
+    Use this command to clear the text you had begun to type, and start over
+    again.
+    """
+
+    key = "clear"
+
+    def func(self):
+        """Execute the command."""
+        screen = self.screen
+        if "content" in screen.db:
+            del screen.db["content"]
+
         screen.display()
 
 
