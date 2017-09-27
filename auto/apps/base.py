@@ -412,6 +412,15 @@ class BaseScreen(object):
             new_screen (Screen): the new screen object.
 
         """
+        # Save the current screen in the tree with current db
+        tree = self.type.db.get("screen_tree")
+        path = type(self).__module__ + "." + type(self).__name__
+        if tree and tree[-1][0] == path:
+            tup = tree[-1]
+            tup = tup[:3] + (dict(self.db), )
+            tree[-1] = tup
+            print tup
+
         db = db or {}
         new_screen = self.move_to(screen, app, db=db)
         path = type(new_screen).__module__ + "." + type(new_screen).__name__
