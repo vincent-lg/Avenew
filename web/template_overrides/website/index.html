@@ -9,7 +9,7 @@
 <div class="row">
   <div class="col">
     <div class="card">
-      <div class="card-block">
+      <div class="card-body">
         <h1 class="card-title">Welcome to Avenew One!</h1>
 
         <hr />
@@ -21,10 +21,10 @@
           of the United States.
         </p>
         <p>
-          {% if webclient_enabled %}
+          
           You can start playing right away in your browser, with the
-          <a href="{% url 'webclient:index' %}">online client</a>.
-          {% endif %}
+          <a href="/webclient/">online client</a>.
+          
           If you prefer playing with your favorite MU* client, you
           can instead connect to:</p>
           <ul>
@@ -48,7 +48,7 @@
     <div class="card">
       <h4 class="card-header">Accounts</h4>
 
-      <div class="card-block">
+      <div class="card-body">
         <p>
           There's currently <strong>{{num_accounts_connected}}</strong> connected out of a total of <strong>{{num_accounts_registered}}</strong> account{{num_accounts_registered|pluralize}} registered.
         </p>
@@ -63,7 +63,7 @@
     <div class="card">
       <h4 class="card-header text-center">Recently Connected</h4>
 
-      <div class="card-block px-0 py-0">
+      <div class="card-body px-0 py-0">
         <ul class="list-group">
           {% for account in accounts_connected_recent %}
             <li class="list-group-item">{{account.username}}&mdash;<em>{{account.last_login|timesince}} ago</em></li>
@@ -77,7 +77,7 @@
     <div class="card">
       <h4 class="card-header text-center">Database Stats</h4>
 
-      <div class="card-block py-0 px-0">
+      <div class="card-body py-0 px-0">
         <ul class="list-group">
           <li class="list-group-item">{{num_accounts_registered}} account{{num_accounts_registered|pluralize}} (+ {{num_characters}} character{{num_characters|pluralize}})</li>
           <li class="list-group-item">{{num_rooms}} room{{num_rooms|pluralize}} (+ {{num_exits}} exits)</li>
@@ -86,12 +86,14 @@
       </div>
     </div>
   </div>
+</div>
 
+<div class="row">
   <div class="col">
     <div class="card">
       <h4 class="card-header text-center">Evennia</h4>
 
-      <div class="card-block">
+      <div class="card-body">
         <p><a href="http://evennia.com">Evennia</a> is an open-source MUD server built in
         <a href="http://python.org">Python</a>, on top of the
         <a href="http://twistedmatrix.com">Twisted</a> and

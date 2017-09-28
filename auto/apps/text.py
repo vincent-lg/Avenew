@@ -44,6 +44,7 @@ Note:
 from textwrap import dedent, wrap
 
 from evennia import search_tag
+from evennia.utils.evtable import EvTable
 from evennia.utils.utils import crop, lazy_property
 
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
@@ -167,8 +168,15 @@ class MainScreen(BaseScreen):
         self.db["threads"] = {}
         stored_threads = self.db["threads"]
         if threads:
+            len_i = 3 if len(threads) < 100 else 4
             string += "  Create a {new} message.\n".format(new=self.format_cmd("new"))
             i = 1
+            table = EvTable(pad_left=0, border="none")
+            table.add_column("S", width=2)
+            table.add_column("I", width=len_i, align="r", valign="t")
+            table.add_column("Sender", width=21)
+            table.add_column("Content", width=36)
+            table.add_column("Ago", width=15)
             for thread_id, text in threads.items():
                 thread = text.thread
                 stored_threads[i] = thread
@@ -179,15 +187,19 @@ class MainScreen(BaseScreen):
                 sender = ", ".join(senders)
                 if thread.name:
                     sender = thread.name
-                sender = crop(sender, 20)
+                senders = crop(senders, 20, "")
 
                 content = text.content.replace("\n", "  ")
                 if text.sender == number:
                     content = "]You] " + content
                 content = crop(content, 35)
                 status = " " if thread.has_read(number) else "|rU|n"
-                string += "\n{} {i} {:<20}: {:<35} ({}(".format(status, sender, content, text.sent_ago, i=self.format_cmd(str(i)))
+                table.add_row(status, self.format_cmd(str(i)), sender, content, text.sent_ago.capitalize())
                 i += 1
+            lines = unicode(table).splitlines()
+            del lines[0]
+            lines = [line.rstrip() for line in lines]
+            string += "\n" + "\n".join(lines)
             string += "\n\n(Type a number to open this text.)"
         else:
             string += "\n  You have no texts yet.  Want to create a {new} one?".format(new=self.format_cmd("new"))

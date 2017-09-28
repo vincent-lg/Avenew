@@ -787,7 +787,47 @@ class CmdNew(AppCommand):
 Notice that we didn't do everything we had planned: there's no way to delete a memo.  When you type text in the `MemoScreen`, it edits the memo text directly, there's no way to type several lines and the "save" button is never used.  But you can now do that on your own, that will be good practice!  The rest of this documentation focuses on more advanced and specific details that you do not need to create your applications, but that might become useful in some cases.
 
 ## Advanced features
-### The notification handler
-### The invitation handler
-### The payment handler
+
+This section contains more specific explanations on various topics.  You might not need them in your app, but if you do, you will find the process explained here.  As usual, for a complete reference, read the code itself which is heavily documented.
+
+### Generic screens
+### Notifications and app status
+
+An app can send notifications to alert the device of incoming information.  The text app, for instance, sends a notification to the recipients of a text when it is sent.  Additionally, an app can have a status (mark the number of items that should be read).  It is usually done through the app's display name (like "Text(3)" to say that 3 texts ought to be read).
+
+Both systems (notifications and status) are independent.  An app can have none, either, or both of them.
+
+#### The app status in its display name
+
+Changing the app status is quite simple: we used `display_name` as a class variable so far, defined on the app itself.  However, it can also have a `get_display_name` method that will return the name to be displayed.  This allows to display a name that will vary depending on the context.  Here, for instance, is the `Text` application `get_display_name` to give you an example:
+
+```python
+class TextApp(BaseApp):
+
+    """Text applicaiton."""
+
+    app_name = "text"
+    display_name = "Text"
+    start_screen = "MainScreen"
+
+    def get_display_name(self):
+        """Return the display name for this app."""
+        number = self.get_phone_number(self.obj)
+        unread = Text.objects.get_nb_unread(number)
+        if unread:
+            return "Text({})".format(unread)
+
+        return "Text"
+```
+
+Don't worry about the two first lines of this method: it will simply get the phone number of the object and then, query the number of unread messages.  You will definitely adapt this example.  The next lines show you how to return a different name depending on status (the number of unread texts, in our case).
+
+#### Sending notifications
+
+
+### Games and invitations
+### Paying within an app
+## Developing apps
+### Troubleshooting
 ### Testing apps for stability
+### Send an app to the main Avenew code
