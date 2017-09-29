@@ -10,6 +10,7 @@ from evennia.utils.evform import EvForm
 from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
 from commands.high_tech import ComputerCmdSet
+from world.log import app as log
 
 class BaseApp(object):
 
@@ -178,6 +179,11 @@ class BaseScreen(object):
         back_screen = [type(self).back_screen, app_name, folder, None]
         return tree and tree[-1] or back_screen
 
+    @property
+    def path(self):
+        """Return the Python path to this screen."""
+        return type(self).__module__ + "." + type(self).__name__
+
     def _load_commands(self):
         """Load the required commands."""
         for i, cmd in enumerate(type(self).commands):
@@ -222,6 +228,40 @@ class BaseScreen(object):
                     for cmd in cmdset.commands:
                         cmd.screen = self
                     break
+
+    # General methods
+    def close(self):
+        """Close the screen, moving to another or quitting the interface.
+
+        You can override this method to do some custom actions when
+        the user leaves this screen.  However, don't forget to call `super()`.
+
+        """
+        log.debug("Closing screen: {} (user={})".format(self.path, self.user))
+
+    def open(self):
+        """The screen opens.
+
+        At this point, it has all the needed information to be loaded
+        (user, app, obj...).
+
+        You can override this method to do some custom actions when
+        the user opens this screen.  However, don't forget to call `super()`.
+
+        """
+        obj = self.obj and self.obj.id or None
+        log.debug("Opening screen: {} (user={}, app={}, obj={})".format(self.path, self.user, self.app, obj))
+        log.debug("  db={}".format(self.db))
+
+    # Display methods
+    def get_text(self):
+        """Return the text to be displayed.
+
+        This is the most common display method to be overridden.
+        `self.display()` displays a pretty version of `get_text()`.
+
+        """
+        return "Nothing to be displayed in this screen"
 
     def format_cmd(self, text, key=None, upper=True):
         """Format the command as a colored, clickable link.
@@ -295,18 +335,7 @@ class BaseScreen(object):
         form = EvForm(cells=cells, form={"CELLCHAR": "x", "TABLECHAR": "c", "FORM": dedent("\n" + form.lstrip("\n"))})
         return form
 
-    def close(self):
-        """Close the screen, erasing its storage."""
-        db = self.type.db
-        if "current_screen" in db:
-            del db["current_screen"]
-        if "screen_storage" in db:
-            del db["screen_storage"]
-
-        if "screen_tree" in db:
-            del db["screen_tree"]
-
-    # Move methods
+    # Navigation methods
     def back(self):
         """Go back in the screen tree.
 
@@ -326,6 +355,7 @@ class BaseScreen(object):
             if isinstance(previous, basestring):
                 previous = class_from_module(previous)
 
+            self.close()
             self._delete_commands()
             if app and folder:
                 app = self.type.apps.get(app, folder)
@@ -335,11 +365,12 @@ class BaseScreen(object):
             if db:
                 previous.db.update(db)
 
-            path = type(self).__module__ + "." + type(self).__name__
+            path = self.path
             tree = self.type.db.get("screen_tree", [])
             if tree and tree[-1][0] == path:
                 del tree[-1]
             previous._save()
+            previous.open()
             previous.display()
             return previous
         return None
@@ -375,6 +406,7 @@ class BaseScreen(object):
                 screen = type(app).__module__ + "." + screen
 
             screen = class_from_module(screen)
+        self.close()
         self._delete_commands()
         new_screen = screen(self.obj, self.user, self.type, app)
         new_screen.db.clear()
@@ -384,6 +416,7 @@ class BaseScreen(object):
         if db:
             new_screen.db.update(db)
 
+        new_screen.open()
         new_screen.display()
         return new_screen
 

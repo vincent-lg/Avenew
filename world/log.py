@@ -150,3 +150,4 @@ def end():
 
 # Prepare the different loggers
 main = logger("")  # Main logger
+app = logger("app")  # Main logger

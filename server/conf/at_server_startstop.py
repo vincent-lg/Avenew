@@ -24,7 +24,7 @@ from evennia import ScriptDB, create_script
 
 from auto.types.high_tech import load_apps
 import tickers
-from world.log import begin, end, main
+from world.log import begin, end, main, app
 
 def at_server_start():
     """
@@ -47,7 +47,7 @@ def at_server_start():
     # Load the apps
     errors = load_apps()
     for name, error in errors:
-        main.warning("Error while loading {}: {}".format(name, error))
+        app.warning("Error while loading {}: {}".format(name, error))
 
 def at_server_stop():
     """

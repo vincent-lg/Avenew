@@ -791,6 +791,7 @@ Notice that we didn't do everything we had planned: there's no way to delete a m
 This section contains more specific explanations on various topics.  You might not need them in your app, but if you do, you will find the process explained here.  As usual, for a complete reference, read the code itself which is heavily documented.
 
 ### Generic screens
+### A screen for app settings
 ### Notifications and app status
 
 An app can send notifications to alert the device of incoming information.  The text app, for instance, sends a notification to the recipients of a text when it is sent.  Additionally, an app can have a status (mark the number of items that should be read).  It is usually done through the app's display name (like "Text(3)" to say that 3 texts ought to be read).

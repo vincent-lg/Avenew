@@ -248,6 +248,7 @@ class Computer(BaseType):
             if db:
                 screen.db.update(db)
             screen._save()
+            screen.open()
             screen.display()
             user.db._aven_using = self.obj
 
