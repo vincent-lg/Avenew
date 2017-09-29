@@ -36,14 +36,19 @@ SERVERNAME = "Avenew One"
 ######################################################################
 
 
+## Protocols
 # Activate SSL protocol (SecureSocketLibrary)
 SSL_ENABLED = True
 
 # IRC
 IRC_ENABLED = True
 
+## Commands
 # UnloggedinCmdSet
 CMDSET_UNLOGGEDIN = "commands.unloggedin.UnloggedinCmdSet"
+
+# Default command class
+COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
 
 # Multi-session mode : 2
 # One account, multiple account, only one session per character

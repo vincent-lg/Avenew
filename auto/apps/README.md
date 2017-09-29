@@ -830,5 +830,30 @@ Don't worry about the two first lines of this method: it will simply get the pho
 ### Paying within an app
 ## Developing apps
 ### Troubleshooting
+
+> My app doesn't load and doesn't appear in my phone.
+
+There could be some reasons preventing an app from loading.  The first step is to see if it has been loaded.  You can do so through a `@py` command:
+
+    @py __import__("auto").types.high_tech.APPS
+
+This command should show a Python dictionary containing, as keys, the folder, and as values, another dictionary with `{name: class}.  If you don't find your app in this folder, check your logs.
+
+The `app` logger can be found in `server/logs/app.log`.  It should contain some debugging information.  It will contain any error happening when importing your app in the game.
+
+    11:59 [WARNING] Error while loading auto.apps.text: invalid syntax (text.py, line 677)
+
+If you fix the error and reload, assuming you have no other syntax errors, the app should load correctly.  Errors while using the app are stored as normal tracebacks.
+
+> My app just doesn't load and it has no error in it!
+
+Some files are not even read by the app system.  It's possible you have created one of them without noticing.  Here are the rules.  Apps should be stored in a file:
+
+- With the `.py` extension.  Other extensions in the file system are ignored.
+- Within the `auto/apps` directory or a sub-folder.  If a sub-folder, remember to add an empty `__init__.py` file, otherwise, it won't be imported.
+- Must contain only valid Python in its name.  An app with a file called `some-stuff.py` will not be loaded (a dash in the file name isn't a valid Python identifier).
+- Not start with an underscore.  Names like "_app.py" will be ignored (the leading underscore is taken as a "private" file and won't be loaded).
+- Not be "base.py".  This file usually contains abstract classes and is not read automatically.
+
 ### Testing apps for stability
 ### Send an app to the main Avenew code

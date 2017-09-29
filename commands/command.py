@@ -5,7 +5,12 @@ Commands describe the input the account can do to the game.
 
 """
 
+import time
+
 from evennia import Command as BaseCommand
+from evennia.commands.default.muxcommand import MuxCommand as BaseMuxCommand
+
+from world.log import command as log
 
 class Command(BaseCommand):
     """
@@ -27,4 +32,40 @@ class Command(BaseCommand):
             every command, like prompts.
 
     """
-    pass
+
+    def at_pre_cmd(self):
+        """Before the command is called."""
+        self.t1 = time.time()
+
+    def at_post_cmd(self):
+        """After the command has executed."""
+        t1 = getattr(self, "t1", None)
+        key = getattr(self, "key", "unknown")
+        if t1:
+            t2 = time.time()
+            total = int(round((t2 - t1) * 1000))
+        else:
+            total = "?"
+
+        log.debug("{}MS for {}".format(total, key))
+
+
+class MuxCommand(BaseMuxCommand):
+
+    # Timed MuxCommands
+
+    def at_pre_cmd(self):
+        """Before the command is called."""
+        self.t1 = time.time()
+
+    def at_post_cmd(self):
+        """After the command has executed."""
+        t1 = getattr(self, "t1", None)
+        key = getattr(self, "key", "unknown")
+        if t1:
+            t2 = time.time()
+            total = int(round((t2 - t1) * 1000))
+        else:
+            total = "?"
+
+        log.debug("{}MS for {}".format(total, key))
