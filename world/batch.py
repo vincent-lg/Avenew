@@ -1,4 +1,4 @@
-﻿"""Module containing utilities for the batch code."""
+"""Module containing utilities for the batch code."""
 
 from textwrap import dedent
 from evennia.utils import create, search
