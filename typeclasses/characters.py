@@ -1,3 +1,5 @@
+# -*-coding:Utf-8 -*
+
 """
 Characters
 
@@ -89,6 +91,19 @@ class Character(EventCharacter):
                 behaviors.append(BEHAVIORS[name])
 
         return behaviors
+
+    def at_say(self, speech, **kwargs):
+        """Say something."""
+        if kwargs.get("whisper"):
+            msg_self = "Vous chuchotez à {all_receivers}: {speech}"
+            msg_receivers = "{object} vous chuchote: {speech}"
+            msg_location = None
+        else:
+            msg_self = "Vous dites : {speech}"
+            msg_receivers = ""
+            msg_location = "{object} dit : {speech}"
+        super(Character, self).at_say(speech, msg_self=msg_self,
+                msg_location=msg_location, msg_receivers=msg_receivers)
 
     def display_turns(self, vehicle, crossroad):
         """Called to display the list of available exits."""
