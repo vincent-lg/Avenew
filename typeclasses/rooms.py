@@ -217,6 +217,9 @@ class Room(EventRoom):
                 start, end = match.span()
                 description = description[:start] + var + description[end:]
                 match = RE_KEYWORD.search(description)
+        else:
+            description = desc
+
         string += description
 
         if exits:
