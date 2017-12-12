@@ -81,6 +81,8 @@ WEBSOCKET_CLIENT_ENABLED = False
 ## Communication
 TEST_SESSION = False
 
+USE_I18N = True
+LANGUAGE_CODE = 'fr'
 try:
     from server.conf.secret_settings import *
 except ImportError:
