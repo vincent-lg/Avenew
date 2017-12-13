@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Module containing the abstract representation."""
 
 from evennia.utils.evform import EvForm

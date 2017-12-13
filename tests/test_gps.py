@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Test the GPS and coordinate finder."""
 
 from logic.gps import GPS

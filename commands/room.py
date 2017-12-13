@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 This file ocntains the CmdRoom and sub-commands.
 

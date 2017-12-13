@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Module containing the Avenew event funcs (event functions).
 """

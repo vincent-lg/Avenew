@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Characters
 
@@ -89,6 +91,45 @@ class Character(EventCharacter):
                 behaviors.append(BEHAVIORS[name])
 
         return behaviors
+
+    def at_before_say(self, message, **kwargs):
+        """
+        Before the object says something.
+
+        This hook is by default used by the 'say' and 'whisper'
+        commands as used by this command it is called before the text
+        is said/whispered and can be used to customize the outgoing
+        text from the object. Returning `None` aborts the command.
+
+        Args:
+            message (str): The suggested say/whisper text spoken by self.
+        Kwargs:
+            whisper (bool): If True, this is a whisper rather than
+                a say. This is sent by the whisper command by default.
+                Other verbal commands could use this hook in similar
+                ways.
+            receivers (Object or iterable): If set, this is the target or targets for the say/whisper.
+
+        Returns:
+            message (str): The (possibly modified) text to be spoken.
+
+        """
+        # Escape | and {} (color codes and mapping)
+        message = message.replace("|", "||")
+        return super(Character, self).at_before_say(message)
+
+    def at_say(self, speech, **kwargs):
+        """Say something."""
+        if kwargs.get("whisper"):
+            msg_self = "You whisper to {all_receivers}: {speech}"
+            msg_receivers = "{object} whispers to you: {speech}"
+            msg_location = None
+        else:
+            msg_self = "You say: {speech}"
+            msg_receivers = ""
+            msg_location = "{object} says: {speech}"
+        super(Character, self).at_say(speech, msg_self=msg_self,
+                msg_location=msg_location, msg_receivers=msg_receivers)
 
     def display_turns(self, vehicle, crossroad):
         """Called to display the list of available exits."""

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 
 MSSP (Mud Server Status Protocol) meta information

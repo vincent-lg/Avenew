@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Module used to handle simple but frequent calculations over directions.
 

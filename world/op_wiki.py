@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Wiki operations.
 
 This module contains operations to effectively communicate with the

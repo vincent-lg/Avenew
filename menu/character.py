@@ -1,4 +1,6 @@
-﻿"""Module dcontaining the menu nodes of logged in account.
+﻿# -*- coding: utf-8 -*-
+
+"""Module dcontaining the menu nodes of logged in account.
 
 This menu allows to login to character, create a new one, delete
 one and so on.

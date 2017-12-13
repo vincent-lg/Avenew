@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 The help command. The basic idea is that help texts for commands
 are best written by those that write the commands - the admins. So

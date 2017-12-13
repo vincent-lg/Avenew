@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Module containing abstract classes for applications.
 """

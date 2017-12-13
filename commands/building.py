@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """This file contains the commands for builders."""
 
 from textwrap import dedent

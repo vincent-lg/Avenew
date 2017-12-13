@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 A login menu using EvMenu.
 
