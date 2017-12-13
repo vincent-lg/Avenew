@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Module containing the representation of the Room class."""
 
 from evennia.utils.evtable import EvTable

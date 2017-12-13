@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Module containing shared classes, usually handlers to be used for objects
 with prototypes.

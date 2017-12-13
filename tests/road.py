@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Parent test for road-related tests."""
 
 from evennia.utils.create import create_object

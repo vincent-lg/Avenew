@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Test the login menu system."""
 
 from django.conf import settings

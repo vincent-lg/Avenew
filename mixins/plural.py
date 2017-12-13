@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Light contrib to group objects by name and display plural names.
 

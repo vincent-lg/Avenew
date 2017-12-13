@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 File conaining the logging facility for Avenew.
 

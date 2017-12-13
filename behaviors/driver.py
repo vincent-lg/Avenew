@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Module containing the driver behavior."""
 
 from math import sqrt

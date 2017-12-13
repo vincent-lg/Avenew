@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 At_initial_setup module template
 

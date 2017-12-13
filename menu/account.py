@@ -1,4 +1,6 @@
-﻿"""This module contains the account connexion/creation menu nodes.
+﻿# -*- coding: utf-8 -*-
+
+"""This module contains the account connexion/creation menu nodes.
 
 start: First login, prompted for username
     'new': create_account

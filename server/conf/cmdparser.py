@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Changing the default command parser
 

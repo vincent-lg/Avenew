@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Package containing the available applications for phones and computers.
 

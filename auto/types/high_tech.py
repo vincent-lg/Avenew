@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 High-tech device types.
 """

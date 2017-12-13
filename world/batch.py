@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Module containing utilities for the batch code."""
 
 from textwrap import dedent

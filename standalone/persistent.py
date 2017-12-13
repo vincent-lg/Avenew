@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Package persistent, containing features to make things persistent.
 
 The most notable usage is the persistent `delay`, a delay that will
