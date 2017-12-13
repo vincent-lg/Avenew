@@ -81,8 +81,12 @@ WEBSOCKET_CLIENT_ENABLED = False
 ## Communication
 TEST_SESSION = False
 
+# Language options
 USE_I18N = True
 LANGUAGE_CODE = 'fr'
+ENCODINGS = ["latin-1", "utf-8", "ISO-8859-1"]
+
+# Private settings
 try:
     from server.conf.secret_settings import *
 except ImportError:
