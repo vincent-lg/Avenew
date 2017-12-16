@@ -19,7 +19,7 @@ from django.conf import settings
 from evennia import utils
 
 CONNECTION_SCREEN = \
-r"""Welcome to
+r"""Bienvenue sur
 
               ,
             /'/
@@ -29,5 +29,5 @@ r"""Welcome to
     /'    /  |  /' /(___,/'  /'    /' /(___,/' |  /|  /'
 (,/'     (_,_|/(__(________/'    /(__(_________|/' |/(__
 
-|gAvenew One|n, built on Evennia %s!""" \
+|gAvenew One|n, construit sur Evennia %s!""" \
  % (utils.get_evennia_version())

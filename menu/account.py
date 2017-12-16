@@ -47,16 +47,16 @@ def start(caller):
 
     """
     text = random_string_from_module(CONNECTION_SCREEN_MODULE)
-    text += "\n\nEnter your username or |wNEW|n to create an account."
+    text += "\n\nEntrez votre nom d'utilisateur ou |yNOUVEAU|n pour créer un nouveau compte."
     options = (
         {
-            "key": "new",
-            "desc": "Create a new character.",
+            "key": "nouveau",
+            "desc": "Créer un nouveau compte.",
             "goto": "create_account",
         },
         {
             "key": "_default",
-            "desc": "Login to an existing account.",
+            "desc": "Se connecter à un compte existant.",
             "goto": "username",
         },
     )
@@ -76,19 +76,19 @@ def username(caller, input):
     account = accounts[0] if accounts else None
     if account is None:
         text = dedent("""
-            |rThe username {} doesn't exist yet.  Have you created it?|n
-                Type |wb|n to go back to the login screen.
-                Or try another name.
+            |rLe nom d'utilisateur {} n'existe pas encore. L'avez-vous déjà créé ?|n
+                Entrez |yp|n pour revenir au menu de connexion.
+                Ou essayez d'entrer un nom d'utilisateur pour s'y connecter.
         """.strip("\n")).format(input)
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the login screen.",
+                "key": "p",
+                "desc": "Revenir à l'écran de connexion.",
                 "goto": "pre_start",
             },
             {
                 "key": "_default",
-                "desc": "Try again.",
+                "desc": "Essayez à nouveau.",
                 "goto": "username",
             },
         )
@@ -100,9 +100,9 @@ def username(caller, input):
         # has been supplied.  This lock shouldn't last more than
         # 3 seconds.
         if locked:
-            text = "Please wait..."
+            text = "Veuillez patienter..."
         else:
-            text = "Enter the password for the account {}.".format(
+            text = "Entrez le mot de passe pour accéder au compte {}.".format(
                     account.name)
 
         # Disables echo for the password
@@ -110,7 +110,7 @@ def username(caller, input):
         options = (
             {
                 "key": "_default",
-                "desc": "Enter your account's password.",
+                "desc": "Entrez le mot de passe du compte.",
                 "goto": "password",
             },
         )
@@ -132,7 +132,7 @@ def password(caller, input):
     options = (
         {
             "key": "_default",
-            "desc": "Enter your password.",
+            "desc": "Entrez votre mot de passe.",
             "goto": "password",
         },
     )
@@ -143,7 +143,7 @@ def password(caller, input):
     # If the account is locked, the user has to wait (maximum
     # 3 seconds) before retrying
     if account.db._locked:
-        text = "|gPlease wait, you cannot enter your password yet.|n"
+        text = "|gVeuillez patienter, vous ne pouvez pas encore entrer votre mot de passe.|n"
         return text, options
 
     bans = ServerConfig.objects.conf("server_bans")
@@ -152,9 +152,9 @@ def password(caller, input):
 
     if not account.check_password(input):
         text = dedent("""
-            |rIncorrect password.|n
-                Type |wb|n to go back to the login screen.
-                Or wait 3 seconds before trying a new password.
+            |rMot de passe incorrect.|n
+                Entrez |yp|n pour revenir à l'écran de connexion.
+                Ou attendez 3 secondes avant d'essayer d'entrer le mot de passe de ce compte.
         """.strip("\n"))
 
         # Loops on the same node, lock for 3 seconds
@@ -162,25 +162,25 @@ def password(caller, input):
         delay(3, _wrong_password, account)
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the login screen.",
+                "key": "p",
+                "desc": "Revenir à l'écran de connexion.",
                 "goto": "pre_start",
             },
             {
                 "key": "_default",
-                "desc": "Enter your password again.",
+                "desc": "Entrez votre mot de passe de nouveau.",
                 "goto": "password",
             },
         )
     elif banned:
         # This is a banned IP or name
         string = dedent("""
-            |rYou have been banned and cannot continue from here.|n
-            If you feel this ban is in error, please email an admin.
+            |rVous avez été banni du jeu et ne pouvez vous connecter|n
+            Si vous estimez que ce bannissesement est une erreur, contactez les administrateurs du jeu.
         """.strip("\n"))
         caller.msg(string)
         caller.sessionhandler.disconnect(
-                caller, "Good bye!  Disconnecting...")
+                caller, "Au revoir. Déconnexion...")
     else:
         # The password is correct, we can log into the account.
         caller.msg(echo=True)
@@ -190,17 +190,17 @@ def password(caller, input):
             options = (
                 {
                     "key": "_default",
-                    "desc": "Enter your email address.",
+                    "desc": "Entrez votre adresse e-mail.",
                     "goto": "email_address",
                 },
             )
         elif not account.db.valid:
             # Redirects to the node for the validation code
-            text = "Enter your 4-digit validation code."
+            text = "Entrez votre code de validation à 4 chiffres."
             options = (
                 {
                     "key": "_default",
-                    "desc": "Enter your validation code.",
+                    "desc": "Entrez votre code de validation.",
                     "goto": "validate_account",
                 },
             )
@@ -212,7 +212,7 @@ def password(caller, input):
                 options = (
                     {
                         "key": "_default",
-                        "desc": "Enter your new character's first name.",
+                        "desc": "Enter le prénom de votre personnage à créer.",
                         "goto": "create_first_name",
                     },
                 )
@@ -228,18 +228,22 @@ def create_account(caller):
 
     """
     text = dedent("""
-        Welcome to Avenew!  We're glad you decided to create an account here.
-        You should begin by providing a username for this account.  It will
-        be asked of you each time you log in.  Account names can be anything,
-        they don't have to be your future character's name.  When your account
-        has been created, you will create a character.  Your account can host five characters.
+        Bienvenue sur Avenew One ! Merci de vouloir créer un compte sur notre jeu!
+        La première étape est de nous donner un nom d'utilisateur pour ce
+        compte. Vous devrez l'entrer à chaque fois que vous souhaiterez vous
+        connecter sur le jeu. Les noms d'utilisateurs n'ont pas à être identiques
+        au nom de votre futur personnage sur le jeu. Il est conseillé de
+        garder le nom d'utilisateur distinct de vos noms de personnage pour
+        des raisons de sécurité. Une fois que votre compte sera créé, vous
+        pourrez créer un personnage dans ce compte. Votre compte peut
+        contenir jusqu'à 5 personnages.
 
-        Enter your new username:
+        Entrez votre nom d'utilisateur à créer :
     """.strip("\n"))
     options = (
         {
             "key": "_default",
-            "desc": "Enter your new username.",
+            "desc": "Entrez votre nom d'utilisateur.",
             "goto": "create_username",
         },
     )
@@ -258,7 +262,7 @@ def create_username(caller, input):
     options = (
         {
             "key": "_default",
-            "desc": "Enter your new account's password.",
+            "desc": "Entrez votre nouveau mot de passe.",
             "goto": "create_password",
         },
     )
@@ -266,42 +270,41 @@ def create_username(caller, input):
     # If an account with that name exists, a new one will not be created
     if account:
         text = dedent("""
-            |rThe account {} already exists.|n
-                Type |wb|n to go back to the login screen.
-                Or enter another username to create.
+            |rLe nom de compte {} existe déjà.|n
+                Entrez |yp|n pour revenir à l'écran de connexion.
+                Ou entrez un nouveau nom d'utilisateur.
         """.strip("\n")).format(input)
 
         # Loops on the same node
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the login screen..",
+                "key": "p",
+                "desc": "Revenir à l'écran de connexion.",
                 "goto": "pre_start",
             },
             {
                 "key": "_default",
-                "desc": "Enter another username.",
+                "desc": "Entrez un nouveau nom d'utilisateur.",
                 "goto": "create_username",
             },
         )
     elif not RE_VALID_USERNAME.search(input):
         text = dedent("""
-            |rThis username isn't valid.|n
-            Letters, numbers, the underscore sign (_) and the dot (.)
-            are accepted in your username.  Additionally, the username must
-            be at least 3 characters long.
-                Type |wb|n to go back to the login screen.
-                Or enter another username to be created.
+            |rCe nom d'utilisateur n'est pas valide.|n
+            Le nom d'utilisateur peut contenir des lettres, chiffres, le signe souligné (_)
+            et le point (.). Le nom d'utilisateur doit contenir au minimum 3 caractères.
+                Entrez |yp|n pour revenir à l'écran de connexion.
+                Ou entrez un nouveau nom d'utilisateur.
         """.strip("\n"))
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the login screen.",
+                "key": "p",
+                "desc": "Revenir à l'écran de connexion.",
                 "goto": "pre_start",
             },
             {
                 "key": "_default",
-                "desc": "Enter another username.",
+                "desc": "Entrez un nouveau nom d'utilisateur.",
                 "goto": "create_username",
             },
         )
@@ -313,11 +316,11 @@ def create_username(caller, input):
         caller.msg(echo=False)
 
         # Redirects to the creation of a password
-        text = "Enter this account's new password."
+        text = "Entrez le nouveau mot de passe de ce compte."
         options = (
             {
                 "key": "_default",
-                "desc": "Enter this account's new password.",
+                "desc": "Entrer le mot de passe du compte.",
                 "goto": "create_password",
             },
         )
@@ -335,13 +338,13 @@ def create_password(caller, input):
     text = ""
     options = (
         {
-            "key": "b",
-            "desc": "Go back to the login screen.",
+            "key": "p",
+            "desc": "Revenir à l'écran de connexion.",
             "goto": "pre_start",
         },
         {
             "key": "_default",
-            "desc": "Enter your password.",
+            "desc": "Entrez votre mot de passe.",
             "goto": "create_password",
         },
     )
@@ -351,18 +354,18 @@ def create_password(caller, input):
     if len(password) < LEN_PASSWD:
         # The password is too short
         text = dedent("""
-            |rYour password must be at least {} characters long.|n
-                Type |wb|n to return to the login screen.
-                Or enter another password.
+            |rVotre mot de passe doit contenir au minimum {} caractères.|n
+                Entrez |wp|n pour revenir à l'écran de connexion.
+                Ou entrez un nouveau mot de passe.
         """.strip("\n")).format(LEN_PASSWD)
     else:
         # Redirects to the "confirm_passwrod" node
         caller.db._password = sha256(password).hexdigest()
-        text = "Enter your password again."
+        text = "Entrez votre mot de passe de nouveau."
         options = (
             {
                 "key": "_default",
-                "desc": "Enter the passwod again.",
+                "desc": "Entrez le même mot de passe de nouveau.",
                 "goto": "confirm_password",
             },
         )
@@ -382,7 +385,7 @@ def confirm_password(caller, input):
     options = (
         {
             "key": "_default",
-            "desc": "Enter your password.",
+            "desc": "Entrez votre mot de passe.",
             "goto": "create_password",
         },
     )
@@ -394,9 +397,10 @@ def confirm_password(caller, input):
     second_password = sha256(password).hexdigest()
     if first_password != second_password:
         text = dedent("""
-            |rThe password you have specified doesn't match the first one.|n
+            |rLe mot de passe que vous avez entré ne correspond pas au mot de passe entré
+            précédemment.|n
 
-            Enter a new password for this account.
+            Entrez un nouveau mot de passe pour ce compte.
         """.strip("\n"))
     else:
         # Creates the new account.
@@ -410,21 +414,20 @@ def confirm_password(caller, input):
             # to handle tracebacks ourselves at this point. If we don't, we
             # won't see any errors at all.
             caller.msg(dedent("""
-                |rAn error occurred.|n  Please email an admin if
-                the problem persists.
+                |rUne erreur s'est produite|n. Contactez un administrateur si l'erreur persiste.
 
-                Please enter another password.
+                Entrez un nouveau mot de passe.
             """.strip("\n")))
             logger.log_trace()
         else:
             caller.db._account = account
             del caller.db._password
-            text = "Your new account was successfully created!"
+            text = "Votre nouveau compte a été créé avec succès !"
             text += "\n\n" + _text_email_address(account)
             options = (
                 {
                     "key": "_default",
-                    "desc": "Enter a valid email address.",
+                    "desc": "Entrez une adresse e-mail valide.",
                     "goto": "email_address",
                 },
             )
@@ -437,7 +440,7 @@ def email_address(caller, input):
     options = (
         {
             "key": "_default",
-            "desc": "Enter a valid email address.",
+            "desc": "Entrez une e-mail adresse valide.",
             "goto": "email_address",
         },
     )
@@ -462,16 +465,16 @@ def email_address(caller, input):
     if not valid:
         # The email address doesn't seem to be valid
         text = dedent("""
-            |rSorry, the specified email address {} cannot be accepted as a valid one.|n
+            |rDésolé, l'adresse e-mail spécifiée {} ne peut être acceptée comme valide.|n
 
-            Please enter another email address.
+            Entrez une nouvelle adresse e-mail.
         """.strip("\n")).format(email_address)
     elif identical:
         # The email address is already used
         text = dedent("""
-            |rThe email address you have entered is already being used by another account.
+            |rL'adresse e-mail spéicifée est déjà utilisée par un autre compte.|n
 
-            Please enter another email address.
+            Entrez une nouvelle adresse e-mail.
         """.strip("\n"))
     else:
         account.email = email_address
@@ -484,15 +487,16 @@ def email_address(caller, input):
             code += choice(numbers)
 
         # Sends an email with the code
-        subject = "[Avenew] Account validation"
+        subject = "[Avenew] Validation de compte"
         body = dedent("""
-            You have successfully created the account {} on Avenew.
+            Le compte {} a été correctement créé sur Avenew.
 
-            In order to validate it and begin to play, you need to enter the following four-digit
-            code in your MUD client.  If you have been disconnected, just login again, entering
-            your account's name and password, the validation screen will appear.
+            Afin de le valider et commencer à jouer, vous devrez entrer le code de validation
+            à 4 chiffres suivant dans votre client MUD. Si vous avez été déconnecté du serveur,
+            connectez-vous de nouveau, précisant votre nom d'utilisateur et mot de passe : le code
+            de validation vous sera à nouveau demandé.
 
-            Four-digit code: {}
+            Code de validation : {}
         """.strip("\n")).format(account.name, code)
         recipent = email_address
         account.db.valid = False
@@ -504,15 +508,15 @@ def email_address(caller, input):
             account.db.valid = True
             account.attributes.remove("validation_code")
             caller.msg(dedent("""
-                Avenew is in a test session mode, your account has been validated automatically.
+                Avenew est en mode de session de test, votre compte a été validé automatiquement.
             """.strip("\n")).format(email_address))
-            caller.msg("-----  You will now create the first character of this account. -----")
+            caller.msg("----- Vous créez maintenant le premier personnage dans votre compte. -----")
             _login(caller, account)
             text = ""
             options = (
                 {
                     "key": "_default",
-                    "desc": "Enter your new character's first name.",
+                    "desc": "Entrez le prénom de votre personnage.",
                     "goto": "create_first_name",
                 },
             )
@@ -521,40 +525,41 @@ def email_address(caller, input):
             account.db.valid = True
             account.attributes.remove("validation_code")
             caller.msg(dedent("""
-                Avenew couldn't send your email containing your validation code to {}.
-                This is probably due to Avenew's failure to connect to the SMTP server.
-                Your account has been validated automatically.
+                Avenew n'a pas pu envoyer l'e-mail de validation à {}.
+                Ce problème est probablement dû au fait qu'Avenew n'arrive pas à se connecter
+                au serveur SMTP. Votre compte a été validé automatiquement.
             """.strip("\n")).format(email_address))
-            caller.msg("-----  You will now create the first character of this account. -----")
+            caller.msg("----- Vous créez maintenant le premier personnage dans votre compte. -----")
             _login(caller, account)
             text = ""
             options = (
                 {
                     "key": "_default",
-                    "desc": "Enter your new character's first name.",
+                    "desc": "Entrez le prénom de votre nouveau personnage.",
                     "goto": "create_first_name",
                 },
             )
         else:
             text = dedent("""
-                An email has been sent to {}.  It contains your validation code which you'll need in
-                order to finish creating your account.  If you haven't received the validation email
-                after some minutes have passed, check your spam folder to see if it's inside of it.
-                If not, you might want to select another email address, or contact an Avenew administrator.
+                Un e-mail a été envoyé à l'adresse {}. Il contient le code de validation dont
+                vous aurez besoin pour commencer à jouer. Si vous n'avez pas reçu l'e-mail de validation
+                après quelques minutes, vérifiez votre dossier de messages indésirables. Si le message
+                ne s'y trouve toujours pas, vous pourriez vouloir essayer une autre adresse e-mail
+                ou contacter un administrateur du jeu.
 
-                From here you can:
-                    Type |wb|n to choose a different email address.
-                    Enter your 4-digit validation code.
+                Vous pouvez :
+                    Entrez |yp|n pour choisir une nouvelle adresse e-mail.
+                    Entrer votre code de validation à 4 chiffres.
                 """.strip("\n")).format(email_address)
             options = (
                 {
-                    "key": "b",
-                    "desc": "Go back to the email address selection.",
+                    "key": "p",
+                    "desc": "Revenir au choix de l'adresse e-mail.",
                     "goto": "pre_email_address",
                 },
                 {
                     "key": "_default",
-                    "desc": "Enter your validation code.",
+                    "desc": "Entrer votre code de validation.",
                     "goto": "validate_account",
                 },
             )
@@ -566,13 +571,13 @@ def validate_account(caller, input):
     text = ""
     options = (
         {
-            "key": "b",
-            "desc": "Go back to the email address menu.",
+            "key": "p",
+            "desc": "Revenir au choix de l'adresse e-mail.",
             "goto": "pre_email_address",
         },
         {
             "key": "_default",
-            "desc": "Enter the validation code.",
+            "desc": "Entrer le code de validation.",
             "goto": "validate_account",
         },
     )
@@ -580,20 +585,20 @@ def validate_account(caller, input):
     account = caller.db._account
     if account.db.validation_code != input.strip():
         text = dedent("""
-            |rSorry, the specified validation code {} doesn't match the one stored for this account.
-            Is it the code you received by email?  You can try to enter it again,
-            Or enter |wb|n to choose a different email address.
+            |rDésolé, le code de validation spécifié {} ne correspond pas à celui enregistré.|n
+            S'agit-il bien du code qui vous a été envoyé par e-mail ? Vous pouvez essayer de
+            l'entrer à nouveau ou entrer |yp|n pour choisir une adresse e-mail différente.
         """.strip("\n")).format(input.strip())
     else:
         account.db.valid = True
         account.attributes.remove("validation_code")
-        caller.msg("-----  You will now create the first character of this account. -----")
+        caller.msg("----- Vous créez maintenant le premier personnage dans votre compte. -----")
         _login(caller, account)
         text = ""
         options = (
             {
                 "key": "_default",
-                "desc": "Enter your new character's first name.",
+                "desc": "Entrez le prénom de votre premier personnage.",
                 "goto": "create_first_name",
             },
         )
@@ -603,16 +608,16 @@ def validate_account(caller, input):
 ## Transition nodes
 def pre_start(self):
     """Node to redirect to 'start'."""
-    text = "Enter your username or |wNEW|n to create an account."
+    text = "Entrez votre nom d'utilisateur ou |yNOUVEAU|n pour créer un compte."
     options = (
         {
-            "key": "new",
-            "desc": "Create a new character.",
+            "key": "nouveau",
+            "desc": "Créer un nouveau compte.",
             "goto": "create_account",
         },
         {
             "key": "_default",
-            "desc": "Login to an existing account.",
+            "desc": "Se connecter à un compte existant.",
             "goto": "username",
         },
     )
@@ -620,11 +625,11 @@ def pre_start(self):
 
 def pre_email_address(self):
     """Node to redirect to 'email_address'."""
-    text = "Enter another valid email address."
+    text = "Entrez une autre adresse e-mail valide."
     options = (
         {
             "key": "_default",
-            "desc": "Enter a valid email address.",
+            "desc": "Entrez une adresse e-mail valide.",
             "goto": "email_address",
         },
     )
@@ -644,7 +649,7 @@ def _create_account(session, accountname, password, permissions, typeclass=None,
         new_account = create.create_account(accountname, email, password, permissions=permissions, typeclass=typeclass)
 
     except Exception as e:
-        session.msg("There was an error creating the Account:\n%s\n If this problem persists, contact an admin." % e)
+        session.msg("Une erreur s'est produite lors de la création du compte:\n%s\nSi l'erreur persiste, contacter un administrateur." % e)
         logger.log_trace()
         return False
 
@@ -657,14 +662,14 @@ def _create_account(session, accountname, password, permissions, typeclass=None,
 def _text_email_address(account):
     """Return the text for the email address menu node."""
     text = dedent("""
-        Enter a valid email address for the account {}.
+        Entrez une e-mail adresse valide pour le compte {}.
 
-        An email confirmation will be sent to this address with a 4-digit code that you will have
-        to enter to validate this account.  This email address will be used only by the staff,
-        should the need arise.  You will be able to update this email address
-        if desired.
+        Un e-mail de confirmation sera envoyé à cette adresse, contenant un code de validation à
+        4 chiffres dont vous aurez besoin pour valider ce compte. Cette adresse e-mail ne sera
+        utilisée que par les administrateurs du jeu, en cas de besoin. Vous pourrez changer
+        cette adresse e-mail par la suite.
 
-        Enter your email address.
+        Entrez votre adresse e-mail.
     """.strip("\n")).format(account.name)
 
     return text
@@ -672,7 +677,7 @@ def _text_email_address(account):
 def _wrong_password(account):
     """Function called after the 3 seconds are up, when a wrong password has been supplied."""
     account.db._locked = False
-    account.msg("Enter your password again.")
+    account.msg("Entrez votre mot de passe de nouveau.")
 
 
 class AccountMenu(evmenu.EvMenu):
