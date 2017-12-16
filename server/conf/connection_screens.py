@@ -19,5 +19,15 @@ from django.conf import settings
 from evennia import utils
 
 CONNECTION_SCREEN = \
-"""Welcome to |g1st Avenew|n, built on Evennia %s!""" \
+r"""Welcome to
+
+              ,
+            /'/
+          /' /
+       ,/'  /.     ,   ____     ,____     ____ .   . ,   ,
+      /`--,/ |    /  /'    )   /'    )  /'    )|   |/   /
+    /'    /  |  /' /(___,/'  /'    /' /(___,/' |  /|  /'
+(,/'     (_,_|/(__(________/'    /(__(_________|/' |/(__
+
+|gAvenew One|n, built on Evennia %s!""" \
  % (utils.get_evennia_version())
