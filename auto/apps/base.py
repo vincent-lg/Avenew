@@ -454,7 +454,6 @@ class BaseScreen(object):
             tup = tree[-1]
             tup = tup[:3] + (dict(self.db), )
             tree[-1] = tup
-            print tup
 
         db = db or {}
         new_screen = self.move_to(screen, app, db=db)
