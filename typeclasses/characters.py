@@ -10,10 +10,12 @@ creation commands.
 
 """
 
+from evennia.utils.utils import lazy_property
 from evennia.contrib.ingame_python.typeclasses import EventCharacter
 from evennia.contrib.ingame_python.utils import register_events
 
 from behaviors import BEHAVIORS
+from logic.character.stats import StatsHandler
 
 # Constants
 MAP = r"""
@@ -91,6 +93,11 @@ class Character(EventCharacter):
                 behaviors.append(BEHAVIORS[name])
 
         return behaviors
+
+    @lazy_property
+    def stats(self):
+        """Return the stat handler for this character."""
+        return StatsHandler(self)
 
     def at_before_say(self, message, **kwargs):
         """
