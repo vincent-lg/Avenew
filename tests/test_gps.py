@@ -2,6 +2,8 @@
 
 """Test the GPS and coordinate finder."""
 
+from __future__ import absolute_import
+
 from logic.gps import GPS
 from tests.road import TestRoad
 from typeclasses.rooms import Room
