@@ -38,6 +38,8 @@ A few examples:
 
 """
 
+from evennia.utils.utils import lazy_property
+
 class StatsHandler(object):
 
     """
@@ -188,6 +190,44 @@ class StatsHandler(object):
         """Change the mental charisma."""
         self._error_set("m_cha", value)
 
+    @lazy_property
+    def db_read(self):
+        """Return the database in which to read only, not write.
+
+        The difference between the `db_read` and `db_write` properties is that
+        the latter returns a dictionary in which you can write.  This
+        dictionary will be saved as attribute of the character.  The
+        former method, on the other hand, will return an empty, not
+        editable dictionary, except if the attributes exist.  You should
+        call `db_read` only when you need to read from the handler but
+        not write in it, for the result will vary depending on whether
+        the attribute already exist or not.
+
+        """
+        if "db" in self._in_cache:
+            return self._in_cache["db"]
+        else:
+            if not self.character.attributes.has("stats"):
+                return {}
+
+            db = self.character.db.stats
+            self._in_cache["db"] = db
+            return db
+
+    @property
+    def db_write(self):
+        """Return the dictionary in which you can write.
+
+        See the docstring on `db_read` for details.
+
+        """
+        if not self.character.attributes.has("stats"):
+            self.character.db.stats = {}
+
+        db = self.character.db.stats
+        self._in_cache["db"] = db
+        return db
+
     def _retrieve(self, name, from_class=None, default=None):
         """Retrieve the stat from the cache, or create it."""
         from_class = from_class or Stat
@@ -200,17 +240,12 @@ class StatsHandler(object):
         else:
             # Get the stat value, if found
             kwargs = {"base": default, "min": min, "max": max}
-            if "db" in self._in_cache:
-                db = self._in_cache["db"]
-            else:
-                if "stats" not in self.character.db.all:
-                    self.character.db.stats = {}
-
-                db = self.character.db.stats
-                self._in_cache["db"] = db
+            db = self.db_read
+            print repr(db.get(name))
             kwargs.update(db.get(name, {}))
 
             # Create the stat
+            print name, kwargs
             stat = from_class(self, name, **kwargs)
             self._in_cache[name] = stat
             return stat
@@ -271,6 +306,7 @@ class Stat(object):
         old = self.current
         self._base = new_base
         self._normalize()
+        self._save()
 
         # If the base has changed, call the 'hit' method that can be subclassed
         new = self.current
@@ -286,6 +322,7 @@ class Stat(object):
         """Set the stat mod."""
         old = self.current
         self._mod = new_mod
+        self._save()
         new = self.current
         if old != new:
             self.hit(old, new)
@@ -304,6 +341,22 @@ class Stat(object):
             self._base = self._min
         if self._max is not None and self._base > self._max:
             self._base = self._max
+
+    def _save(self):
+        """Save the stat in the handler.
+
+        This should be done automatically and shouldn't have to be called directly.
+
+        """
+        handler = self.handler
+        db = handler.db_write
+        db[self.name] = {
+                "base": self._base,
+                "mod": self._mod,
+        }
+
+        if self._max is not None:
+            db[self.name].update({"max": self._max})
 
     def hit(self, old_value, new_value):
         """The base of this stat has changed.
@@ -349,6 +402,7 @@ class StatVarMax(Stat):
         self._max = value
         if value is not None and self._base > value:
             self._base = value
+        self._save()
 
 class PVit(StatVarMax):
 
