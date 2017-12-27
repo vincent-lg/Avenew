@@ -241,11 +241,9 @@ class StatsHandler(object):
             # Get the stat value, if found
             kwargs = {"base": default, "min": min, "max": max}
             db = self.db_read
-            print repr(db.get(name))
             kwargs.update(db.get(name, {}))
 
             # Create the stat
-            print name, kwargs
             stat = from_class(self, name, **kwargs)
             self._in_cache[name] = stat
             return stat
