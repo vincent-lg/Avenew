@@ -412,5 +412,5 @@ class PVit(StatVarMax):
         if character:
             if new_value == 0:
                 character.die()
-            else:
+            elif old_value == 0:
                 character.live()
