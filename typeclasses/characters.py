@@ -76,6 +76,7 @@ class Character(EventCharacter):
         "pre_turn": (["character", "vehicle", "crossroad"], PRE_TURN),
         "post_turn": (["character", "vehicle", "crossroad"], POST_TURN),
     }
+    repr = "representations.character.CharacterRepr"
 
     @property
     def behaviors(self):
