@@ -90,7 +90,7 @@ class BaseRepr(object):
 
     def display(self, caller):
         """Display the object."""
-        self.caller.msg(self.get_form(caller))
+        caller.msg(self.get_form(caller))
 
     def get_form(self, caller):
         """Return the formatted form."""
@@ -100,7 +100,9 @@ class BaseRepr(object):
                 if hasattr(self, "get_{}".format(field)):
                     value = getattr(self, "get_{}".format(field))(caller)
                 else:
-                    value = getattr(self.obj, field)
+                    value = self.obj
+                    for part in field.split("."):
+                        value = getattr(value, part)
                 to_display[i + 1] = value
             return unicode(EvForm(form={"CELLCHAR": "x", "TABLECHAR": "c",
                     "FORM": type(self).form}, cells=to_display))

@@ -5,14 +5,14 @@ Module containing the StatsHandler for characters, and the individual Stats.
 
 You will access the `StatsHandler` through `character.stats`.  From there you will be able to access the stats as objects (not value):
     character.stats.p_vit: the character's physical health/vitality (0-100).
-    character.stats.p_tired: physical tiredness (0-200).
+    character.stats.p_wea: physical weariness/tiredness (0-200).
     character.stats.p_str: physical strength.
     character.stats.p_dex: physical dexterity.
     character.stats.p_con: physical constitution, can influence health and tiredness.
     character.stats.p_sen: physical sensitivity.
     character.stats.p_qui: physical quickness, agility.
     character.stats.m_vit: mental vitality/health, integrity (0-100).
-    character.stats.m_tired: mental stress (0-200).
+    character.stats.m_wea: mental weariness/stress (0-200).
     character.stats.m_pow: mental power.
     character.stats.m_wil: mental willpower.
     character.stats.m_int: mental intelligence, memory.
@@ -53,7 +53,7 @@ class StatsHandler(object):
 
     defaults = {
         "p_vit": (100, 0, 100),
-        "p_tired": (0, 0, 100),
+        "p_wea": (0, 0, 100),
         "p_str": (5, 0, 100),
         "p_dex": (5, 0, 100),
         "p_con": (5, 0, 100),
@@ -62,7 +62,7 @@ class StatsHandler(object):
 
         # Mental stats
         "m_vit": (100, 0, 100),
-        "m_tired": (0, 0, 100),
+        "m_wea": (0, 0, 100),
         "m_pow": (5, 0, 100),
         "m_wil": (5, 0, 100),
         "m_int": (5, 0, 100),
@@ -83,13 +83,13 @@ class StatsHandler(object):
         self._error_set("p_vit", value)
 
     @property
-    def p_tired(self):
+    def p_wea(self):
         """Return the physical tiredness of this character."""
-        return self._retrieve("p_tired", StatVarMax)
-    @p_tired.setter
-    def p_tired(self, value):
+        return self._retrieve("p_wea", StatVarMax)
+    @p_wea.setter
+    def p_wea(self, value):
         """Change the physical tiredness."""
-        self._error_set("p_tired", value)
+        self._error_set("p_wea", value)
 
     @property
     def p_str(self):
@@ -146,13 +146,13 @@ class StatsHandler(object):
         self._error_set("m_vit", value)
 
     @property
-    def m_tired(self):
+    def m_wea(self):
         """Return the mental tiredness of this character."""
-        return self._retrieve("m_tired", StatVarMax)
-    @m_tired.setter
-    def m_tired(self, value):
+        return self._retrieve("m_wea", StatVarMax)
+    @m_wea.setter
+    def m_wea(self, value):
         """Change the mental tiredness."""
-        self._error_set("m_tired", value)
+        self._error_set("m_wea", value)
 
     @property
     def m_pow(self):
