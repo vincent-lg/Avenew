@@ -16,6 +16,7 @@ from evennia.utils import create, evmenu, logger
 from evennia.utils.evmenu import EvMenu
 
 from typeclasses.characters import Character
+from world.utils import latinify
 
 ## Constants
 RE_VALID_FIRST_NAME = re.compile(r"^[a-z -]{2,}$", re.I)
@@ -28,7 +29,7 @@ def choose_characters(account, command):
     options = (
         {
             "key": "_default",
-            "desc": "Press RETURN to continue.",
+            "desc": "Appuyez sur ENTRER pour continuer.",
             "goto": "start",
         },
     )
@@ -43,7 +44,7 @@ def choose_characters(account, command):
             account.puppet_object(session, character)
             return "", None
 
-    text = "|rThis character cannot be found.  Try again.|n"
+    text = "|rImpossible de trouver ce personnage. Essayez à nouveau.|n"
     text += "\n" + _text_choose_characters(account)
     options = _options_choose_characters(account)
     return text, options
@@ -51,21 +52,26 @@ def choose_characters(account, command):
 def create_character(account):
     """Display the introduction to the character creation."""
     text = dedent("""
-        You find yourself driving at high speed along a highway.  Said high speed slowly begins to decrease, as
-        traffic becomes heavier.  You finally navigate through a wide exit ramp,
-        to be stopped by a checkpoint before entering the city.
+        Vous vous trouvez à l'arrière d'un taxi, fonçant sur la voix express d'une
+        autoroute. La vitesse ionitiale de votre véhicule diminue peu à peu, tandis
+        que le flot de voitures, motos et camions signale l'approche d'une sortie
+        importante. Le taxi s'engage sur une voie latérale et s'arrête à quelques
+        mètres d'un cordon de sécurité, visiblement improvisé, barrant l'accès
+        aux zones urbaines.
 
-        A police officer walks toward your door and motions you to slide down the car window:
-            'Sorry, just a few questions, it won't take more than a minute or so.
-            We need to keep track of visitors, we've had some trouble recently.  Could you
-            tell me your first name please?'
+        Un officier de police se détache du groupe, faisant signe à votre conducteur
+        de baisser la vitre arrière de votre côté. Ouvrant son carnet et se
+        préparant à prendre note, il vous regarde attentivement :
+            "Juste quelques questions avant de poursuivre votre route... on n'a pas
+            besoin d'ennuis supplémentaires ici. Pour commencer, qui êtes-vous ?
+            Donnez-moi votre prénom, s'il vous plaît.
 
-        Enter your new character's first name.
+        Entrez le prénom de votre nouveau personnage.
     """.strip("\n"))
     options = (
         {
             "key": "_default",
-            "desc": "Enter your new character's first name.",
+            "desc": "Entrez le prénom de votre nouveau personnage.",
             "goto": "create_first_name",
         },
     )
@@ -75,23 +81,24 @@ def create_character(account):
 def create_first_name(account, command):
     """Prompt the new character for his/her first name."""
     command = command.strip()
-    if not RE_VALID_FIRST_NAME.search(command):
+    if not RE_VALID_FIRST_NAME.search(latinify(command)):
         text = dedent("""
-            |rSorry, this first name is not valid.|n
-            A correct first name may contain letters (and possibly
-            spaces), without special characters.  You can:
-                Type |wb|n to go back to the character selection.
-                Or enter this character's first name again.
+            |rDésolé, ce prénom n'est pas valide.|n
+            Un prénom correct peut comporter des lettres, caractères accentués et
+            éventuellement des espaces. D'ici, vous pouvez :
+
+                Entrer |yp|n pour revenir au choix de personnage.
+                Ou entrer de nouveau le prénom de ce personnage.
         """.strip("\n"))
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the character selection.",
+                "key": "p",
+                "desc": "Revenir au choix de personnage.",
                 "goto": "display_characters",
             },
             {
                 "key": "_default",
-                "desc": "Enter another first name.",
+                "desc": "Entrez de nouveau le prénom de votre personnage.",
                 "goto": "create_first_name",
             },
         )
@@ -101,15 +108,16 @@ def create_first_name(account, command):
 
         # Redirects to the creation of the last name
         text = dedent("""
-            The police officer stares at you with some wariness:
-                'All right, we're getting somewhere.  Would you mind giving me a last name now?'
+            L'officier de police vous regarde d'un air vaguement curieux.
+                "Bien... c'est déjà quelque chose. Pouvez-vous me donner votre nom de
+                famille à présent ?"
 
-            Enter your new character's last name.
+            Entrez le nom de famille de votre nouveau personnage.
         """.strip("\n"))
         options = (
             {
                 "key": "_default",
-                "desc": "Enter this character's last name.",
+                "desc": "Entrez le nom de famille de votre nouveau personnage.",
                 "goto": "create_last_name",
             },
         )
@@ -126,41 +134,41 @@ def create_last_name(account, command):
 
     # Gets the characters with the same name
     characters = Character.objects.filter(db_key__iexact=full_name)
-    if not RE_VALID_LAST_NAME.search(command):
+    if not RE_VALID_LAST_NAME.search(latinify(command)):
         text = dedent("""
-            |rSorry, this last name is not valid.|n
-            A correct last name may contain letters (and possibly spaces), without special
-            characters.  You can:
-                Type |wb|n to go back to the first name selection.
-                Or enter this character's last name again.
+            |rDésolé, ce nom de famille n'est pas valide.|n
+            Un nom de famille doit comporter des lettres (éventuellement accentuées)
+            et des espaces. D'ici vous pouvez :
+                Entrer |yp|n pour revenir au choix de prénom.
+                Ou entrez de nouveau le nom de famille de ce personnage.
         """.strip("\n"))
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the first name selection.",
+                "key": "p",
+                "desc": "Revenir au choix du prénom de votre peresonnage.",
                 "goto": "pre_first_name",
             },
             {
                 "key": "_default",
-                "desc": "Enter another last name.",
+                "desc": "Entrez à nouveau le nom de famille de votre personnage.",
                 "goto": "create_last_name",
             },
         )
     elif len(characters) > 0:
         text = dedent("""
-            |rA character named {} already exists.  You can:
-                Type |wb|n to go back to the first name selection.
-                Or enter this character's last name again.
+            |rUn personnage nommé {} existe déjà.  Vous pouvez :
+                Entrer |yp|n pour revenir au choix de prénom.
+                Ou entrez de nouveau le nom de famille de ce personnage.
         """.format(full_name).strip("\n"))
         options = (
             {
-                "key": "b",
-                "desc": "Go back to the first name selection.",
+                "key": "p",
+                "desc": "Revenir au choix du prénom de votre personnage.",
                 "goto": "pre_first_name",
             },
             {
                 "key": "_default",
-                "desc": "Enter another last name.",
+                "desc": "Entrer à nouveau le nom de famille de votre personnage.",
                 "goto": "create_last_name",
             },
         )
@@ -170,15 +178,15 @@ def create_last_name(account, command):
 
         # Redirects to the gender selection.
         text = dedent("""
-            The police officer nods and scribbles on his pad:
-                'Nice name, I s'pose.  What gender should I indicate here?'
+            L'officier de police hoche la tête et griffonne sur son carnet :
+                "Pourrait être pire... Quel genre dois-je indiquer ?"
 
-            Select your gender (|wF|n or |wM|n).
+            Choisissez votre genre (|yF|n ou |yM|n).
         """.strip("\n"))
         options = (
             {
                 "key": "_default",
-                "desc": "Enter your gender (F or M).",
+                "desc": "Entrez votre genre (F ou H).",
                 "goto": "select_gender",
             },
         )
@@ -190,33 +198,33 @@ def select_gender(account, command):
     gender = command.strip().lower()
     if gender not in "mf":
         text = dedent("""
-            The police officer scratches his head thoughtfully:
-                'Sorry, I didn't catch that.'
+            L'officier de police se gratte la tête.
+                "Pardon ? Je n'ai pas compris."
 
-            Enter |wF|n for female or |wM|n for male.
+            Entrez |yF|n pour féminin ou |yM|n pour masculin.
         """.strip("\n"))
         options = (
             {
                 "key": "_default",
-                "desc": "Select this character's gender.",
+                "desc": "Entrez le genre de ce personnage.",
                 "goto": "select_gender",
             },
         )
     else:
         female = True if gender == "f" else False
-        title = "ma'am" if female else "sir"
+        title = "madame" if female else "monsieur"
         account.db._female = female
 
         text = dedent("""
-            The police officer nods and scribbles on his pad.
-                'Thank you {title}.  We're almost done.  I just need to know your age.'
+            L'officier de police hoche la tête et griffonne sur son carnet :
+                "Merci {title}. C'est presque fini. Il me faudrait juste savoir votre âge."
 
-            Enter your character's age.
+            Entrez l'âge de votre personnage.
         """.strip("\n")).format(title=title)
         options = (
             {
                 "key": "_default",
-                "desc": "Enter your character's age.",
+                "desc": "Entrez l'âge de votre nouveau personnage.",
                 "goto": "select_age",
             },
         )
@@ -234,26 +242,26 @@ def select_age(account, command):
 
     if age is None:
         text = dedent("""
-            The police officer scratches his head thoughtfully.
-                'Sorry, I didn't quite catch that.'
+            L'officier de police se gratte la tête pensivement.
+                "Désolé, je n'ai pas compris."
 
-            Please enter your character's age again.
+            Entrez l'âge de votre personnage à nouveau."
         """.strip("\n"))
         options = (
             {
                 "key": "_default",
-                "desc": "Select this character's age.",
+                "desc": "Entrez l'âge de votre personnage.",
                 "goto": "select_age",
             },
         )
     else:
         full_name = account.db._full_name
         female = account.db._female
-        title = "ma'am" if female else "sir"
+        title = "madame" if female else "monsieur"
         options = (
             {
                 "key": "_default",
-                "desc": "Enter your character's age.",
+                "desc": "Entrez l'âge de votre personnage.",
                 "goto": "select_age",
             },
         )
@@ -261,37 +269,40 @@ def select_age(account, command):
         # There are invalid choices
         if age < 0:
             text = dedent("""
-                The police officer steps back in surprise:
-                    'Now, how's that possible?  Probably a mistake he?'
+                L'officier de police recule d'un pas, apparemment surpris :
+                    "Hmmm, me semble pas possible. Sans doute une erreur."
 
-                Please enter your character's age again.
+                Entrez l'âge de votre personnage.
             """.strip("\n"))
         elif age < 10:
             text = dedent("""
-                The police officer gazes at you in surprise:
-                    'Shouldn't you be in the backseat?  Okay, I'm sorry,
-                    but it's a bit too young to drive, don't you think?'
+                L'officier de police vous considère avec surprise :
+                    "Et où sont tes parents ? Me faut parler à un adulte responsable, désolé."
 
-                Please enter your character's age again.
+                Entrez l'âge de votre personnage.
             """.strip("\n"))
         elif age < 16:
             text = dedent("""
-                The police officer looks you up and down:
-                    'Well kid, I don't mean to sound offensive or anything, but you can't drive a car
-                    at that age.  As far as I'm concerned, you can lie, but be convincing.'
+                L'officier de police vous fixe de haut en bas :
+                    "Désolé, je ne peux autoriser que des adultes ici, à moins qu'ils
+                    soient accompagnés. Ce n'est pas bien juste, mais ce sont les ordres.
+                    Et le droit de conduire, c'est à 16 ans ici. Si tu as moins, me faudra
+                    voir tes parents. Maintenant, tu as le droit de mentir aussi, mais
+                    sois convaincant au moins."
 
-                Please enter your character's age again.
+                Entrez l'âge de votre personnage.
             """.strip("\n"))
         else:
             text = dedent("""
-                The police officer takes a final note on his pad:
-                    'That will do!  Have a good stay with us, {title}.
+                L'officier de police écrit de nouveau dans son carnet, avant de le ranger :
+                    Ça suffira. Bon séjour parmi nous, {title}."
 
-                The police officer steps back and waves your car through the checkpoint.  You are now
-                free to enter Los Alfaques, a city built on the ocean shore, its high rises forming the
-                foreground of the city scape you discover as you speed up.  After a few minute
-                drive, you park in front of a large building.  You get off your car, lock the door behind you,
-                and walk toward the building, stopping a few feet away from the main entrance inside.
+                L'officier de police recule et vous fait signe de passer au travers
+                du cordon de sécurité. Votre taxi reprend de la vitesse en entrant en ville.
+                Au bout de quelques minutes, il ralentit et finit par s'immobiliser devant
+                un hôtel semblant un peu décrépit, vu de l'extérieur. Vous descendez,
+                payez le prix de la course et regardez le taxi s'éloigner avant d'étudier
+                votre nouvel environnement.
             """.strip("\n")).format(title=title)
 
             # Create the character
@@ -326,15 +337,15 @@ def display_characters(account):
 def pre_first_name(account):
     """A menu node to pause before the choice of the first name."""
     text = dedent("""
-        A police officer crosses out something on his pad:
-            'Okay, let's start over then.  Could you give me your first name, please?'
+        Un officier de police raye quelque chose dans son carnet :
+            "Bon, recommençons du début alors. Pouvez-vous me donner votre prénom ?
 
-        Enter your new character's first name.
+        Entrez le prénom de votre nouveau personnage.
     """.strip("\n"))
     options = (
         {
             "key": "_default",
-            "desc": "Enter your new character's first name.",
+            "desc": "Entrez le prénom de votre nouveau personnage.",
             "goto": "create_first_name",
         },
     )
@@ -387,21 +398,21 @@ def _create_character(name, account):
 
 def _text_choose_characters(account):
     """Display the menu to choose a character."""
-    text = "Enter a valid number to log into that character.\n"
+    text = "Entrez un numéro pour vous connecter sur ce personnage.\n"
     characters = account.db._playable_characters
     if len(characters):
         for i, character in enumerate(characters):
-            text += "\n  |y{}|n - Log into {}.".format(str(i + 1),
+            text += "\n  |y{}|n - Jouer avec {}.".format(str(i + 1),
                     character.name)
     else:
-        text += "\n  No character has been created in this account yet."
+        text += "\n  Aucun personnage n'a été créé dans ce compte pour l'heure."
 
     text += "\n"
     if len(characters) < 5:
-        text += "\n  |yC|n to create a new character."
+        text += "\n  |yC|n pour créer un nouveau personnage."
 
     if len(characters) > 0:
-        text += "\n  |yD|n to delete one of your characters."
+        text += "\n  |yS|n pour supprimer un de vos personnages actuels."
 
     return text
 
@@ -418,20 +429,20 @@ def _options_choose_characters(account):
     if len(characters) < 5:
         options.append(        {
                 "key": "c",
-                "desc": "Create a new character.",
+                "desc": "Créer un nouveau personnage.",
                 "goto": "create_character",
         })
 
     if len(characters) > 0:
         options.append(        {
-                "key": "d",
-                "desc": "Delete an existing character.",
+                "key": "s",
+                "desc": "Supprime un de vos personnages.",
                 "goto": "delete_character",
         })
 
     options.append(        {
             "key": "_default",
-            "desc": "Login to an existing character.",
+            "desc": "Jouer avec un de vos personnages.",
             "goto": "choose_characters",
     })
     return tuple(options)
