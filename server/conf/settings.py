@@ -48,6 +48,7 @@ IRC_ENABLED = True
 ## Commands
 # UnloggedinCmdSet
 CMDSET_UNLOGGEDIN = "commands.unloggedin.UnloggedinCmdSet"
+DELAY_CMD_LOGINSTART = 0
 
 # Default command class
 COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
