@@ -18,29 +18,43 @@ from typeclasses.vehicles import Crossroad
 class CmdEdit(MuxCommand):
 
     """
-    Global editing command.
+    Commande d'édition générale.
 
-    To use this command, you have to specify the field you wish to
-    edit, the object's name (or #ID) and the value after an equal
-    sign.  For instance:
+    Pour utiliser cette commande, vous devez préciser le nom du champ à
+    modifier, l'objet (ou son ID) suivi de la nouvelle valeur.
 
-        @speed a porsche = 180
+    Exemple :
+        :x ici 35
+        :name moi quelqu'un de tout à fait exceptionnel
+        :speed porsche 180
 
-    Depending on the object, you will have different fields you can
-    modify through this command.  If you have the object and want to
-    know what you can edit, simply use this command without the first
-    parameter:
+    En fonciton de l'objet, différents champs seront disponibles. Si vous
+    voulez connaître la liste des champs associés à un objet, vous pouvez
+    entrer le nom (ou ID) de l'objet après le signe deux points :
+
+        :me
+
+    Un tableau récapitulatif des champs et de leur valeur actuelle sera affiché
+    suivant un format un peu plus agréable.
+
+    Si vous avez besoin de connaître la valeur actuelle d'un champ sans
+    la modifier, ne précisez que le nom de l'objet suivi du nom du champ, sans
+    valeur :
+
+        :y ici
 
         @ a porsche
 
-    Use both the field name and object name without the equal sign
-    and value to see the current value of this field:
+    Là encore, vous pouvez utiliser les ID uniques des objets à la place de préciser leur nom, ce qui est utile en cas de conflit ou d'édition à distance :
 
-        @speed #331
+        :/2
+        :/2 x
+        :/2 x 5
 
     """
 
-    key = "@"
+    key = ":"
+    aliases = ["@"]
     locks = "cmd:id(1) or perm(Builders)"
     help_category = "Building"
 
@@ -63,7 +77,7 @@ class CmdEdit(MuxCommand):
             field_name = ""
 
         if not obj_name:
-            self.msg("Specify at least an object's name or #ID.")
+            self.msg("Précisez au moins le nom de l'objet ou son /ID.")
             return
 
         # Search for the actual object
@@ -78,7 +92,7 @@ class CmdEdit(MuxCommand):
         # Get the representation value for this object type
         repr = getattr(type(obj), "repr", None)
         if repr is None:
-            self.msg("This object has no representation to describe it.")
+            self.msg("Cet objet n'a pas de représentation pour le décrire.")
             return
 
         repr = class_from_module(repr)
@@ -89,21 +103,22 @@ class CmdEdit(MuxCommand):
 class CmdNew(UnixCommand):
 
     """
-    Create a new object.
+    Crée un nouvel objet.
 
-    You can use this command to create multiple objects, like rooms,
-    exits, vehicles, and so on.  The first parameter after the
-    |w@new|n command is the type to create: |w@new room|n, for
-    instance, will create a room.  Different types have different
-    expectations.  Read the help above to see the available options
-    for each type.
+    Vous pouvez utiliser cette commande pour créer différents objets, comme
+    des salles, sorties, véhicules et autre. Le premier paramètre qu'attend la
+    commande |y:new|n est le nom (anglais) du type d'objet à créer. Les types
+    disponibles attendent différentes options. Consultez l'aide en entrant
+    |y:new <type> -h|n, par exemple |y:new room -h|y pour avoir le détail
+    des options disponibles pour la création de salles.
 
-    Examples:
-      |w@new room n|n
+    Exemples :
+      |y:new room n|n
 
     """
 
-    key = "@new"
+    key = ":new"
+    aliases = ["@new"]
     locks = "cmd:id(1) or perm(Builders)"
     help_category = "Building"
 

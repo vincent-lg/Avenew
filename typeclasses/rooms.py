@@ -225,9 +225,9 @@ class Room(EventRoom):
         string += description
 
         if exits:
-            string += "\n|wExits:|n " + ", ".join(exits)
+            string += "\n|wSorties :|n " + ", ".join(exits)
         if users or things:
-            string += "\n|wYou see:|n " + ", ".join(users + things)
+            string += "\n|wVous voyez :|n " + ", ".join(users + things)
         return string
 
     def add_address(self, number, name):

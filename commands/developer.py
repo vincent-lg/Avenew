@@ -12,18 +12,18 @@ from evennia.utils.utils import time_format
 class CmdLog(MuxCommand):
 
     """
-    Tail and watch game log files.
+    Affiche les dernières lignes d'un fichier de log.
 
     Usage:
-        @log <logfile>
+        :log <nom du fichier de log>
 
-    This command allows to see the end of a log file, or watch it.
-    In this latter case, messages sent to the logger will be directly
-    sent to you as well.
+    Cette commande permet de voir la fin d'un fichier de log. Vous pouvez aussi
+    surveiller ce fichier de log : dans ce dernier cas, les messages envoyés au
+    fichier seront automatiquement envoyés à votre client.
 
     """
 
-    key = "@log"
+    key = ":log"
     locks = "cmd:id(1) or perm(Developers)"
     help_category = "System"
 
@@ -36,7 +36,7 @@ class CmdLog(MuxCommand):
         path = os.path.join("server/logs", filename)
         now = datetime.datetime.now()
         if not os.path.exists(path) or not os.path.isfile(path):
-            self.msg("The {} log file doesn't exist.".format(filename))
+            self.msg("Le fichier de log {} n'existe pas.".format(filename))
         else:
             lines = tail_log_file(filename, 0, 20)
             render = []
@@ -55,4 +55,4 @@ class CmdLog(MuxCommand):
             if render:
                 self.msg("\n".join(render))
             else:
-                self.msg("|rNo message could be found in this log file.|n")
+                self.msg("|rAucun message n'a pu être lu depuis ce fichier.|n")
