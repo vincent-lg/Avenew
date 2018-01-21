@@ -19,18 +19,6 @@ from datetime import datetime
 import logging
 import os
 
-class CustomFormatter(logging.Formatter):
-
-    """Special formatter to add hour and minute."""
-
-    def format(self, record):
-        """Add special placeholders for shorter messages."""
-        now = datetime.now()
-        record.hour = now.hour
-        record.minute = now.minute
-        return logging.Formatter.format(self, record)
-
-
 loggers = {}
 
 def logger(name):
@@ -61,8 +49,7 @@ def logger(name):
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
-    formatter = CustomFormatter(
-            "%(hour)02d:%(minute)02d [%(levelname)s] %(message)s")
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
     # If it's the main logger, create a stream handler
     if name == "avenew":

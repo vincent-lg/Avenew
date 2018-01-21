@@ -22,6 +22,7 @@ from evennia.contrib.ingame_python.commands import CmdCallback
 
 from commands.building import CmdEdit, CmdNew
 from commands.comms import CmdConnect, CmdDisconnect, CmdChannel
+from commands.developer import CmdLog
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
 from commands.moving import CmdEnter, CmdLeave
@@ -51,6 +52,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdStartRoad())
         self.add(CmdUse())
         self.add(CmdAddress())
+        self.add(CmdLog())
 
         # Channel commands
         self.add(CmdChannel())
