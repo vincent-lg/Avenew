@@ -11,6 +11,91 @@ Classes:
 
 from evennia.typeclasses.attributes import AttributeHandler
 
+class AvenewObject(object):
+
+    """Mix-in containing shared behavior that all typeclasses in the Avenew game should use."""
+
+    def get_display_name(self, looker, **kwargs):
+        """
+        Displays the name of the object in a viewer-aware manner.
+
+        Args:
+            looker (TypedObject): The object or account that is looking
+                at/getting inforamtion for this object.
+
+        Returns:
+            name (str): A string containing the name of the object,
+                including the DBREF if this user is privileged to control
+                said object.
+
+        """
+        if self.locks.check_lockstring(looker, "perm(Builder)"):
+            return "{}(#{})".format(self.name, self.id)
+        return self.name
+
+    def search(self, searchdata, **kwargs):
+        """
+        Returns an Object matching a search string/condition
+
+        Perform a standard object search in the database, handling
+        multiple results and lack thereof gracefully. By default, only
+        objects in the current `location` of `self` or its inventory are searched for.
+
+        Args:
+            searchdata (str or obj): Primary search criterion. Will be matched
+                against `object.key` (with `object.aliases` second) unless
+                the keyword attribute_name specifies otherwise.
+                **Special strings:**
+                - `#<num>`: search by unique dbref. This is always
+                   a global search.
+                - `me,self`: self-reference to this object
+                - `<num>-<string>` - can be used to differentiate
+                   between multiple same-named matches
+            global_search (bool): Search all objects globally. This is overruled
+                by `location` keyword.
+            use_nicks (bool): Use nickname-replace (nicktype "object") on `searchdata`.
+            typeclass (str or Typeclass, or list of either): Limit search only
+                to `Objects` with this typeclass. May be a list of typeclasses
+                for a broader search.
+            location (Object or list): Specify a location or multiple locations
+                to search. Note that this is used to query the *contents* of a
+                location and will not match for the location itself -
+                if you want that, don't set this or use `candidates` to specify
+                exactly which objects should be searched.
+            attribute_name (str): Define which property to search. If set, no
+                key+alias search will be performed. This can be used
+                to search database fields (db_ will be automatically
+                prepended), and if that fails, it will try to return
+                objects having Attributes with this name and value
+                equal to searchdata. A special use is to search for
+                "key" here if you want to do a key-search without
+                including aliases.
+            quiet (bool): don't display default error messages - this tells the
+                search method that the user wants to handle all errors
+                themselves. It also changes the return value type, see
+                below.
+            exact (bool): if unset (default) - prefers to match to beginning of
+                string rather than not matching at all. If set, requires
+                exact matching of entire string.
+            candidates (list of objects): this is an optional custom list of objects
+                to search (filter) between. It is ignored if `global_search`
+                is given. If not set, this list will automatically be defined
+                to include the location, the contents of location and the
+                caller's contents (inventory).
+            nofound_string (str):  optional custom string for not-found error message.
+            multimatch_string (str): optional custom string for multimatch error header.
+            use_dbref (bool or None, optional): if True/False, active/deactivate the use of
+                #dbref as valid global search arguments. If None, check against a permission
+                ('Builder' by default).
+
+        Returns:
+            match (Object, None or list): will return an Object/None if `quiet=False`,
+                otherwise it will return a list of 0, 1 or more matches.
+
+        """
+        return super(AvenewObject, self).search(searchdata, **kwargs)
+
+
 class SharedAttributeHandler(AttributeHandler):
 
     """
@@ -119,7 +204,7 @@ class SharedAttributeHandler(AttributeHandler):
 
         """
         ret = super(SharedAttributeHandler, self).get(
-                key=key, default=default, category=category,
+                key=key, category=category,
                 return_obj=return_obj, strattr=strattr,
                 raise_exception=raise_exception, accessing_obj=accessing_obj,
                 default_access=default_access, return_list=return_list)

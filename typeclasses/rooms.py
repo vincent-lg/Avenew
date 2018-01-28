@@ -7,15 +7,16 @@ Rooms are simple containers that has no location of their own.
 
 """
 
+from collections import defaultdict
 from math import sqrt
 import re
 from textwrap import wrap
 
 from evennia.contrib.ingame_python.typeclasses import EventRoom
 from evennia.contrib.ingame_python.utils import register_events
-from evennia.utils.utils import lazy_property
+from evennia.utils.utils import lazy_property, list_to_string
 
-from typeclasses.shared import SharedAttributeHandler
+from typeclasses.shared import AvenewObject, SharedAttributeHandler
 
 # Constants
 RE_KEYWORD = re.compile(r"\B\$\w+")
@@ -41,7 +42,7 @@ Variables you can use in this event:
 """
 
 @register_events
-class Room(EventRoom):
+class Room(AvenewObject, EventRoom):
 
     """
     A room with coords.
@@ -189,7 +190,7 @@ class Room(EventRoom):
         visible = (con for con in self.contents if con != looker and
                                                     con.access(looker, "view"))
 
-        exits, users, things = [], [], []
+        exits, users, things = [], [], defaultdict(list)
         for con in visible:
             key = con.get_display_name(looker)
             if con.destination:
@@ -197,7 +198,7 @@ class Room(EventRoom):
             elif con.has_account:
                 users.append("|c%s|n" % key)
             else:
-                things.append(key)
+                things[key].append(con)
 
         # Get description, build string
         string = "|c%s|n" % self.get_display_name(looker)
@@ -227,7 +228,17 @@ class Room(EventRoom):
         if exits:
             string += "\n|wSorties :|n " + ", ".join(exits)
         if users or things:
-            string += "\n|wVous voyez :|n " + ", ".join(users + things)
+            # handle pluralization of things (never pluralize users)
+            thing_strings = []
+            for key, itemlist in sorted(things.iteritems()):
+                nitem = len(itemlist)
+                if nitem == 1:
+                    key, _ = itemlist[0].get_numbered_name(nitem, looker, key=key)
+                else:
+                    key = itemlist[0].get_numbered_name(nitem, looker, key=key)[1]
+                thing_strings.append(key)
+            string += "\n|wVous voyez:|n " + list_to_string(users + thing_strings)
+
         return string
 
     def add_address(self, number, name):
