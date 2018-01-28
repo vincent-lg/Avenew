@@ -21,9 +21,10 @@ from auto.types.typehandler import TypeHandler
 from typeclasses.characters import Character
 from typeclasses.objects import Object
 from typeclasses.rooms import Room
+from typeclasses.shared import AvenewObject
 
 @register_events
-class PChar(DefaultObject):
+class PChar(AvenewObject, DefaultObject):
 
     """PChar (character prototype).
 
@@ -37,7 +38,7 @@ class PChar(DefaultObject):
     """
 
     _events = Character._events.copy()
-    _events.update(Character.__bases__[0]._events)
+    _events.update(Character.__bases__[1]._events)
 
     @property
     def characters(self):
@@ -60,7 +61,7 @@ class PChar(DefaultObject):
 
 
 @register_events
-class PObj(DefaultObject):
+class PObj(AvenewObject, DefaultObject):
 
     """PObj (object prototype).
 
@@ -73,7 +74,7 @@ class PObj(DefaultObject):
     """
 
     _events = Object._events.copy()
-    _events.update(Object.__bases__[0]._events)
+    _events.update(Object.__bases__[1]._events)
 
     @lazy_property
     def types(self):
@@ -107,7 +108,7 @@ class PObj(DefaultObject):
 
 
 @register_events
-class PRoom(DefaultObject):
+class PRoom(AvenewObject, DefaultObject):
 
     """PRoom (room prototype).
 
@@ -125,7 +126,7 @@ class PRoom(DefaultObject):
     """
 
     _events = Room._events.copy()
-    _events.update(Room.__bases__[0]._events)
+    _events.update(Room.__bases__[1]._events)
 
     @property
     def rooms(self):

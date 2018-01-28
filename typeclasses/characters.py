@@ -16,6 +16,7 @@ from evennia.contrib.ingame_python.utils import register_events
 
 from behaviors import BEHAVIORS
 from logic.character.stats import StatsHandler
+from typeclasses.shared import AvenewObject
 
 # Constants
 MAP = r"""
@@ -66,7 +67,7 @@ Variables you can use in this event:
 
 # Classes
 @register_events
-class Character(EventCharacter):
+class Character(AvenewObject, EventCharacter):
     """
     The character, representing an account-character (connected) or
     NPC (non-connected).

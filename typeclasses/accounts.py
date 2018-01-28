@@ -25,8 +25,9 @@ several more options for customizing the Guest account system.
 """
 
 from evennia import DefaultAccount, DefaultGuest
+from typeclasses.shared import AvenewObject
 
-class Account(DefaultAccount):
+class Account(AvenewObject, DefaultAccount):
     """
     This class describes the actual OOC account (i.e. the user connecting
     to the MUD). It does NOT have visual appearance in the game world (that
@@ -103,7 +104,7 @@ class Account(DefaultAccount):
         return ""
 
 
-class Guest(DefaultGuest):
+class Guest(AvenewObject, DefaultGuest):
     """
     This class is used for guest logins. Unlike Accounts, Guests and their
     characters are deleted after disconnection.

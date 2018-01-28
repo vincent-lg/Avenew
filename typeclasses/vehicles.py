@@ -13,13 +13,14 @@ from evennia import DefaultObject, MONITOR_HANDLER
 
 from logic.geo import NAME_OPP_DIRECTIONS, coords_in, direction_between, distance_between
 from typeclasses.rooms import Room
+from typeclasses.shared import AvenewObject
 from world.log import logger
 
 # Constants
 DIRECTIONS = NAME_OPP_DIRECTIONS
 log = logger("vehicle")
 
-class Crossroad(DefaultObject):
+class Crossroad(AvenewObject, DefaultObject):
 
     """A crossroad, used to set up the route system.
 
@@ -524,7 +525,7 @@ class Crossroad(DefaultObject):
             self.tags.remove(name, category="road")
 
 
-class Vehicle(DefaultObject):
+class Vehicle(AvenewObject, DefaultObject):
 
     """
     A vehicle driven on a road complex.
