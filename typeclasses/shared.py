@@ -30,7 +30,7 @@ class AvenewObject(object):
 
         """
         if self.locks.check_lockstring(looker, "perm(Builder)"):
-            return "{}(#{})".format(self.name, self.id)
+            return "{}(/{})".format(self.name, self.id)
         return self.name
 
     def search(self, searchdata, **kwargs):
@@ -93,6 +93,13 @@ class AvenewObject(object):
                 otherwise it will return a list of 0, 1 or more matches.
 
         """
+        if isinstance(searchdata, basestring):
+            if searchdata.lower() in ("ici", ):
+                searchdata = "here"
+            elif searchdata.lower() in ("moi", ):
+                searchdata = "me"
+            if searchdata.startswith("/") and all(char.isdigit() for char in searchdata[1:]):
+                searchdata = "#" + searchdata[1:]
         return super(AvenewObject, self).search(searchdata, **kwargs)
 
 
