@@ -52,7 +52,7 @@ class AvenewObject(object):
         """
         key = kwargs.get("key", self.key)
         singular = key
-        plural = "{} {}".format(count, self.attributes.get("plural", "things"))
+        plural = "{} {}".format(count, self.attributes.get("plural", "choses"))
         if not self.aliases.get(plural, category="plural_key"):
             # we need to wipe any old plurals/an/a in case key changed in the interrim
             self.aliases.clear(category="plural_key")
