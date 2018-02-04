@@ -10,6 +10,64 @@ from evennia.utils.utils import crop, inherits_from
 
 from commands.command import Command
 
+## Constants
+CATEGORY = "Object manipulation"
+
+class CmdGet(Command):
+    """
+    Pick up something.
+
+    Usage:
+      get [quantity] <object name> [from <container>] [into <container>]
+
+    Pick up one or more objects at your feet.  The easiest usage is to simply
+    specify an object name as argument:
+      |yget apple|n
+
+    You can also pick up several objects at once:
+      |yget 3 apples|n
+
+    Or get all of them:
+      |yget * apples|n
+
+    By default, the objects you pick up will be sorted in your inventory, which is
+    defined by what you are carrying as containers.  If you have a pair of jeans
+    on, you will have pockets... but they won't be too large either.  If you don't
+    have any more room in your containers, you will try to pick up the objects with
+    your free hands, assuming they are not too heavy for you.  You can also specify
+    in which container to store the objects you have picked up:
+      |yget 5 apples into lunch sack|n
+
+    Finally, you can also take objects from a container (usually, a chest or
+    furniture).  Just specify the name of the container after the |yfrom|n keyword:
+      |yget coin from chest|n
+
+    You can combine all these syntaxes if needed.
+
+    See also: drop, hold, put, wear, remove.
+
+    """
+
+    key = "get"
+    aliases = ["grab"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|yWhat do you want to pick up?|n")
+            return
+
+        # Extract from and into
+        # Extract the quantity, if specified
+        quantity = 1
+        words = self.args.strip().split(" ")
+
+
+
+
 class CmdUse(Command):
 
     """
@@ -29,7 +87,7 @@ class CmdUse(Command):
     """
 
     key = "use"
-    help_category = "Object manipulation"
+    help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
@@ -54,6 +112,7 @@ class CmdUse(Command):
 
         types[0].use(self.caller)
 
+
 class CmdAddress(Command):
 
     """
@@ -71,7 +130,7 @@ class CmdAddress(Command):
     """
 
     key = "address"
-    help_category = "Object manipulation"
+    help_category = CATEGORY
 
     def access(self, srcobj, access_type="cmd", default=False):
         if srcobj.cmdset.has("computer"):

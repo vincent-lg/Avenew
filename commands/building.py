@@ -4,14 +4,16 @@
 
 from textwrap import dedent
 
-from evennia import create_object
+from evennia import ObjectDB
 from evennia.commands.default.muxcommand import MuxCommand
 from evennia.utils.create import create_object
 from evennia.utils.utils import class_from_module, inherits_from
 
 from evennia.contrib.unixcommand import UnixCommand
+
+from auto.types.typehandler import TYPES
 from logic.geo import NAME_DIRECTIONS, coords_in, coords, get_direction
-from typeclasses.prototypes import PRoom
+from typeclasses.prototypes import PRoom, PObj
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
 
@@ -126,6 +128,29 @@ class CmdNew(UnixCommand):
                 help="the road name, AUTO to find it automatically or NONE")
         room.set_defaults(func=self.create_room)
         room.set_defaults(parser=room)
+
+        # @new pobj
+        pobj = subparsers.add_parser("pobj", help="add an object prototype",
+                epilog=dedent(self.create_pobj.__doc__).strip())
+        pobj.add_argument("key", nargs="?",
+                help="the key of the object prototype to create")
+        pobj.add_argument("-h", "--help", action="store_true",
+                help="display the help")
+        pobj.add_argument("-t", "--types", help="the new object prototype types, separated by a comma")
+        pobj.set_defaults(func=self.create_pobj)
+        pobj.set_defaults(parser=pobj)
+
+        # @new obj
+        obj = subparsers.add_parser("obj", help="add an object",
+                epilog=dedent(self.create_obj.__doc__).strip())
+        obj.add_argument("key", nargs="+",
+                help="the key of the object to create")
+        obj.add_argument("-h", "--help", action="store_true",
+                help="display the help")
+        obj.add_argument("-p", "--prototype", help="the new object's prototype")
+        obj.add_argument("-l", "--location", help="the new object's location")
+        obj.set_defaults(func=self.create_obj)
+        obj.set_defaults(parser=obj)
 
     def func(self):
         if self.opts.help:
@@ -304,3 +329,119 @@ class CmdNew(UnixCommand):
                 create_object("typeclasses.exits.Exit", back, room,
                                aliases=aliases, destination=origin)
                 self.msg("Created {} exit from {} to {}.".format(back, room.key, origin.key))
+
+    def create_pobj(self, args):
+        """
+        Create an object prototype, given its new key.
+
+        When using the |w@new pobj|n command, you have to specify the key of
+        the object prototype to create.  This is a mandatory argument.  The key
+        will not be displayed to players and is usually used as a reference to
+        builders, so keep it short and simple, knowing that two prototypes
+        cannot have the same key.
+
+        Other options:
+            |y-t|n (|y--types|n): the object types separated by a comma.
+
+        Examples:
+          |w@new pobj red_apple|n
+          |w@new pobj red_apple -t fruit|n
+          |w@new pobj dress -t clothe, container|n
+
+        You will always be able to change the object types, using |y@types/add|n
+        and |y@types/remove|n.
+
+        """
+        # Check that the key doesn't already exist
+        key = args.key.strip().lower()
+
+        if not key:
+            self.msg("|ySpecify at least a key for this object prototype.|n")
+            return
+
+        try:
+            obj = ObjectDB.objects.get(db_key=key)
+        except ObjectDB.DoesNotExist:
+            pass
+        else:
+            self.msg("|rThe specified key ({}) is already being used by #{}.".format(key, obj.id))
+            return
+
+        types = args.types
+        if types:
+            types = types.split(",")
+            types = [name.strip() for name in types]
+        else:
+            types = []
+
+        # Check that the type exists
+        for name in types:
+            if name not in TYPES:
+                self.msg("|rThe specified type name ({}) doesn't exist.|n".format(name))
+                return
+
+        # Create the new PObj
+        pobj = create_object("typeclasses.prototypes.PObj", key=key, location=None)
+        self.msg("The object prototype {} (#{}) was successfully created.".format(pobj.key, pobj.id))
+
+        # Add types
+        for name in types:
+            pobj.types.add(name)
+            self.msg("  Adding type '{}' to the object prototype.".format(name))
+
+    def create_obj(self, args):
+        """
+        Create an object, given its new key.
+
+        When using the |w@new obj|n command, you have to specify the name of
+        the object to create.  This is a mandatory argument.
+
+        Other options:
+            |y-p|n (|y--prototype|n): the object prototype.
+            |y-l|n (|y--location|n): the object's location.
+
+        Examples:
+          |w@new obj an apple|n
+          |w@new obj an apple -p red_apple|n
+          |w@new obj a lovely apple -t red_apple -l #2|n
+
+        Objects don't necessarily have a prototype, even though it is very common.
+        You can set their prototype by the |y-p|n option.
+
+        Using the optional location, you can easily spawn an object in a container
+        (owned by a player, for instance) or on the ground of a distant
+        room.  If you don't specify this option, the object will be
+        spawned at your feet.
+
+        """
+        key = " ".join(args.key).strip().lower()
+
+        if not key:
+            self.msg("|rSpecify at least a name for this object prototype.|n")
+            return
+
+        # Search for the optional prototype
+        prototype = None
+        if args.prototype:
+            prototype = self.caller.search(args.prototype, global_search=True, use_dbref=True)
+            if not prototype:
+                return
+            elif not inherits_from(prototype, "typeclasses.prototypes.PObj"):
+                self.msg("{} isn't a valid object prototype.".format(prototype.get_display_name(self.caller)))
+                return
+
+        # Search for the optional location
+        location = self.caller.location
+        if args.location:
+            location = self.caller.search(args.location, global_search=True, use_dbref=True)
+            if not location:
+                return
+
+        # Create the new Obj
+        if prototype:
+            obj = prototype.create(key=key, location=location)
+            self.msg("The object {} was created on prototype {}.".format(obj.get_display_name(self.caller), prototype.key))
+        else:
+            obj = create_object("typeclasses.objects.Object", key=key, location=location)
+            self.msg("The object {} was successfully created without a prototype.".format(obj.get_display_name(self.caller)))
+        self.msg("It was spawned in: {}.".format(location.get_display_name(self.caller)))

@@ -11,6 +11,7 @@ from textwrap import dedent, wrap
 from django.utils.timezone import make_aware
 from evennia.utils import gametime
 from evennia.utils.utils import all_from_module, class_from_module, crop, inherits_from, lazy_property, time_format
+
 from evennia.contrib.random_string_generator import RandomStringGenerator
 
 from auto.apps.base import BaseApp, MainScreen
@@ -141,10 +142,10 @@ class Phone(BaseType):
 
         return number
 
-    def at_type_creation(self):
+    def at_type_creation(self, prototype=False):
         """The type has just been added."""
         db = self.db
-        if "number" not in db:
+        if not prototype and "number" not in db:
             number = PHONE_GENERATOR.get()
             db["number"] = number
             self.obj.tags.add(number.replace("-", ""), category="phone number")
@@ -173,6 +174,7 @@ class Computer(BaseType):
     """
 
     name = "computer"
+    can_use = True
 
     @lazy_property
     def apps(self):
@@ -184,18 +186,15 @@ class Computer(BaseType):
         """Return the application handler."""
         return NotificationHandler(self.obj, self)
 
-    def at_type_creation(self):
-        """The type has just been added.
-
-        Since this method is only called for objects, we copy the prototype apps.
-
-        """
-        prototype = self.obj.db.prototype
-        if prototype:
-            type = prototype.types.get("computer")
-            for folder, apps in type.db.get("apps", {}).items():
-                for app in apps:
-                    self.apps.add(app, folder=folder)
+    def at_type_creation(self, prototype=False):
+        """The type has just been added."""
+        if not prototype:
+            prototype = self.obj.db.prototype
+            if prototype:
+                type = prototype.types.get("computer")
+                for folder, apps in type.db.get("apps", {}).items():
+                    for app in apps:
+                        self.apps.add(app, folder=folder)
 
     def return_appearance(self, looker):
         """Return the appearance of the phone."""

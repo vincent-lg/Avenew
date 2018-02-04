@@ -75,6 +75,7 @@ class PObj(AvenewObject, DefaultObject):
 
     _events = Object._events.copy()
     _events.update(Object.__bases__[1]._events)
+    repr = "representations.prototypes.PObjRepr"
 
     @lazy_property
     def types(self):
