@@ -16,6 +16,7 @@ from evennia.contrib.ingame_python.utils import register_events
 
 from behaviors import BEHAVIORS
 from logic.character.stats import StatsHandler
+from logic.geo import get_direction
 from typeclasses.shared import AvenewObject
 
 # Constants
@@ -24,19 +25,19 @@ Crossroad
 
    Map                        Roads
 
-        {f}                     {fn}
-  {el}    {fl}    {er}
+        N                     {fn}
+  NW    {fl}    NE
     {ell}   {fl}   {erl}                 {ern}
      {ell}  {fl}  {erl}                  {eln}
       {ell} {fl} {erl}
        {ell}{fl}{erl}                    {rn}
-{l}{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}{r}             {ln}
+W{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}E             {ln}
        {hll}{bl}{hrl}
       {hll} {bl} {hrl}                   {hrn}
      {hll}  {bl}  {hrl}                  {hln}
     {hll}   {bl}   {hrl}
-  {hl}    {bl}    {hr}
-        {b}                     {bn}
+  SW    {bl}    SE
+        S                     {bn}
 """
 
 PRE_TURN = """
@@ -147,18 +148,7 @@ class Character(AvenewObject, EventCharacter):
 
         vehicle.add_message("turns")
         direction = vehicle.db.direction
-        exits = dict([((k - direction) % 8, v) for k, v in crossroad.db.exits.items()])
-        names = {
-                0: "Forward",
-                1: "Easy right",
-                2: "Right",
-                3: "Hard right",
-                4: "Behind",
-                5: "Hard left",
-                6: "Left",
-                7: "Easy left",
-        }
-
+        exits = crossroad.db.exits
         sessions = self.sessions.get()
         if sessions:
             if any(session.protocol_flags.get(
@@ -169,35 +159,27 @@ class Character(AvenewObject, EventCharacter):
                     if msg:
                         msg += "\n"
 
-                    name = names[dir]
+                    name = get_direction(dir)["name"].capitalize()
                     msg += "  {:<10} - {}".format(name, exit["name"])
             else:
                 # Create the diagram to represent the crossroad
                 msg = MAP.format(
-                        f="F" if 0 in exits else " ",
                         fl="|" if 0 in exits else " ",
-                        fn="F  - " + exits[0]["name"] if 0 in exits else "",
-                        er="ER" if 1 in exits else "  ",
+                        fn="N  - " + exits[0]["name"] if 0 in exits else "",
                         erl="/" if 1 in exits else " ",
-                        ern="ER - " + exits[1]["name"] if 1 in exits else "",
-                        el="EL" if 7 in exits else "  ",
+                        ern="NE - " + exits[1]["name"] if 1 in exits else "",
                         ell="\\" if 7 in exits else " ",
-                        eln="EL - " + exits[7]["name"] if 7 in exits else "",
-                        r="R" if 2 in exits else " ",
+                        eln="NW - " + exits[7]["name"] if 7 in exits else "",
                         rl="-" if 2 in exits else " ",
-                        rn="R  - " + exits[2]["name"] if 2 in exits else "",
-                        l="L" if 6 in exits else " ",
+                        rn="E  - " + exits[2]["name"] if 2 in exits else "",
                         ll="-" if 6 in exits else " ",
-                        ln="L  - " + exits[6]["name"] if 6 in exits else "",
-                        hr="HR" if 3 in exits else "  ",
+                        ln="W  - " + exits[6]["name"] if 6 in exits else "",
                         hrl="\\" if 3 in exits else " ",
-                        hrn="HR - " + exits[3]["name"] if 3 in exits else "",
-                        hl="HL" if 5 in exits else "  ",
+                        hrn="SE - " + exits[3]["name"] if 3 in exits else "",
                         hll="/" if 5 in exits else " ",
-                        hln="HL - " + exits[5]["name"] if 5 in exits else "",
-                        b="B" if 4 in exits else " ",
+                        hln="SW - " + exits[5]["name"] if 5 in exits else "",
                         bl="|" if 4 in exits else " ",
-                        bn="B  - " + exits[4]["name"] if 4 in exits else "",
+                        bn="S  - " + exits[4]["name"] if 4 in exits else "",
                 )
 
             self.msg(msg)
