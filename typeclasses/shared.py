@@ -15,6 +15,15 @@ class AvenewObject(object):
 
     """Mix-in containing shared behavior that all typeclasses in the Avenew game should use."""
 
+    @property
+    def mass(self):
+        """Return the mass and these of contents."""
+        mass = self.db.mass
+        if mass is None:
+            mass = 1
+
+        return reduce(lambda x, y: x + y.mass, [mass] + self.contents)
+
     def get_display_name(self, looker, **kwargs):
         """
         Displays the name of the object in a viewer-aware manner.

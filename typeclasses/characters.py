@@ -15,6 +15,7 @@ from evennia.contrib.ingame_python.typeclasses import EventCharacter
 from evennia.contrib.ingame_python.utils import register_events
 
 from behaviors import BEHAVIORS
+from logic.character.equipment import EquipmentHandler
 from logic.character.stats import StatsHandler
 from typeclasses.shared import AvenewObject
 
@@ -95,6 +96,11 @@ class Character(AvenewObject, EventCharacter):
                 behaviors.append(BEHAVIORS[name])
 
         return behaviors
+
+    @lazy_property
+    def equipment(self):
+        """Return the equipment handler for this character."""
+        return EquipmentHandler(self)
 
     @lazy_property
     def stats(self):
