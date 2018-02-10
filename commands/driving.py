@@ -8,8 +8,11 @@ from evennia import default_cmds
 from evennia.utils.utils import inherits_from
 
 from commands.command import Command
-from logic.geo import distance_between
+from logic.geo import distance_between, get_direction
 from typeclasses.vehicles import Crossroad, log
+
+# Constants
+CATEGORY = "Driving"
 
 # Commands
 class CmdDrive(Command):
@@ -22,21 +25,21 @@ class CmdDrive(Command):
 
     This command is both used to begin driving a vehicle when you
     are in the front seat, or to stop driving if the vehicle has
-    stopped moving.  Entering the |wdrive|n command to stop driving
+    stopped moving.  Entering the |ydrive|n command to stop driving
     will stop the vehicle in the middle of the street, which isn't
-    often a good idea.  Instead, you can use the |wpark|n command,
+    often a good idea.  Instead, you can use the |ypark|n command,
     which will try to park the vehicle neatly on the side of
     the street you are currently driving in.  Once parked, you can
-    |wleave|n the vehicle.
+    |yleave|n the vehicle.
 
     While driving, you can use several short commands to control
-    speed, direction and driving mode.  Read the |wdriving|n help
-    file (by typing |whelp driving|n) for more information.
+    speed, direction and driving mode.  Read the |ydriving|n help
+    file (by typing |yhelp driving|n) for more information.
 
     """
 
     key = "drive"
-    help_category = "Driving"
+    help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
@@ -98,48 +101,49 @@ class CmdPark(Command):
     Park the vehicle you are driving.
 
     Usage:
-        park
-        park left
+        park [direction]
 
     This command can be used to park the vehicle you are driving,
-    right on the sidewalk.  The vehicle's speed has to be really
+    right on the sidewalk.  the vehicle's speed has to be really
     reduced.  You will not be able to park anywhere.  When you have
     arrived at your destination, after reducing speed (using the
-    |wspeed|n command), you can |wpark|n, then use the |wdrive|n
-    command to stop driving.  Then, you can |wleave|n the vehicle.
+    |yspeed|n command), you can |ypark|n, then use the |ydrive|n
+    command to stop driving.  Then, you can |yleave|n the vehicle.
 
-    By default, you will try to park on the right side of the street.
-    You can also type |wpark left|n to park instead on the left side
-    of the street.
+    By default, you will try to park on the right side of the street, which will vary
+    depending on your current direction.  If you are driving from east to west,
+    for instance, then |ypark|n without argument will try to park on the north
+    sidewalk (the one directly on the right of your vehicle).  You can specify a
+    direction in which to park instead.  Like |ypark south|n.  You can use aliases
+    to directions like |ypark s|n.
 
     """
 
     key = "park"
-    help_category = "Driving"
+    help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("It seems you are not in a vehicle.")
+            self.msg("|rIt seems you are not in a vehicle.|n")
             return
 
         vehicle = room.location
 
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg(
-                    "Are you, or are you not, in a vehicle?  Hard to say...")
+            self.msg("|rAre you, or are you not, in a vehicle?  Hard to say...|n")
             return
 
         # Make sure we are currently driving
         if vehicle.db.driver is not self.caller:
-            self.msg("You aren't driving {}.".format(vehicle.key))
+            self.msg("|gYou aren't driving {}.|n".format(vehicle.key))
             return
 
         # Check the speed
         if vehicle.db.speed > 10:
-            self.msg("You are still driving too fast.")
+            self.msg("|gYou are still driving too fast.|n")
             return
 
         # Get both sides of the current coordinate
@@ -164,43 +168,48 @@ class CmdPark(Command):
                         "#{}, trying to park at {} {}.".format(
                         vehicle.id, x, y))
 
-                self.msg("It seems you can't park here.")
+                self.msg("|gIt seems you can't park here.|n")
                 return
         else:
-            self.msg("Now, you cannot park in the middle of a crossroad.")
+            self.msg("|gNow, you cannot park in the middle of a crossroad.|n")
             return
 
         # Get the matching street
         log.debug("Parking #{} on {} {} {}".format(vehicle.id, x, y, z))
         closest, name, streets = Crossroad.get_street(x, y, z)
         if not streets:
-            self.msg("You don't find any free spot to park.")
+            self.msg("|gYou don't find any free spot to park.|n")
             return
 
-        # Park on the left or right
-        left = self.args.lower().strip() == "left"
+        # Park left of right, according to the specified direction
+        args = self.args if self.args.strip() else get_direction((direction + 2) % 8)["name"]
+        infos = get_direction(args)
+        if infos is None or infos["direction"] in (8, 9):
+            self.msg("|rYou have specified an unknown direction: {}.|n".format(self.args))
+            return
 
-        if left:
-            side_direction = (direction - 2) % 8
-        else:
-            side_direction = (direction + 2) % 8
+        side_direction = infos["direction"]
+        if (side_direction + 2) % 8 != direction and (side_direction - 2) % 8 != direction:
+            self.msg("|r{} isn't a valid direction in which to park.|n\n|gCheck the street direction.|n".format(infos["name"]))
+            return
+
         spot = streets.get(side_direction)
-        log.debug("  Parking #{} on the {} side, found {}".format(vehicle.id, "left" if left else "right", spot))
+        log.debug("  Parking #{} in {}, found {}".format(vehicle.id, infos["name"], spot))
 
         # If there's no room there
         if spot and spot["room"] is None:
-            self.msg("You don't find any free spot to park.")
+            self.msg("|gYou don't find any free spot to park.|n")
             return
 
         room = spot["room"]
         vehicle.location = room
         vehicle.stop()
         numbers = "-".join(str(n) for n in spot["numbers"])
-        self.caller.msg("You park {} on the {side} side.".format(
-                vehicle.key, side="left" if left else "right"))
-        self.caller.location.msg_contents("{driver} parks {vehicle} on the {side} side.",
+        self.caller.msg("You park {} on the {sidewalk} sidewalk.".format(
+                vehicle.key, sidewalk=infos["name"]))
+        self.caller.location.msg_contents("{driver} parks {vehicle} on the {sidewalk} sidewalk.",
                 exclude=[self.caller], mapping=dict(driver=self.caller,
-                vehicle=vehicle, side="left" if left else "right"))
+                vehicle=vehicle, sidewalk=infos["name"]))
         vehicle.msg_contents("{vehicle} pulls up in front of {numbers} {street}",
                 mapping=dict(vehicle=vehicle, numbers=numbers, street=name))
 
@@ -245,26 +254,25 @@ class CmdSpeed(Command):
     """
 
     key = "speed"
-    help_category = "Driving"
+    help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("It seems you are not in a vehicle.")
+            self.msg("|rIt seems you are not in a vehicle.|n")
             return
 
         vehicle = room.location
 
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg(
-                    "Are you, or are you not, in a vehicle?  Hard to say...")
+            self.msg("|rAre you, or are you not, in a vehicle?  Hard to say.|n..")
             return
 
         # Make sure we are currently driving
         if vehicle.db.driver is not self.caller:
-            self.msg("You aren't driving {}.".format(vehicle.key))
+            self.msg("|gYou aren't driving {}|n.".format(vehicle.key))
             return
 
         # If the vehicle is parked, un-park it
@@ -279,7 +287,7 @@ class CmdSpeed(Command):
             desired = int(desired)
             assert desired >= 0
         except (ValueError, AssertionError):
-            self.msg("Sorry, this is not a valid speed.")
+            self.msg("|rSorry, this is not a valid speed.|n")
         else:
             vehicle.db.desired_speed = desired
             self.msg("You're now planning to drive at {} MPH.".format(desired))
@@ -293,96 +301,80 @@ class CmdSpeed(Command):
                         vehicle.key))
 
 
-# Command set
 class CmdTurn(Command):
 
     """
     Prepare to turn in a direction.
 
-    If you are driving a vehicle, you can use this command to prepare to turn.  When the vehicle approaches a crossroad, the possibility should be displayed to you, much like the obvious exits in a room.  The vehicle isn't in the middle of the crossroad yet, just a short distance away, and you can turn without slowing down too much.  However, if you wait too long to turn, then the vehicle will stop in the middle of the crossroad, and you will need to speed up again after you have turned.
+    If you are driving a vehicle, you can use this command to prepare to turn.
+    When the vehicle approaches a crossroad, the possibility should be displayed to
+    you, much like the obvious exits in a room.  The vehicle isn't in the middle of the
+    crossroad yet, just a short distance away, and you can turn without slowing down
+    too much.  However, if you wait too long to turn, then the vehicle will stop in
+    the middle of the crossroad, and you will need to speed up again after you have turned.
 
-    To use this command, you can either use the full name of the turn, or aliases.  Aliases are much quicker to type, and once you get used to driving in the game, you will find using them is much better, particularly if your client doesn't support macro.  Here are all the directions and possible syntaxes:
+    To use this command, you can either use the full name of the direction, or aliases.
+    Aliases are much quicker to type, and once you get used to driving in the game, you
+    will find using them is much better, particularly if your client doesn't support macro.
+    Here are all the directions and possible syntaxes:
 
     +------------|---------------------------------------------+
     | Directions | Commands                                    ||
     +------------|---------------------------------------------+
-    | Forward    | |wgo forward|n      | |wforward|n    | |wgo f|n    | |yf|n  |
-    | Easy right | |wturn easy right|n | |weasy right|n | |wturn er|n | |wer|n |
-    | Easy left  | |wturn easy left|n  | |weasy left|n  | |wturn el|n | |wel|n |
-    | Right      | |wturn right|n      | |wright|n      | |wturn r|n  | |wtr|n |
-    | Left       | |wturn left|n       | |wleft|n       | |wturn l|n  | |wtl|n |
-    | Hard right | |wturn hard right|n | |whard right|n | |wturn hr|n | |whr|n |
-    | Hard left  | |wturn hard left|n  | |whard left|n  | |wturn hl|n | |whl|n |
-    | Behind     | |wgo behind|n       | |wbehind|n     | |wgo b|n    | |wb|n  |
+    | east       | |yturn east|n          | |yeast|n           | |ye|n     |
+    | southeast  | |yturn southeast|n     | |ysoutheast|n      | |yse|n    |
+    | south      | |yturn south|n         | |ysouth|n          | |ys|n     |
+    | southwest  | |yturn southwest|n     | |ysouthwest|n      | |ysw|n    |
+    | west       | |yturn west|n          | |ywest|n           | |yw|n     |
+    | northwest  | |yturn northwest|n     | |ynorthwest|n      | |ynw|n    |
+    | north      | |yturn north|n         | |ynorth|n          | |yn|n     |
+    | northeast  | |yturn northeast|n     | |ynortheast|n      | |yne|n    |
     +------------||---------------------------------------------+
 
     In other words, a little before arriving to a crossroad with
-    an exit on the left, you could prepare to turn in this direction
-    by entering either |wturn left|n, or |wleft|n, or simply |wl|n.
+    an exit to the north, you could prepare to turn in this direction
+    by entering either |yturn north|n, or |ynorth|n, or simply |yn|n.
 
     """
 
     key = "turn"
-    aliases = ["go", "forward", "f", "easy right", "er", "easy left", "el",
-            "right", "tr", "left", "tl", "hard right", "hr", "hard left", "hl",
-            "behind", "b"]
-    help_category = "Driving"
+    aliases = ["north", "n", "northeast", "ne", "northwest", "nw",
+            "east", "e", "west", "w", "southeast", "se", "southwest", "sw",
+            "south", "s"]
+    help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("It seems you are not in a vehicle.")
+            self.msg("|rIt seems you are not in a vehicle.|n")
             return
 
         vehicle = room.location
 
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg(
-                    "Are you, or are you not, in a vehicle?  Hard to say...")
+            self.msg("|rAre you, or are you not, in a vehicle?  Hard to say.|n..")
             return
 
         # Make sure we are currently driving
         if vehicle.db.driver is not self.caller:
-            self.msg("You aren't driving {}.".format(vehicle.key))
+            self.msg("|gYou aren't driving {}.|n".format(vehicle.key))
             return
 
         # Proceed to turn
         name = self.raw_string.strip().lower()
-        direction = vehicle.db.direction
+        if name.startswith("turn "):
+            name = name[5:]
 
-        # Different choices
-        if name in ("go", "go forward", "forward", "go f", "f"):
-            turn = 0
-            msg = "You prepare to go forward on the next open crossroad."
-        elif name in ("turn easy right", "easy right", "turn er", "er"):
-            turn = 1
-            msg = "You prepare to do an easy right on the next open crossroad."
-        elif name in ("turn easy left", "easy left", "turn el", "el"):
-            turn = 7
-            msg = "You prepare to do an easy left on the next open crossroad."
-        elif name in ("turn right", "right", "turn r", "tr"):
-            turn = 2
-            msg = "You prepare to turn right on the next open crossroad."
-        elif name in ("turn left", "left", "turn l", "tl"):
-            turn = 6
-            msg = "You prepare to turn left on the next open crossroad."
-        elif name in ("turn hard right", "hard right", "turn hr", "hr"):
-            turn = 3
-            msg = "You prepare to do a hard right on the next open crossroad."
-        elif name in ("turn hard left", "hard left", "turn hl", "hl"):
-            turn = 5
-            msg = "You prepare to do a hard left on the next open crossroad."
-        elif name in ("go behind", "behind", "go b", "b"):
-            turn = 4
-            msg = "You prepare to do some scarcely-legal U turn."
-        else:
-            self.msg("In what direction do you want to turn?")
+        direction = vehicle.db.direction
+        infos = get_direction(name)
+        if infos is None or infos["direction"] in (8, 9):
+            self.msg("|gThe direction you specified is unknown.|n")
             return
 
-        vehicle.db.expected_direction = (direction + turn) % 8
-        self.msg(msg)
+        vehicle.db.expected_direction = infos["direction"]
+        self.msg("You prepare to turn {} on the next open crossroad.".format(infos["name"]))
 
 
 class DrivingCmdSet(default_cmds.CharacterCmdSet):
@@ -401,6 +393,9 @@ class DrivingCmdSet(default_cmds.CharacterCmdSet):
     is still rolling.
 
     """
+
+    key = "driving"
+    priority = 102
 
     def at_cmdset_creation(self):
         """Populates the cmdset with commands."""
