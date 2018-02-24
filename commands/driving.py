@@ -8,7 +8,7 @@ from evennia import default_cmds
 from evennia.utils.utils import inherits_from
 
 from commands.command import Command
-from logic.geo import distance_between, get_direction
+from logic.geo import distance_between, get_direction, NAME_DIRECTIONS
 from typeclasses.vehicles import Crossroad, log
 
 # Constants
@@ -338,9 +338,7 @@ class CmdTurn(Command):
     """
 
     key = "turn"
-    aliases = ["north", "n", "northeast", "ne", "northwest", "nw",
-            "east", "e", "west", "w", "southeast", "se", "southwest", "sw",
-            "south", "s"]
+    aliases = list(NAME_DIRECTIONS.keys())
     help_category = CATEGORY
 
     def func(self):

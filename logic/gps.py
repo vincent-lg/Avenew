@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
-Module containing the GPS class.
-
-"""
+"""Module containing the GPS class."""
 
 from math import fabs, sqrt
 from Queue import PriorityQueue
@@ -23,8 +20,7 @@ log = logger("gps")
 
 class GPS(object):
 
-    """
-    Class to represent a GPS query.
+    """Class to represent a GPS query.
 
     A GPS query is a link between two points (often represented as
     addresses).  It will attempt to find the shortest path between
@@ -43,8 +39,7 @@ class GPS(object):
             self.destination = self.find_address(destination, is_dest=True)
 
     def find_address(self, address, is_dest=False):
-        """
-        Find and return the address.
+        """Find and return the address.
 
         Args:
             address (str): the address to be found.

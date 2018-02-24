@@ -855,6 +855,5 @@ class Vehicle(AvenewObject, DefaultObject):
 def report_move(obj, fieldname, vehicle):
     """Report a change in coordinates."""
     driver = vehicle.db.driver
-    if driver:
-        for behavior in driver.behaviors:
-            behavior.call("attempt_parking", driver, vehicle, obj.value)
+    if driver and "driver" in driver.behaviors:
+        driver.behaviors["driver"].attempt_parking(driver, vehicle, obj.value)

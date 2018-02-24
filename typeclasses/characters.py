@@ -14,7 +14,7 @@ from evennia.utils.utils import lazy_property
 from evennia.contrib.ingame_python.typeclasses import EventCharacter
 from evennia.contrib.ingame_python.utils import register_events
 
-from behaviors import BEHAVIORS
+from auto.behaviors.behaviorhandler import BehaviorHandler
 from logic.character.stats import StatsHandler
 from logic.geo import get_direction
 from typeclasses.shared import AvenewObject
@@ -80,22 +80,10 @@ class Character(AvenewObject, EventCharacter):
     }
     repr = "representations.character.CharacterRepr"
 
-    @property
+    @lazy_property
     def behaviors(self):
-        """Return the list of active behaviors."""
-        tags = self.tags.get(category="behavior")
-        if tags is None:
-            tags = []
-        elif isinstance(tags, basestring):
-            tags = [tags]
-
-        # Place the behaviors in a list
-        behaviors = []
-        for name in tags:
-            if name in BEHAVIORS:
-                behaviors.append(BEHAVIORS[name])
-
-        return behaviors
+        """Return the behavior handler for this character."""
+        return BehaviorHandler(self)
 
     @lazy_property
     def stats(self):
@@ -164,22 +152,22 @@ class Character(AvenewObject, EventCharacter):
             else:
                 # Create the diagram to represent the crossroad
                 msg = MAP.format(
-                        fl="|" if 0 in exits else " ",
-                        fn="N  - " + exits[0]["name"] if 0 in exits else "",
-                        erl="/" if 1 in exits else " ",
-                        ern="NE - " + exits[1]["name"] if 1 in exits else "",
-                        ell="\\" if 7 in exits else " ",
-                        eln="NW - " + exits[7]["name"] if 7 in exits else "",
-                        rl="-" if 2 in exits else " ",
-                        rn="E  - " + exits[2]["name"] if 2 in exits else "",
-                        ll="-" if 6 in exits else " ",
-                        ln="W  - " + exits[6]["name"] if 6 in exits else "",
-                        hrl="\\" if 3 in exits else " ",
-                        hrn="SE - " + exits[3]["name"] if 3 in exits else "",
-                        hll="/" if 5 in exits else " ",
-                        hln="SW - " + exits[5]["name"] if 5 in exits else "",
-                        bl="|" if 4 in exits else " ",
-                        bn="S  - " + exits[4]["name"] if 4 in exits else "",
+                        fl="|" if 6 in exits else " ",
+                        fn="N  - " + exits[6]["name"] if 6 in exits else "",
+                        erl="/" if 7 in exits else " ",
+                        ern="NE - " + exits[7]["name"] if 7 in exits else "",
+                        ell="\\" if 5 in exits else " ",
+                        eln="NW - " + exits[5]["name"] if 5 in exits else "",
+                        rl="-" if 0 in exits else " ",
+                        rn="E  - " + exits[0]["name"] if 0 in exits else "",
+                        ll="-" if 4 in exits else " ",
+                        ln="W  - " + exits[4]["name"] if 4 in exits else "",
+                        hrl="\\" if 1 in exits else " ",
+                        hrn="SE - " + exits[1]["name"] if 1 in exits else "",
+                        hll="/" if 3 in exits else " ",
+                        hln="SW - " + exits[3]["name"] if 3 in exits else "",
+                        bl="|" if 2 in exits else " ",
+                        bn="S  - " + exits[2]["name"] if 2 in exits else "",
                 )
 
             self.msg(msg)
@@ -192,7 +180,6 @@ class Character(AvenewObject, EventCharacter):
         # Call the 'pre_turn' event on the driver
         self.callbacks.call("pre_turn", self, vehicle, crossroad)
 
-        # Call the pre_turn behavior
-        for behavior in self.behaviors:
-            behavior.call("pre_turn", self, vehicle)
-        log.debug("  Decided to turn {}".format(vehicle.db.expected_direction))
+        # Call the pre_turn behavior on driver
+        if "driver" in self.behaviors:
+            self.behaviors["driver"].pre_turn(self, vehicle)
