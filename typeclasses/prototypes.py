@@ -17,6 +17,7 @@ from evennia.utils.create import create_object
 from evennia.utils.search import search_tag
 from evennia.utils.utils import lazy_property
 
+from auto.behaviors.behaviorhandler import BehaviorHandler
 from auto.types.typehandler import TypeHandler
 from typeclasses.characters import Character
 from typeclasses.objects import Object
@@ -40,6 +41,10 @@ class PChar(AvenewObject, DefaultObject):
     _events = Character._events.copy()
     _events.update(Character.__bases__[1]._events)
 
+    @lazy_property
+    def behaviors(self):
+        return BehaviorHandler(self)
+
     @property
     def characters(self):
         """Return the list of characters with the PChar's key."""
@@ -57,6 +62,11 @@ class PChar(AvenewObject, DefaultObject):
                 key="somebody", location=location)
         character.tags.add(self.key, category="pchar")
         character.db.prototype = self
+
+        # Add the behaviors
+        for behavior in self.behaviors:
+            character.behaviors.add(type(behavior).name, recursive=False)
+
         return character
 
 
@@ -75,6 +85,7 @@ class PObj(AvenewObject, DefaultObject):
 
     _events = Object._events.copy()
     _events.update(Object.__bases__[1]._events)
+    repr = "representations.prototypes.PObjRepr"
 
     @lazy_property
     def types(self):

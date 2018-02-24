@@ -223,19 +223,25 @@ def get_direction(direction):
     Return information on the provided direction.
 
     Args:
-        direction (int): a direction number (between 0 and 9).
+        direction (str or int): a direction number (between 0 and 9).
 
     Returns:
-        A dictionary containing the name of the direction, aliases, and
-        opposite directions.
+        A dictionary containing the direction number, the name of the
+        direction, aliases, and opposite directions.
 
     """
+    if isinstance(direction, basestring):
+        direction = NAME_DIRECTIONS.get(direction.strip().lower())
+        if direction is None:
+            return None
+
     name = NAME_OPP_DIRECTIONS[direction]
     aliases = ALIAS_DIRECTIONS[direction]
     opp_direction = OPP_DIRECTIONS[direction]
     opp_name = NAME_OPP_DIRECTIONS[opp_direction]
     opp_aliases = ALIAS_DIRECTIONS[opp_direction]
     return {
+            "direction": direction,
             "name": name,
             "aliases": aliases,
             "opposite_direction": opp_direction,

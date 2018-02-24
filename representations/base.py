@@ -103,7 +103,7 @@ class BaseRepr(object):
                     value = self.obj
                     for part in field.split("."):
                         value = getattr(value, part)
-                to_display[i + 1] = value
+                to_display[i + 1] = str(value)
             return unicode(EvForm(form={"CELLCHAR": "x", "TABLECHAR": "c",
                     "FORM": type(self).form}, cells=to_display))
         else:

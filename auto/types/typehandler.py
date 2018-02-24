@@ -10,12 +10,17 @@ several types.  The specific data is stored in the object (or prototype) attribu
 
 from collections import OrderedDict
 
+from evennia.utils.utils import inherits_from
+
+from auto.types.container import Container
 from auto.types.high_tech import Computer, Phone
 
 ## Constants
+# You can change the type order here, it will be reflected in the type list of every object.
 TYPES = OrderedDict()
 TYPES["computer"] = Computer
 TYPES["phone"] = Phone
+TYPES["container"] = Container
 
 ## Classes
 class TypeHandler(object):
@@ -39,7 +44,7 @@ class TypeHandler(object):
 
     def __str__(self):
         names = [type(type_obj).name for type_obj in self._types]
-        return "Types: {}".format(names)
+        return ", ".join(names)
 
     def __iter__(self):
         return iter(self._types)
@@ -103,13 +108,16 @@ class TypeHandler(object):
             self._find_types()
 
             # If the object has a prototype, create the type consistently
-            if self._obj.db.prototype:
+            if inherits_from(self._obj, "typeclasses.prototypes.PObj"):
                 new_type = self.get(name)
-                new_type.at_type_creation()
-            elif recursive:
-                # This is probably a prototype, add the type to its objects
-                for obj in getattr(self._obj, "objs", []):
-                    obj.types.add(name, recursive=False)
+                new_type.at_type_creation(prototype=True)
+                if recursive:
+                    # This is a prototype, add the type to its objects
+                    for obj in getattr(self._obj, "objs", []):
+                        obj.types.add(name, recursive=False)
+            elif self._obj.db.prototype:
+                new_type = self.get(name)
+                new_type.at_type_creation(prototype=False)
 
     def remove(self, name):
         """Remove a type.
@@ -188,15 +196,16 @@ class TypeHandler(object):
             types (list): the list of types that support this behavior name.
 
         Note:
-            A type supports a behavior if it has a method with the same
-            name.  For instance, `obj.types.can("use")` will return
+            A type supports a behavior if it has a class attribute with "can_{name}".
+            For instance, `obj.types.can("use")` will return
             a list with the computer type if it is present on the
-            handler, since the computer type has a `use` method.
+            handler, since the computer type has a `can_use` class attribute.
+            Note that this class attribute can be a method too.
 
         """
         types = []
         for type in self._types:
-            if callable(getattr(type, name, None)):
+            if getattr(type, "can_{}".format(name), None):
                 types.append(type)
 
         return types

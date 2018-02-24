@@ -24,6 +24,8 @@ class Object(AvenewObject, EventObject):
     Default objects.
     """
 
+    repr = "representations.objects.ObjectRepr"
+
     @lazy_property
     def attributes(self):
         return SharedAttributeHandler(self)

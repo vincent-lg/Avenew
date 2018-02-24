@@ -135,44 +135,50 @@ class Room(AvenewObject, EventRoom):
     def attributes(self):
         return SharedAttributeHandler(self)
 
-    def _get_x(self):
+    @property
+    def x(self):
         """Return the X coordinate or None."""
         x = self.tags.get(category="coordx")
         return int(x) if isinstance(x, str) else None
-    def _set_x(self, x):
+
+    @x.setter
+    def x(self, x):
         """Change the X coordinate."""
         old = self.tags.get(category="coordx")
         if old is not None:
             self.tags.remove(old, category="coordx")
         if x is not None:
             self.tags.add(str(x), category="coordx")
-    x = property(_get_x, _set_x)
 
-    def _get_y(self):
+    @property
+    def y(self):
         """Return the Y coordinate or None."""
         y = self.tags.get(category="coordy")
         return int(y) if isinstance(y, str) else None
-    def _set_y(self, y):
+
+    @y.setter
+    def y(self, y):
         """Change the Y coordinate."""
         old = self.tags.get(category="coordy")
         if old is not None:
             self.tags.remove(old, category="coordy")
         if y is not None:
             self.tags.add(str(y), category="coordy")
-    y = property(_get_y, _set_y)
 
-    def _get_z(self):
+    @property
+    def z(self):
         """Return the Z coordinate or None."""
         z = self.tags.get(category="coordz")
         return int(z) if isinstance(z, str) else None
-    def _set_z(self, z):
+
+    @z.setter
+    def z(self, z):
         """Change the Z coordinate."""
         old = self.tags.get(category="coordz")
         if old is not None:
             self.tags.remove(old, category="coordz")
         if z is not None:
             self.tags.add(str(z), category="coordz")
-    z = property(_get_z, _set_z)
 
     def return_appearance(self, looker):
         """
