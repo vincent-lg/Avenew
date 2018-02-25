@@ -50,19 +50,19 @@ class Character(AvenewObject, EventCharacter):
     """
 
     _events = {
-        "can_delete": (["character"], CAN_DELETE),
-        "can_move": (["character", "origin", "destination"], CAN_MOVE),
-        "can_part": (["character", "departing"], CAN_PART),
-        "can_say": (["speaker", "character", "message"], CAN_SAY, phrase_event),
-        "delete": (["character"], DELETE),
-        "greet": (["character", "newcomer"], GREET),
-        "move": (["character", "origin", "destination"], MOVE),
-        "pre_turn": (["character", "vehicle", "crossroad"], PRE_TURN),
-        "post_turn": (["character", "vehicle", "crossroad"], POST_TURN),
-        "puppeted": (["character"], PUPPETED),
-        "say": (["speaker", "character", "message"], SAY, phrase_event),
-        "time": (["character"], TIME, None, time_event),
-        "unpuppeted": (["character"], UNPUPPETED),
+        "can_delete": (["personnage"], CAN_DELETE),
+        "can_move": (["personnage", "origine", "destination"], CAN_MOVE),
+        "can_part": (["personnage", "acteur"], CAN_PART),
+        "can_say": (["acteur", "personnage", "message"], CAN_SAY, phrase_event),
+        "delete": (["personnage"], DELETE),
+        "greet": (["personnage", "acteur"], GREET),
+        "move": (["personnage", "origine", "destination"], MOVE),
+        "pre_turn": (["personnage", "vehicule", "carrefour"], PRE_TURN),
+        "post_turn": (["personnage", "vehicule", "carrefour"], POST_TURN),
+        "puppeted": (["personnage"], PUPPETED),
+        "say": (["acteur", "personnage", "message"], SAY, phrase_event),
+        "time": (["personnage"], TIME, None, time_event),
+        "unpuppeted": (["personnage"], UNPUPPETED),
     }
 
     repr = "representations.character.CharacterRepr"
