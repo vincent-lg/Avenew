@@ -12,9 +12,10 @@ creation commands.
 
 from evennia.utils.utils import lazy_property
 from evennia.contrib.ingame_python.typeclasses import EventCharacter
-from evennia.contrib.ingame_python.utils import register_events
+from evennia.contrib.ingame_python.utils import register_events, time_event, phrase_event
 
 from auto.behaviors.behaviorhandler import BehaviorHandler
+from logic.character.events import *
 from logic.character.stats import StatsHandler
 from logic.geo import get_direction
 from typeclasses.shared import AvenewObject
@@ -40,33 +41,7 @@ W{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}E             {ln}
         S                     {bn}
 """
 
-PRE_TURN = """
-Before the driven vehicle turn into a crossroad.
-This event is called on the character driving a vehicle, when this
-vehicle is close from a crossroad where it will have to turn.  This
-event can be called to set taxi drivers or other automatic NPCs on a
-driving mission.
 
-Variables you can use in this event:
-    character: the character connected to this event.
-    vehicle: the vehicle driven by the character.
-    crossroad: the crossroad on which the vehicle is about to arrive.
-"""
-
-POST_TURN = """
-After the driven vehicle has turned into a road.
-This event is called on the character driving a vehicle, when this
-vehicle has just turned from a crossroad onto a road.  This
-event can be called to set taxi drivers or other automatic NPCs on a
-driving mission.
-
-Variables you can use in this event:
-    character: the character connected to this event.
-    vehicle: the vehicle driven by the character.
-    crossroad: the crossroad on which the vehicle has just turned.
-"""
-
-# Classes
 @register_events
 class Character(AvenewObject, EventCharacter):
     """
@@ -75,9 +50,21 @@ class Character(AvenewObject, EventCharacter):
     """
 
     _events = {
+        "can_delete": (["character"], CAN_DELETE),
+        "can_move": (["character", "origin", "destination"], CAN_MOVE),
+        "can_part": (["character", "departing"], CAN_PART),
+        "can_say": (["speaker", "character", "message"], CAN_SAY, phrase_event),
+        "delete": (["character"], DELETE),
+        "greet": (["character", "newcomer"], GREET),
+        "move": (["character", "origin", "destination"], MOVE),
         "pre_turn": (["character", "vehicle", "crossroad"], PRE_TURN),
         "post_turn": (["character", "vehicle", "crossroad"], POST_TURN),
+        "puppeted": (["character"], PUPPETED),
+        "say": (["speaker", "character", "message"], SAY, phrase_event),
+        "time": (["character"], TIME, None, time_event),
+        "unpuppeted": (["character"], UNPUPPETED),
     }
+
     repr = "representations.character.CharacterRepr"
 
     @lazy_property
