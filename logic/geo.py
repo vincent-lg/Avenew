@@ -11,41 +11,45 @@ from math import fabs
 
 ## Constants
 NAME_DIRECTIONS = {
-        "east": 0,
-        "southeast": 1,
-        "south": 2,
-        "southwest": 3,
-        "west": 4,
-        "northwest": 5,
-        "north": 6,
-        "northeast": 7,
-        "down": 8,
-        "up": 9,
+        "est": 0,
+        "sud-east": 1,
+        "sud": 2,
+        "sud-ouest": 3,
+        "ouest": 4,
+        "nord-ouest": 5,
+        "nord": 6,
+        "nord-est": 7,
+        "bas": 8,
+        "haut": 9,
 
         # Aliases
         "e": 0,
         "se": 1,
         "s": 2,
-        "sw": 3,
-        "w": 4,
-        "nw": 5,
+        "so": 3,
+        "o": 4,
+        "no": 5,
         "n": 6,
         "ne": 7,
-        "d": 8,
-        "u": 9,
+        "b": 8,
+        "h": 9,
+        "sudest": 1,
+        "sudouest": 3,
+        "nordouest": 5,
+        "nordest": 7,
 }
 
 NAME_OPP_DIRECTIONS = {
-        0: "east",
-        1: "southeast",
-        2: "south",
-        3: "southwest",
-        4: "west",
-        5: "northwest",
-        6: "north",
-        7: "northeast",
-        8: "down",
-        9: "up"
+        0: "est",
+        1: "sud-est",
+        2: "sud",
+        3: "sud-ouest",
+        4: "ouest",
+        5: "nord-ouest",
+        6: "nord",
+        7: "nord-est",
+        8: "bas",
+        9: "haut"
 }
 
 OPP_DIRECTIONS = {
@@ -65,13 +69,13 @@ ALIAS_DIRECTIONS = {
         0: ["e"],
         1: ["se", "s-e"],
         2: ["s"],
-        3: ["sw", "s-w"],
-        4: ["w"],
-        5: ["nw", "n-w"],
+        3: ["so", "s-o"],
+        4: ["o"],
+        5: ["no", "n-o"],
         6: ["n"],
         7: ["ne", "n-e"],
-        8: ["d"],
-        9: ["u"],
+        8: ["b"],
+        9: ["h"],
 }
 
 ## Functions

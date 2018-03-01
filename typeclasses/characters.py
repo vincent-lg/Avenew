@@ -22,22 +22,22 @@ from typeclasses.shared import AvenewObject
 
 # Constants
 MAP = r"""
-Crossroad
+Carrefour
 
-   Map                        Roads
+   Carte                      Routes
 
         N                     {fn}
-  NW    {fl}    NE
+  NO    {fl}    NE
     {ell}   {fl}   {erl}                 {ern}
      {ell}  {fl}  {erl}                  {eln}
       {ell} {fl} {erl}
        {ell}{fl}{erl}                    {rn}
-W{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}E             {ln}
+O{ll}{ll}{ll}{ll}{ll}{ll}{ll}*{rl}{rl}{rl}{rl}{rl}{rl}{rl}E             {ln}
        {hll}{bl}{hrl}
       {hll} {bl} {hrl}                   {hrn}
      {hll}  {bl}  {hrl}                  {hln}
     {hll}   {bl}   {hrl}
-  SW    {bl}    SE
+  SO    {bl}    SE
         S                     {bn}
 """
 

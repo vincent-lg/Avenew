@@ -12,84 +12,83 @@ from logic.geo import distance_between, get_direction, NAME_DIRECTIONS
 from typeclasses.vehicles import Crossroad, log
 
 # Constants
-CATEGORY = "Driving"
+CATEGORY = "Conduite"
 
 # Commands
 class CmdDrive(Command):
 
     """
-    Begin or stop driving a vehicle.
+    Commence ou arrête de conduire un véhicule.
 
-    Usage:
+    Usage :
         drive
 
-    This command is both used to begin driving a vehicle when you
-    are in the front seat, or to stop driving if the vehicle has
-    stopped moving.  Entering the |ydrive|n command to stop driving
-    will stop the vehicle in the middle of the street, which isn't
-    often a good idea.  Instead, you can use the |ypark|n command,
-    which will try to park the vehicle neatly on the side of
-    the street you are currently driving in.  Once parked, you can
-    |yleave|n the vehicle.
+    Cette commande est utilisé pour commencer à conduire un véhicule, si vous
+    vous trouvez dans la cabine et que personne d'autre ne tient le volant.
+    Vous pouvez également l'utiliser pour cesser de conduire si le véhicule
+    est arrêté. Si le véhicule est toujours sur la chaussée, cette commande
+    vous permet de relâcher le volant et le véhicule s'arrêtera au milieu
+    de la route, ce qui n'est pas nécessairement le plus sûr. Il est préférable
+    d'utiliser la commande |ypark|n pour essayer de se garer sur le trottoir
+    avant de relâcher le volant (|ydrive|n) et quitter le véhicule (|yleave|n).
 
-    While driving, you can use several short commands to control
-    speed, direction and driving mode.  Read the |ydriving|n help
-    file (by typing |yhelp driving|n) for more information.
+    Pendant que vous conduisez, vous pouvez utiliser les commandes |yspeed|n
+    pour modifier la vitesse, |yturn|n pour tourner (des alias existent
+    pour le faire automatiquement) et |ymode|n pour changer de mode de
+    conduite. Lisez l'aide de ces commandes pour plus d'informations ou
+    bien, quand il sera écrit, le fichier d'aide |yconduire|n.
 
     """
 
     key = "drive"
+    aliases = ["conduire"]
     help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("It seems you are not in a vehicle.")
+            self.msg("|rIl semble que vous ne soyez pas dans un véhicule.|n")
             return
 
         vehicle = room.location
+
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg(
-                    "Are you, or are you not, in a vehicle?  Hard to say...")
+            self.msg("|rÊtes-vous bien dans un véhicule ? Difficile à dire...|n")
             return
 
         # We can only control the steering wheel from the front seat
         if room is not vehicle.contents[0]:
-            self.msg("You aren't in the front seat of {}.".format(
+            self.msg("|rVous n'êtes pas dans la cabine pour conduire {}|n.".format(
                     vehicle.key))
             return
 
         # Are we already driving this vehicle
         if vehicle.db.driver is self.caller:
             vehicle.db.driver = None
-            self.msg("You let go of the steering wheel.")
-            room.msg_contents("{driver} lets go of the streering wheel.",
+            self.msg("Vous relâchez le volant.")
+            room.msg_contents("{driver} relâche le volant.",
                     exclude=[self.caller], mapping=dict(driver=self.caller))
             self.caller.cmdset.remove("commands.driving.DrivingCmdSet")
             return
 
         # Or someone else could be riving
         if vehicle.db.driver:
-            self.msg("Someone else is at the wheel.")
+            self.msg("Quelqu'un d'autre est au volant.")
             return
 
         # All is good, allow 'self.caller' to drive
         vehicle.db.driver = self.caller
-        self.msg("You grip the steering wheel and stretch your legs " \
-                "to reach the pedals.")
-        room.msg_contents("{driver} grips the steering wheel and stretches " \
-                "his legs to reach the pedals.", exclude=[self.caller],
+        self.msg("Vous saisissez le volant et placez vos pieds sur les pédales.")
+        room.msg_contents("{driver} saisie le volant et place ses pieds sur les pédales.", exclude=[self.caller],
                 mapping=dict(driver=self.caller))
 
         # If the vehicle is in a room, leave it.
         if vehicle.location is not None:
             vehicle.location = None
-            self.msg("You start the engine and begin to drive {} " \
-                    "on the street.".format(vehicle.key))
-            vehicle.msg_contents("The engine of {vehicle} starts.",
-                    exclude=[self.caller], mapping=dict(vehicle=vehicle))
+            vehicle.msg_contents("Le moteur de {vehicle} commence à tourner.",
+                    mapping=dict(vehicle=vehicle))
 
         self.caller.cmdset.add("commands.driving.DrivingCmdSet",
                 permanent=True)
@@ -98,52 +97,52 @@ class CmdDrive(Command):
 class CmdPark(Command):
 
     """
-    Park the vehicle you are driving.
+    Gare le véhicule que vous conduisez.
 
-    Usage:
+    Usage :
         park [direction]
 
-    This command can be used to park the vehicle you are driving,
-    right on the sidewalk.  the vehicle's speed has to be really
-    reduced.  You will not be able to park anywhere.  When you have
-    arrived at your destination, after reducing speed (using the
-    |yspeed|n command), you can |ypark|n, then use the |ydrive|n
-    command to stop driving.  Then, you can |yleave|n the vehicle.
+    Cette commande permet de garer le véhicule que vous conduisez actuellement.
+    Pour vous garer, le véhicule devra avoir une vitesse assez basse.
+    Vous ne pourrez garer votre véhicule à n'importe quel endroit. Commencez
+    par utiliser la commande |yspeed|n pour ralentir. Utilisez la commande
+    |ypark|n pour vous garer puis la commande |ydrive|n pour relâcher le
+    volant. Enfin, utilisez la commande |yleave|n pour quitter le véhicule.
 
-    By default, you will try to park on the right side of the street, which will vary
-    depending on your current direction.  If you are driving from east to west,
-    for instance, then |ypark|n without argument will try to park on the north
-    sidewalk (the one directly on the right of your vehicle).  You can specify a
-    direction in which to park instead.  Like |ypark south|n.  You can use aliases
-    to directions like |ypark s|n.
+    Si vous ne précisez aucun argument à la commande |ypark|n, vous
+    essayerez de vous garer sur le côté droit de la route. La direction
+    dépendra donc de là où vous vous trouvez et le déplacement du véhiculle.
+    Vous pouvez aussi préciser la direction dans laquelle vous souhaitez
+    vous garer, comme |ypark nord|n ou |ypark se|n.
 
     """
 
     key = "park"
+    aliases = ["garer"]
     help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("|rIt seems you are not in a vehicle.|n")
+            self.msg("|rIl semble que vous ne soyez pas dans un véhicule.|n")
             return
 
         vehicle = room.location
 
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg("|rAre you, or are you not, in a vehicle?  Hard to say...|n")
+            self.msg("|rÊtes-vous réellement dans un véhicule ? Difficile à dire...|n")
             return
 
         # Make sure we are currently driving
         if vehicle.db.driver is not self.caller:
-            self.msg("|gYou aren't driving {}.|n".format(vehicle.key))
+            self.msg("|gVous ne conduisez pas {}.|n".format(vehicle.key))
             return
 
         # Check the speed
         if vehicle.db.speed > 10:
-            self.msg("|gYou are still driving too fast.|n")
+            self.msg("|gVous allez toujours trop vite pour pouvoir vous garer.|n")
             return
 
         # Get both sides of the current coordinate
@@ -168,29 +167,29 @@ class CmdPark(Command):
                         "#{}, trying to park at {} {}.".format(
                         vehicle.id, x, y))
 
-                self.msg("|gIt seems you can't park here.|n")
+                self.msg("|gIl semble que vous ne puissiez pas vous garer ici.|n")
                 return
         else:
-            self.msg("|gNow, you cannot park in the middle of a crossroad.|n")
+            self.msg("|gVous pourriez difficilement vous garer au milieu d'un carrefour.|n")
             return
 
         # Get the matching street
         log.debug("Parking #{} on {} {} {}".format(vehicle.id, x, y, z))
         closest, name, streets = Crossroad.get_street(x, y, z)
         if not streets:
-            self.msg("|gYou don't find any free spot to park.|n")
+            self.msg("|gVous ne trouez aucune place de libre pour vous garer.|n")
             return
 
         # Park left of right, according to the specified direction
         args = self.args if self.args.strip() else get_direction((direction + 2) % 8)["name"]
         infos = get_direction(args)
         if infos is None or infos["direction"] in (8, 9):
-            self.msg("|rYou have specified an unknown direction: {}.|n".format(self.args))
+            self.msg("|rVous ne pouvez vous garer dans cette direction : {}.|n".format(self.args))
             return
 
         side_direction = infos["direction"]
         if (side_direction + 2) % 8 != direction and (side_direction - 2) % 8 != direction:
-            self.msg("|r{} isn't a valid direction in which to park.|n\n|gCheck the street direction.|n".format(infos["name"]))
+            self.msg("|r{} n'est pas une direction valide dans laquelle se garer.|n\n|gCheck the street direction.|n".format(infos["name"]))
             return
 
         spot = streets.get(side_direction)
@@ -198,81 +197,83 @@ class CmdPark(Command):
 
         # If there's no room there
         if spot and spot["room"] is None:
-            self.msg("|gYou don't find any free spot to park.|n")
+            self.msg("|gVous ne trouez aucune place de libre pour vous garer.|n")
             return
 
         room = spot["room"]
         vehicle.location = room
         vehicle.stop()
         numbers = "-".join(str(n) for n in spot["numbers"])
-        self.caller.msg("You park {} on the {sidewalk} sidewalk.".format(
+        self.caller.msg("Vous garez {} sur le côté {sidewalk} de la route.".format(
                 vehicle.key, sidewalk=infos["name"]))
-        self.caller.location.msg_contents("{driver} parks {vehicle} on the {sidewalk} sidewalk.",
+        self.caller.location.msg_contents("{driver} gare {vehicle} sur le côté {sidewalk} de la route.",
                 exclude=[self.caller], mapping=dict(driver=self.caller,
                 vehicle=vehicle, sidewalk=infos["name"]))
-        vehicle.msg_contents("{vehicle} pulls up in front of {numbers} {street}",
+        vehicle.msg_contents("{vehicle} s'arrête devant {numbers} {street}",
                 mapping=dict(vehicle=vehicle, numbers=numbers, street=name))
 
 
 class CmdSpeed(Command):
 
     """
-    Change the desired speed of your vehicle when you are driving.
+    Change la vitesse désirée de votre véhicule, quand vous le conduisez.
 
-    Usage:
-        speed <miles per hour>
+    Usage :
+        speed <kilomètres par heure>
 
-    This command can be used to change the speed of your vehicle while
-    you're driving.  You don't have to enter it to speed up or brake
-    at every road, crossroad, traffic light and such: what you are
-    changing using this command is your desired speed.  It usually
-    reflects the maximum speed you will drive to, assuming no need
-    for braking occurs.  When you stop for any reason, and then begin
-    driving again, your speed will increase until it reaches the
-    desired speed you have specified.  This speed will, however, depend
-    on your driving mode: by default, you will obey traffic rules as
-    much as you can, stop for traffic lights and slow down for crossroads.
-    You can change your driving mode (usually, to drive faster), but
-    be aware that this will increase the probability of crashing your
-    vehicle.  If you decide to ignore traffic lights, for instance, you
-    may end up crashing into another vehicle at the next crossroad.
-    It will depend on your driving skill, your reflexes in handling
-    unexpected situations will be greatly solicitated if you decide
-    to drive in such a way.
+    Cette commande peut être utilisée pour changer la vitesse du véhicule
+    que voous conduisez. Vous n'avez pas besoin de l'entrer systématiquement
+    pour accélérer ou freiner à chaque croisement, feu de circulation ou
+    autre. Cette commande permet de modifier la vitesse désirée et vous
+    ralentirez tout seul à l'approche de carrefours ou autre, pour accélérer
+    de nouveau après. Il s'agit plus de modifier votre vitesse de croisière
+    maximale. Si votre véhicule s'arrête pour une raison ou une autre, et
+    accélère de nouveau après, vous accélérerez jusqu'à atteindre de nouveau
+    votre vitesse de croisière, si d'autres obstacles ne se présentent pas.
+    Cette vitesse est également influencée par votre mode de conduite : par
+    défaut, vous conduisez en mode normal, ralentissant progressivement avant
+    chaque carrefour ou virage. Vous pouvez changer ce mode pour avoir une
+    conduite plus rapide et agressive. Si changer de mode de conduite peut
+    vous permettre de gagner en vitesse, cela ne va pas sans risques : ignorer
+    les feux de circulation, par exemple, pourrait très bien mener à un
+    accident au prochain carrefour. Tout dépend de votre rapidité et talent de
+    conducteur. Pour plus d'informations, lisez l'aide de la commande |ymode|n.
 
-    To change your desired speed without affecting your driving mode,
-    use this command |yspeed|n, followed by the number of desired
-    mile per hour.
+    Pour modifier votre vitesse désirée sans modifier votre mode de conduite,
+    utilisez donc la commande |yspeed|n suivie de la vitesse, en kilomètres
+    par heure.
 
-    Example:
+    Par exemple :
         |yspeed 25|n
 
-    If you want to gently brake and park, you can use |yspeed 0|n
-    to gently brake, and then, when the vehicle has stopped, the |ypark|n
-    command.
+    Si vous souhaitez ralentir pour vous garer, vous pouvez utiliser
+    |yspeed 0|n pour décélérer progressivement. Une fois le véhicule
+    arrêté ou suffisamment ralenti, utilisez la commande |ypark|n pour
+    vous garer.
 
     """
 
     key = "speed"
+    aliases = ["vitesse", "vit"]
     help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("|rIt seems you are not in a vehicle.|n")
+            self.msg("|rIl semble que vous ne soyez pas dans un véhicule.|n")
             return
 
         vehicle = room.location
 
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg("|rAre you, or are you not, in a vehicle?  Hard to say.|n..")
+            self.msg("|rÊtes-vous réellement dans un véhicule ? Difficile à dire...|n")
             return
 
         # Make sure we are currently driving
         if vehicle.db.driver is not self.caller:
-            self.msg("|gYou aren't driving {}|n.".format(vehicle.key))
+            self.msg("|gVous ne conduisez actuellement pas {}|n.".format(vehicle.key))
             return
 
         # If the vehicle is parked, un-park it
@@ -287,92 +288,96 @@ class CmdSpeed(Command):
             desired = int(desired)
             assert desired >= 0
         except (ValueError, AssertionError):
-            self.msg("|rSorry, this is not a valid speed.|n")
+            self.msg("|rDésolé, cela n'est pas une vitesse correcte.|n")
         else:
             vehicle.db.desired_speed = desired
-            self.msg("You're now planning to drive at {} MPH.".format(desired))
+            self.msg("Vous allez essayer de conduire à {} Km/h.".format(desired))
 
             # Display a message to the vehicle if the speed changes
             if current < desired:
-                vehicle.msg_contents("{} begins to speed up.".format(
+                vehicle.msg_contents("{} commence à accélérer.".format(
                         vehicle.key))
             elif current > desired:
-                vehicle.msg_contents("{} begins to slow down.".format(
+                vehicle.msg_contents("{} commence à ralentir.".format(
                         vehicle.key))
 
 
 class CmdTurn(Command):
 
     """
-    Prepare to turn in a direction.
+    Prépare à tourner dans une direction.
 
-    If you are driving a vehicle, you can use this command to prepare to turn.
-    When the vehicle approaches a crossroad, the possibility should be displayed to
-    you, much like the obvious exits in a room.  The vehicle isn't in the middle of the
-    crossroad yet, just a short distance away, and you can turn without slowing down
-    too much.  However, if you wait too long to turn, then the vehicle will stop in
-    the middle of the crossroad, and you will need to speed up again after you have turned.
+    Si vous êtes en train de conduire un véhicule, vous pouvez utiliser
+    cette commande pour vous préparer à tourner. Peu avant d'arriver à un
+    carrefour, vous recevrez la liste des rues possibles, de façon assez
+    semblable aux sorties disponibles dans une salle. Le véhicule ne sera pas au milieu du carrefour, vous
+    aurez quelques secondes pour vous préparer à tourner. Si vous ne choisissez
+    aucune direction, cependant, le véhicule s'arrêtera au milieu du
+    carrefour et vous devrez tourner, puis accélérer manuellement de nouveau
+    à l'aide de la commande |yspeed|n.
 
-    To use this command, you can either use the full name of the direction, or aliases.
-    Aliases are much quicker to type, and once you get used to driving in the game, you
-    will find using them is much better, particularly if your client doesn't support macro.
-    Here are all the directions and possible syntaxes:
+    Pour utiliser cette commande, vous pouvez soit préciser le nom complet
+    de la direction, ou bien des alias. Utiliser des alias est bien plus
+    rapide. Les alias étant les mêmes que pour vous déplacer à pied, les lier
+    à des macros est aussi extrêmement simple. Voici les directions et syntaxes possibles :
 
-    +------------|---------------------------------------------+
-    | Directions | Commands                                    ||
-    +------------|---------------------------------------------+
-    | east       | |yturn east|n          | |yeast|n           | |ye|n     |
-    | southeast  | |yturn southeast|n     | |ysoutheast|n      | |yse|n    |
-    | south      | |yturn south|n         | |ysouth|n          | |ys|n     |
-    | southwest  | |yturn southwest|n     | |ysouthwest|n      | |ysw|n    |
-    | west       | |yturn west|n          | |ywest|n           | |yw|n     |
-    | northwest  | |yturn northwest|n     | |ynorthwest|n      | |ynw|n    |
-    | north      | |yturn north|n         | |ynorth|n          | |yn|n     |
-    | northeast  | |yturn northeast|n     | |ynortheast|n      | |yne|n    |
+    +------------|---------------------------------------------+-----------+
+    | Directions | Commandes                                   |           |
+    +------------|---------------------------------------------+-----------+
+    | est        | |yturn est|n           | |yest|n            | |ye|n     |
+    | sud-est    | |yturn sud-est|n       | |ysud-est|n        | |yse|n    |
+    | sud        | |yturn sud|n           | |ysud|n            | |ys|n     |
+    | sud-ouest  | |yturn sud-ouest|n     | |ysud-ouest|n      | |yso|n    |
+    | ouest      | |yturn ouest|n         | |youest|n          | |yo|n     |
+    | nord-ouest | |yturn nord-ouest|n    | |ynord-ouest|n     | |yno|n    |
+    | nord       | |yturn nord|n          | |ynord|n           | |yn|n     |
+    | nord-est   | |yturn nord-est|n      | |ynord-est|n       | |yne|n    |
     +------------||---------------------------------------------+
 
-    In other words, a little before arriving to a crossroad with
-    an exit to the north, you could prepare to turn in this direction
-    by entering either |yturn north|n, or |ynorth|n, or simply |yn|n.
+    En d'autres termes, un peu avant d'arriver à un carrefour ayant une
+    rue disponible au nord, vous pouvez vous préparer à tourner en entrant
+    |yturn nord|n ou |ynord|n ou simplement |yn|n.
 
     """
 
     key = "turn"
-    aliases = list(NAME_DIRECTIONS.keys())
+    aliases = ["tourner"] + list(NAME_DIRECTIONS.keys())
     help_category = CATEGORY
 
     def func(self):
         """Execute the command."""
         room = self.caller.location
         if not inherits_from(room, "typeclasses.rooms.VehicleRoom"):
-            self.msg("|rIt seems you are not in a vehicle.|n")
+            self.msg("|rIl semble que vous ne soyez pas dans un véhicule.|n")
             return
 
         vehicle = room.location
 
         # A VehicleRoom should be contained in a vehicle... but let's check
         if not inherits_from(vehicle, "typeclasses.vehicles.Vehicle"):
-            self.msg("|rAre you, or are you not, in a vehicle?  Hard to say.|n..")
+            self.msg("|rÊtes-fvous bien dans un véhicule ? Diffile à dire...")
             return
 
         # Make sure we are currently driving
         if vehicle.db.driver is not self.caller:
-            self.msg("|gYou aren't driving {}.|n".format(vehicle.key))
+            self.msg("|gVous ne conduisez pas {} actuellement.|n".format(vehicle.key))
             return
 
         # Proceed to turn
         name = self.raw_string.strip().lower()
         if name.startswith("turn "):
             name = name[5:]
+        elif name.startswith("tourner "):
+            name = name[8:]
 
         direction = vehicle.db.direction
         infos = get_direction(name)
         if infos is None or infos["direction"] in (8, 9):
-            self.msg("|gThe direction you specified is unknown.|n")
+            self.msg("|gLa direction que vous avez précisée est inconnue.|n")
             return
 
         vehicle.db.expected_direction = infos["direction"]
-        self.msg("You prepare to turn {} on the next open crossroad.".format(infos["name"]))
+        self.msg("Vous vous préparer à tourner vers {} au prochain carrefour.".format(infos["name"]))
 
 
 class DrivingCmdSet(default_cmds.CharacterCmdSet):

@@ -814,17 +814,17 @@ class Vehicle(AvenewObject, DefaultObject):
         road = previous.db.exits[direction]["name"]
         diff = (direction - old_direction) % 8
         msg = ""
-        side = "left" if diff > 4 else "right"
+        side = "gauche" if diff > 4 else "droite"
         if diff == 0:
-            msg = "You go foward and take {road}."
+            msg = "Vous continuez tout droit sur {road}."
         elif diff in (1, 7):
-            msg = "You slightly turn to the {side} on {road}."
+            msg = "Vous tournez légèrement à {side} sur {road}."
         elif diff in (2, 6):
-            msg = "You veer off to the {side} on {road}."
+            msg = "Vous tournez à {side} sur {road}."
         elif diff in (3, 5):
-            msg = "You take a very sharp turn to the {side} on {road}."
+            msg = "Vous tournez franchement à {side} sur {road}."
         elif diff == 4:
-            msg = "An illegal U turn and you're going back on {road}."
+            msg = "Un demi-tour à peine légal, et vous êtes de retour sur {road}."
 
         if msg:
             self.msg_contents(msg, mapping=dict(side=side, road=road))
