@@ -39,9 +39,9 @@ class CmdHelp(OldCmdHelp):
         """
         string = _SEP + "\n"
         if title:
-            string += "|CHelp for |y%s|n" % title
+            string += "|CAide sur |y%s|n" % title
         if aliases:
-            string += " |C(aliases: %s|C)|n" % ("|C,|n ".join("|y%s|n" % ali for ali in aliases))
+            string += " |C(alias : %s|C)|n" % ("|C,|n ".join("|y%s|n" % ali for ali in aliases))
         if help_text:
             string += "\n%s" % dedent(help_text.rstrip())
         string.strip()
@@ -58,17 +58,18 @@ class CmdHelp(OldCmdHelp):
         """
         string = ""
         if hdict_cmds and any(hdict_cmds.values()):
-            string += "\n" + _SEP + "\n   |CCommand help entries|n\n" + _SEP
+            string += "\n" + _SEP + "\n   |CAide sur les commandes|n\n" + _SEP
             for category in sorted(hdict_cmds.keys()):
                 string += "\n  |w%s|n:\n" % (str(category).title())
                 string += "|G" + fill("|C, |G".join(sorted(hdict_cmds[category]))) + "|n"
         if hdict_db and any(hdict_db.values()):
-            string += "\n\n" + _SEP + "\n\r  |CHelp entries|n\n" + _SEP
+            string += "\n\n" + _SEP + "\n\r  |CAutres fichiers d'aide|n\n" + _SEP
             topics = []
             for category in hdict_db.keys():
                 topics += hdict_db[category]
-            topics.sort(key=lambda topic: topic.key.lower())
-            string += "|G" + fill(", ".join([str(topic) for topic in topics])) + "|n"
+            print repr(topics)
+            topics.sort()
+            string += "\n  |G" + fill(", ".join([str(topic) for topic in topics])) + "|n"
 
         return string
 
