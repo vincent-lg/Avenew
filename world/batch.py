@@ -3,6 +3,7 @@
 """Module containing utilities for the batch code."""
 
 from textwrap import dedent
+from evennia.help.models import HelpEntry
 from evennia.utils import create, search
 
 from logic.geo import direction_between
@@ -143,3 +144,36 @@ def add_callback(obj, name, number, code, parameters=""):
     else:
         # Just add it
         obj.callbacks.add(name, code, author=author, valid=True, parameters=parameters)
+
+def get_help_entry(key, text, category="General", locks=None, aliases=None):
+    """Get or create a help entry.
+
+    Args:
+        key (str): the help entry key.
+        text (str): the content of the help entry that will be updated or created.
+        category (str, optional): the help entry category.
+        locks (str, optional): locks to be used.
+        aliases (list, optional): a list of aliases to associate to this help entry.
+
+    Note:
+        Lock access type can be:
+            view: who can view this help entry
+
+    """
+    try:
+        topic = HelpEntry.objects.get(db_key=key)
+    except HelpEntry.DoesNotExist:
+        topic = create.create_help_entry(key, dedent(text), category)
+
+    # Update the help entry
+    topic.entrytext = dedent(text)
+    topic.category = category
+    if locks:
+        topic.locks.clear()
+        topic.locks.add(locks)
+    if aliases:
+        topic.aliases.clear()
+        topic.aliases.add(aliases)
+
+    topic.save()
+    return topic
