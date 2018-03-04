@@ -97,7 +97,7 @@ class Character(AvenewObject, EventCharacter):
                 types = obj.types.has("notifications")
                 if types:
                     if types[0].notifications.all():
-                        self.msg("|c{} vibrates|n: you have new notifications.".format(obj.get_display_name(self).capitalize()))
+                        self.msg("|c{} vibre|n: vous avez des notifications non lues.".format(obj.get_display_name(self).capitalize()))
 
     def at_before_say(self, message, **kwargs):
         """
