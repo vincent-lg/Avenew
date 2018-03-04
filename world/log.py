@@ -141,3 +141,4 @@ def end():
 main = logger("")  # Main logger
 app = logger("app")  # Main logger
 command = logger("command")  # Main logger
+login = logger("login")  # Main logger
