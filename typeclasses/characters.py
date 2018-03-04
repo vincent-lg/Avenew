@@ -77,6 +77,28 @@ class Character(AvenewObject, EventCharacter):
         """Return the stat handler for this character."""
         return StatsHandler(self)
 
+    def at_post_puppet(self):
+        """
+        Called just after puppeting has been completed and all
+        Account<->Object links have been established.
+
+        Note:
+            You can use `self.account` and `self.sessions.get()` to get
+            account and sessions at this point; the last entry in the
+            list from `self.sessions.get()` is the latest Session
+            puppeting this Object.
+
+        """
+        super(Character, self).at_post_puppet()
+
+        # Display notifications
+        for obj in self.contents:
+            if hasattr(obj, "types"):
+                types = obj.types.has("notifications")
+                if types:
+                    if types[0].notifications.all():
+                        self.msg("|c{} vibrates|n: you have new notifications.".format(obj.get_display_name(self).capitalize()))
+
     def at_before_say(self, message, **kwargs):
         """
         Before the object says something.

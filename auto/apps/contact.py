@@ -288,6 +288,16 @@ class MainScreen(BaseScreen):
     """
 
     commands = ["CmdNew"]
+    short_help = "Screen to display the contact list."
+    long_help = """
+        From here, you can use the |ynew|n command to create a new contact.
+        You should also see the contact list you already have, assuming you
+        have any.  In front of every contact name, you should see a number.
+        Enter this number to open this contact, to edit or delete it.
+        As in any screen, use the |yback|n command to go back to the previous
+        screen, or the |yexit|n command to exit the interface.  You can obtain
+        additional help with the |yhelp|n command.
+    """
 
     def get_text(self):
         """Display the app."""
@@ -364,6 +374,21 @@ class ContactScreen(BaseScreen):
     """
 
     commands = ["CmdFirst", "CmdLast", "CmdNumber", "CmdDone"]
+    short_help = "Screen to edit a contact."
+    long_help = """
+        From here, you can change elements of a contact, its first name,
+        last name, and phone number.  Use the |yfirst|n, |ylast|n, and
+        |ynumber|n commands respectively to do so.  In each case, you will need
+        to specify the new first name, last name or phone number as argument.
+        For instance, here are the commands to type to set a contact:
+            |yfirst Annabeth|n
+            |ylast Chase|n
+            |ynumber 551-0821|n
+        To save your modifications, use the |ydone|n command without anu argument.
+        As in any screen, use the |yback|n command to go back to the previous
+        screen, or the |yexit|n command to exit the interface.  You can obtain
+        additional help with the |yhelp|n command.
+    """
 
     @property
     def contact(self):

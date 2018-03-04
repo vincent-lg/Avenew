@@ -4,6 +4,8 @@
 High-tech command set and commands.
 """
 
+from textwrap import dedent
+
 from evennia import CmdSet
 from evennia.commands.cmdhandler import CMD_NOINPUT, CMD_NOMATCH
 from evennia.utils.utils import class_from_module, delay
@@ -29,6 +31,35 @@ class CmdText(Command):
     def func(self):
         """Execute the command."""
         self.caller.msg("That was some text here!")
+
+
+class CmdHelp(Command):
+
+    """
+    Display help in a computer or phone interface.
+    """
+
+    key = "help"
+    help_category = "General"
+
+    def func(self):
+        """Execute the command."""
+        screen = getattr(self, "screen", None)
+        if not screen:
+            self.msg("|rSorry, the screen in which you are is not clear.  Please report to admin.|n")
+            return
+
+        text = screen.short_help
+        text += "\n\nCommands you can use here:"
+        if screen.commands:
+            for cmd in screen.commands:
+                text += "\n  |y" + cmd.key.ljust(15) + "|n" + cmd.__doc__.strip().splitlines()[0]
+        text += "\n  |yback|n           Go back to the previous screen."
+        text += "\n  |yhelp|n           Get help on the screen or a command in it."
+        text += "\n  |yexit|n           Exit the interface."
+        text += "\n\n" + dedent(screen.long_help)
+        self.msg(text)
+
 
 
 class CmdNoInput(Command):
@@ -123,7 +154,7 @@ class ComputerCmdSet(CmdSet):
                 cmd.screen = screen
                 self.add(cmd)
 
-        cmds = [CmdNoInput(), CmdNoMatch()]
+        cmds = [CmdNoInput(), CmdNoMatch(), CmdHelp()]
         for cmd in cmds:
             if screen:
                 cmd.screen = screen

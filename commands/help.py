@@ -67,7 +67,6 @@ class CmdHelp(OldCmdHelp):
             topics = []
             for category in hdict_db.keys():
                 topics += hdict_db[category]
-            print repr(topics)
             topics.sort()
             string += "\n  |G" + fill(", ".join([str(topic) for topic in topics])) + "|n"
 

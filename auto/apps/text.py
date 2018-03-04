@@ -152,6 +152,18 @@ class MainScreen(BaseScreen):
 
     commands = ["CmdNew", "CmdSettings"]
     back_screen = "auto.apps.base.MainScreen"
+    short_help = "Screen to display your text messages."
+    long_help = """
+        From here, you can use the |ynew|n command to create a new text message.
+        You should also see the list of texts you already have, assuming you
+        have any.  In front of every text message, you should see a number.
+        Enter this number to open this text, to read or reply to it.
+        You can also use the |ysettings|n command to open the settings screen,
+        to change configuration for your text app.
+        As in any screen, use the |yback|n command to go back to the previous
+        screen, or the |yexit|n command to exit the interface.  You can obtain
+        additional help with the |yhelp|n command.
+    """
 
     def get_text(self):
         """Display the app."""
@@ -228,6 +240,7 @@ class MainScreen(BaseScreen):
             else:
                 thread = self.db["threads"][thread]
                 thread.mark_as_read(number)
+                NewTextScreen.forget_notification(self.obj, thread)
                 self.next("ThreadScreen", db=dict(thread=thread))
 
             return True
@@ -255,6 +268,23 @@ class NewTextScreen(BaseScreen):
 
     commands = ["CmdSend", "CmdCancel", "CmdTo", "CmdClear"]
     back_screen = MainScreen
+    short_help = "Screen to write a text message."
+    long_help = """
+        The first thing to do is to set the recipient, if not set already.
+        To do so, use the |yto|n command.  You can specify it a phone number,
+        like |yto 555-1234|n, or a contact name, like |yto annabeth|n.
+        Type text to simply add it to the text content to be sent.  For instance:
+            |yhello, how is it going?|n
+        If you want to delete the content you have typed, you can use the
+        |yclear|n command.  When you want to send your message, simply use the
+        |ysend|n command.  Notice that if you have the |yautosend|n setting
+        turned on, the text that you type will be automatically sent whenever
+        you press RETURN.  Therefore, the |ysend|n and |yclear|n commands are
+        not necessary here.
+        As in any screen, use the |yback|n command to go back to the previous
+        screen, or the |yexit|n command to exit the interface.  You can obtain
+        additional help with the |yhelp|n command.
+    """
 
     def get_text(self):
         """Display the new message screen."""
@@ -311,13 +341,26 @@ class NewTextScreen(BaseScreen):
 
         """
         # Try to get the sender's phone number
+        group = "text.thread.{}".format(text.thread.id)
         sender = TextApp.format(obj, text.sender)
         message = "{obj} emits a short beep."
         title = "New message from {}".format(sender)
         content = text.content
         screen = "auto.apps.text.ThreadScreen"
         db = {"thread": text.thread}
-        TextApp.notify(obj, title, message, content, screen, db)
+        TextApp.notify(obj, title, message, content, screen, db, group)
+
+    @staticmethod
+    def forget_notification(obj, thread):
+        """Forget the unread notifications for this thread.
+
+        Args:
+            obj (Object): the object having been notified.
+            thread (Thread): the thread toi mask as read.
+
+        """
+        group = "text.thread.{}".format(thread.id)
+        TextApp.forget_notification(obj, group)
 
 
 ## Thread screen
@@ -334,6 +377,24 @@ class ThreadScreen(BaseScreen):
 
     commands = ["CmdSend", "CmdClear", "CmdContact"]
     back_screen = MainScreen
+    short_help = "Screen to see a thread, and reply to it."
+    long_help = """
+        This screen displays a thread, a list of messages between several
+        recipients (probably you and someone else).  You should see the list
+        of more recent messages here.  You can also reply to this thread
+        right away and send your reply.
+        Type text to simply add it to the text content to be sent.  For instance:
+            |yhello, how is it going?|n
+        If you want to delete the content you have typed, you can use the
+        |yclear|n command.  When you want to send your message, simply use the
+        |ysend|n command.  Notice that if you have the |yautosend|n setting
+        turned on, the text that you type will be automatically sent whenever
+        you press RETURN.  Therefore, the |ysend|n and |yclear|n commands are
+        not necessary here.
+        As in any screen, use the |yback|n command to go back to the previous
+        screen, or the |yexit|n command to exit the interface.  You can obtain
+        additional help with the |yhelp|n command.
+    """
 
     def get_text(self):
         """Display the new message screen."""
@@ -408,6 +469,18 @@ class SettingsScreen(BaseScreen):
 
     commands = []
     back_screen = "auto.apps.text.MainScreen"
+    short_help = "Screen to edit settings of the text app."
+    long_help = """
+        You can set settings of your text app here.  Simply enter the
+        setting name if you want to turn it on or off.  Some settings might
+        require additional arguments that you have to specify after the
+        setting name, like |ylog 3|n.
+        Available settings:
+            |yautosend|n   Allow to auto-send a message when pressing RETURN.
+        As in any screen, use the |yback|n command to go back to the previous
+        screen, or the |yexit|n command to exit the interface.  You can obtain
+        additional help with the |yhelp|n command.
+    """
 
     def get_text(self):
         """Display the app."""
