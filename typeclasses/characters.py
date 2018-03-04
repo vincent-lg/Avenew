@@ -19,6 +19,7 @@ from logic.character.events import *
 from logic.character.stats import StatsHandler
 from logic.geo import get_direction
 from typeclasses.shared import AvenewObject
+from world.log import login as log
 
 # Constants
 MAP = r"""
@@ -90,6 +91,13 @@ class Character(AvenewObject, EventCharacter):
 
         """
         super(Character, self).at_post_puppet()
+
+        # Log the connection
+        sessions = self.sessions.get()
+        if self.account and sessions:
+            account = self.account
+            session = sessions[0]
+            log.info("{:>2}: {}@{}:{} logged in".format(session.sessid, account.key, session.address, self.key))
 
         # Display notifications
         for obj in self.contents:
