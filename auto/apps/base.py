@@ -146,6 +146,10 @@ class BaseScreen(object):
     can_quit = True # Can quit the screen and close the interface
     back_screen = None
     show_header = True
+    short_help = "Some screen"
+    long_help = """
+        This is some longer help file.
+    """
 
     def __init__(self, obj, user, type, app=None, add_commands=True):
         self.obj = obj
@@ -505,6 +509,18 @@ class MainScreen(BaseScreen):
 
     can_back = False # At this point we shouldn't try to get back
     show_header = False
+    short_help = "Welcome to the interface main screen."
+    long_help = """
+        From here, you can enter the first letter of an installed app to
+        open it.  If the |ytext|n app is installed on your device, for instance,
+        you could open it by entering |ytext|n.  You can also exit the interface
+        by using the |yexit|n command.  If you want to display the screen on
+        which you are at any time, press RETURN without any text.  In other
+        screens, you can use the |yback|n command to go back to the previous
+        screen.  If you need additional help at any time in a screen, use the |yhelp|n command without
+        argument to see the screen help, or with argument to get help on
+        a command inside the screen.
+    """
 
     def get_text(self):
         """Display the installed apps."""
