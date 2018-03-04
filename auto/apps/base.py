@@ -51,7 +51,7 @@ class BaseApp(object):
         return storage[self.app_name]
 
     @classmethod
-    def notify(cls, obj, title, message="", content="", screen=None, db=None):
+    def notify(cls, obj, title, message="", content="", screen=None, db=None, group=None):
         """Send a message to the owner of the app if needed.
 
         This method is called when a notificaiton has to be sent.
@@ -68,6 +68,7 @@ class BaseApp(object):
             message (str, optional): the message to be displayed by the location.
             screen (str or Screen, optional): the screen's path (default to the app's start screen).
             db (dict, optional): the optional arguments to give to the screen.
+            group (str, optional): the notification group.
 
         Note:
             Notifications are defined in the app because it might be
@@ -110,7 +111,21 @@ class BaseApp(object):
             user.msg(to_send)
         else:
             # If no current user, add a notification
-            type.notifications.add(title, screen, app, folder, content=content, db=db)
+            type.notifications.add(title, screen, app, folder, content=content, db=db, group=group)
+
+    @classmethod
+    def forget_notification(cls, obj, group=None):
+        """Clear all notifications or notifications from a group.
+
+        Args:
+            obj (Object): the object owning the notifications.
+            group (str, optional): the group notification.
+
+        """
+        types = obj.types.has("notifications")
+        type = types and types[0] or None
+        if type is not None:
+            type.notifications.clear(group=group)
 
     def get_display_name(self):
         """Return the display name."""

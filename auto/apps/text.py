@@ -240,6 +240,7 @@ class MainScreen(BaseScreen):
             else:
                 thread = self.db["threads"][thread]
                 thread.mark_as_read(number)
+                NewTextScreen.forget_notification(self.obj, thread)
                 self.next("ThreadScreen", db=dict(thread=thread))
 
             return True
@@ -340,13 +341,26 @@ class NewTextScreen(BaseScreen):
 
         """
         # Try to get the sender's phone number
+        group = "text.thread.{}".format(text.thread.id)
         sender = TextApp.format(obj, text.sender)
         message = "{obj} emits a short beep."
         title = "New message from {}".format(sender)
         content = text.content
         screen = "auto.apps.text.ThreadScreen"
         db = {"thread": text.thread}
-        TextApp.notify(obj, title, message, content, screen, db)
+        TextApp.notify(obj, title, message, content, screen, db, group)
+
+    @staticmethod
+    def forget_notification(obj, thread):
+        """Forget the unread notifications for this thread.
+
+        Args:
+            obj (Object): the object having been notified.
+            thread (Thread): the thread toi mask as read.
+
+        """
+        group = "text.thread.{}".format(thread.id)
+        TextApp.forget_notification(obj, group)
 
 
 ## Thread screen
