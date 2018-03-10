@@ -829,6 +829,83 @@ Don't worry about the two first lines of this method: it will simply get the pho
 
 #### Sending notifications
 
+Notifications can be accessed through the `NotificationHandler`.  However, in most cases, we'll use two simple methods of every app:
+
+- `notify`: send a notification to a user.
+- `forget_notification`: forget one or more notifications.
+
+Since `notify` takes a lot of arguments, we usually wrap its call in a screen.  It's not unheard of to have an app sending several types of notification.  A screen, however, usually sends only one type.  It is up to you, and you can definitely use these methods directly.
+
+`notify` and `forget_notification` are class methods, so you can use them from outside of the class, which may be very handy at times.
+
+##### notify
+
+This method has the following arguments:
+
+- `obj`: the object to notify, usually a phone or a computer depending on what is available.
+- `title`: the title of the notification to be displayed.
+- `message`: the message to be sent to the user of `obj`, if any.  If the user is not presently connected, this will be ignored.
+- `content`: the content of the notification, a longer text.  This could be the received text for instance.
+- `screen`: the screen having created this notification.  Notifications can be "answered", so a user could want to answer a notification.  For instance, if the recipient of a message is not logged in, she will be notified when login that notifications wait for her.  She can see them and answer them.  If she answers a message, for instance, the screen will be opened with the message content.  If you prefer, it's a bit like tapping on a notification on your smartphone to open it.  To do this, it needs the screen name and some other information.
+- `db`: the database attributes to generate when opening the screen.  Again, this is screen-specific.
+- `group`: notifications can be grouped.  This is useful to remove several notifications.  This argument is not necessary but it might be very handy.  See the following section for details on notification grouping.
+
+As you can see, these are a lot of arguments that could be deduced by the screen itself.  That's why, when we need to notify the user, we often wrap the call to `notify` in a screen method.  Rather than a long explanation though, let's see the `notify` method of `NewTextScreen` in the `text` app.
+
+```python
+class NewTextScreen(BaseScreen):
+
+    """This screen appears to write a new message, with possibly some
+    fields that are pre-loaded.  This screen will appear to create
+    a new message independent of any thread.  Note, however, that if
+    the list of recipients matches a previous conversation, the new
+    message will simply be appended to this previous thread.
+
+    Data attributes you can use (in screen.db):
+        recipients: a list of phone numbers representing the list of recipients.
+        content: the new text content as a string.
+
+    """
+
+    # ... class variables and other methods
+
+    @staticmethod
+    def notify(obj, text):
+        """Notify obj of a new text message.
+
+        This is a shortcut to specifically send a "new message" notification
+        to the object.  It uses the app's `notify` which calls the
+        notification handler in time, doing just a bit of wrapping.
+
+        Args:
+            obj (Object): the object being notified.
+            text (Text): the text message.
+
+        """
+        # Try to get the sender's phone number
+        group = "text.thread.{}".format(text.thread.id)
+        sender = TextApp.format(obj, text.sender)
+        message = "{obj} emits a short beep."
+        title = "New message from {}".format(sender)
+        content = text.content
+        screen = "auto.apps.text.ThreadScreen"
+        db = {"thread": text.thread}
+        TextApp.notify(obj, title, message, content, screen, db, group)
+```
+
+If someone is using the interface, he will receive the message "{obj} emits a short beep.".  Otherwise, the message will be sent to the object location (the room in which it sits, for instance) and a notification will be created.
+
+##### forget_notification
+
+In some cases, we want to erase the notifications we have sent.  This can happen, for instance, when opening the phone, the text app, and then reading a thread (conversation) for which we have been notified.  All notifications are deleted when answering one.  But if you open the phone using the `use` command, then notifications are not removed automatically.  And they shouldn't be.  So we need to remove them manually.
+
+In the previous example, you might have noticed we specify a notification group.  In this example, it would be `text.thread.<thread_id>` with `thread_id` being a number.  Without detailing too much the working of the text app, threads are conversations and can contain several text messages.  So basically, all texts in a conversation have the same thread ID.
+
+Assuming no none has ever used messages before, if you send a text to someone else, the text will have the thread ID 1.  If this someone answers, it will have the same thread ID, because it still is the same conversation.  So if you send a message, the "text.thread.1" notification will be created.  If you send another message to the same recipient, it will add a new notification with the same group: "text.thread.1".  When the recipient reads your messages, it should mark the notifications of group "text.thread.1" as read.
+
+That's why `forget_notification` has a `group` argument.  This allows to remove several notifications with the same group.  If you don't specify a group, all notifications for this object will be removed.
+
+You can set unique group notifications too.  Nothing forces you to keep a group with more than one notification.  It will, again, depend on your app.  For more information, read the `BaseApp.notify` and `BaseApp.forget_notification` methods.  You could also check to see how these methods are used in other apps.
 
 ### Games and invitations
 ### Paying within an app
