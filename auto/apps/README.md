@@ -1,40 +1,43 @@
-# Apps on Avenew One
+# Les apps sur Avenew one
 
-[Avenew One](https://www.avenew.one) uses an extensive phone and computer system, with an interface usable in-game.  This interface, called AvenOS, is a very simple text-based mobile interface that is meant to be flexible and as easy to use as a smartphone interface.  Smartphones in Avenew One can access these apps.  You can easily create new apps: be aware that creating an app is doable through code editing.  Although the process has been simplified, coding a new Aven app still involves some coding in Python.  The steps needed to code an app will be explained further in this document, along with other linked documents.  If you have a basic understanding of the Python syntax, if you know what is a variable, a function, a condition, a loop, an exception, a class, and the syntax to manipulate them; if you understand the basic concept of inheritance, then you should be fine just following this document.
+[Avenew One](https://www.avenew.one) possède un système complet et extensible d'applications (apps) pour téléphones et ordinateurs, avec une interface utilisable depuis le jeu. Cette interface, appelée AvenOS, est une interface simple et épurée en mode texte représentant une interface mobile, se voulant flexible et simple d'utilisation. Les téléphones ou ordinateurs (smartphones) peuvent utiliser ces applications. La création d'applications est relativement simple, mais elle nécessite l'édition de code source. Bien que le développement reste facile et intuitif au possible, ajouter une app dans Avenew nécessite de coder en Python. Les étapes nécessaires seront décrites en détail dans la suite de ce document, ainsi que dans d'autres documents annexes. Si vous possédez une connaissance de base de la syntaxe de Python, si vous savez ce qu'est une variable, une fonction, une condition, une boucle, une exception, une classe et la syntaxe pour les manipuler, si vous comprenez le principe de base de l'héritage, alors coder une app en suivant ce document ne devrait pas être difficile.
 
-## Getting started
+## Pour commencer
 
-The first step is to install a copy of Avenew on your system.  In order to do so, you will need [Evennia](www.evennia.com) installed.
+La première étape est d'installer une copie d'Avenew sur votre PC. Pour ce faire, vous aurez besoin d'[Evennia](www.evennia.com) déjà installé.
 
-You can follow the [quick start to installing Avenew](https://github.com/vlegoff/avenew/blob/master/README.md).
+Vous pouvez suivre le document [installation rapide d'Avenew](https://github.com/vlegoff/avenew/blob/fr/README.md).
 
-When the system has been set up, you should be able to run `evennia start` in the "avenew" folder.  You will be asked to create a superuser (with a username, optional email address, and a password).  When you have done so, you should be able to connect to `localhost` on port `4000` through your favorite MU* client, or go to http://localhost:4001 and click on the "play online" link.
+Une fois le système configuré, vous devriez pouvoir exécuter `evennia start` dans le dossier "avenew".  Evennia vous demandera de créer un super-utilisateur (superuser) avec un nom, e-mail (optionnel) et mot de passe. Une fois cela fait, vous devriez pouvoir vous connecter à l'adresse "localhost" (port 4000) en utilisant votre client MU* favoris, ou bien vous rendre à l'adresse http://localhost:4001 et cliquer sur le lien "jouer en ligne" pour utiliser le webclient.
 
-When you have connected to your new copy of Avenew, you will be placed in a single room with not much created.  You can create a demonstration of the game (which will create more rooms and objects, including a smartphone) by running the following command:
+Une fois connecté en utilisant les identifiants du super-utilisateur que vous venez de créer, vous vous retrouverez dans une salle vide. Vous pouvez créer une démonstration du jeu (contenant plusieurs salles et objets, incluant un smartphone) en entrant la commande suivante :
 
     @batchcode demo
 
-It might take a couple of seconds for the command to respond.  If it has succeeded, you should see a smartphone on the ground, right at your character's feet.  You will see it if you enter `look`.  You can pick it up (`get phone`).  You can open the Aven interface by typing `use phone`.
+La commande peut prendre quelques secondes avant de répondre. Si tout va bien, vous devriez voir un smartphone à vos pieds. Vous le verrez en entrant `look`.  Vous pouvez le ramasser en entrant `get aven`. Vous pouvez ouvrir l'interface AvenOS en entrant `use aven`.
 
-You should now be in the phone interface.  You can open an app by entering its name (like `text`).  If you have played, or are playing, on Avenew, this should look familiar.  The difference is that you can create your own app and request that it be added to the Avenew game.
+Vous vous trouvez maintenant dans l'interface du téléphone. Vous pouvez ouvrir une application en entrant son nom, comme `texte`. Si vous avez été, ou êtes joueur sur Avenew One, cette interface ne devrait pas vous surprendre. La différence étant que vous pouvez créer votre propre app et demander qu'elle soit intégrée au jeu.
 
-## Creating a basic app
+## Créer une nouvelle application
 
-An app is easy to add in your code.  In the "avenew" folder, open the "auto" folder, then the "apps" folder.  In it, there is one file per app.  To create a new app, just create a file with the `.py` extension and put some default code in it (see below).  That's as simple as that.
+Une application est très facile à ajouter dans le code. Dans le dossier "avenew", ouvrez le dossier "auto", puis le dossier "apps". Dans ce dernier, les apps se trouvent listées, une application par fichier. Pour créer une application, créez une nouveau fichier avec l'extension `.py` et placez-y quelques lignes de code (voir ci-dessous). C'est aussi simple que cela.
 
-### Basic code of an app
+### Code minimal d'une app
 
-Let's say you want to create an app called "memo" to allow to create and edit memos (short text notes).  The first step is to create a file called "memo.py" in the "auto/apps" folder.
+Admettons que vous souhaitiez créer une application simple, appelée "memo", permettant d'ajouter, éditer et supprimer des mémos (des notes). La première étape est de créer un fichier appelé  "memo.py" et de le placer dans "auto/apps". Notez que le nom de fichier doit être un module Python valide : évitez les accents et n'utilisez pas de caractères autres que des lettres. Certains caractères comme le souligné (`_`) sont autorisés, ainsi que des chiffres dans une certaine mesure. Gardez un nom court et explicite.
 
-In it, you should write the following code (modify depending on your application name, obviously):
+Dans ce fichier, vous pouvez coller le code suivant (en changeant le nom de l'application, si vous voulez) :
 
 ```
-"""
-Memo app: store short text messages for the application user.
+# -*- coding: utf-8 -*-
 
-Give more details on what it does here.  You can write several lines.  Remember
-to keep your lines shorter than 75 characters.  Take a look at the other files
-for examples of what should be included here.
+"""
+App mémo : conserve des notes courtes entrées par l'utilisateur de l'application.
+
+Entrez plus de détails sur l'application ici. Vous pouvez écrire plusieurs
+lignes. De préférence, gardez vos lignes plus courtes que 75 caractères.
+Regardez les exemples d'autres fichiers pour voir les informations qui sont
+généralement écrites ici.
 
 """
 
@@ -43,123 +46,128 @@ from auto.apps.base import BaseApp, BaseScreen, AppCommand
 class Memo(BaseApp):
 
     """
-    Memo app.
+    App mémo.
 
-    You can add more technical details here, on how to use it for a developer,
-    the possible methods and such.
+    Vous pouvez ajouter davantage de détails ici à l'adresse des développeurs.
+    Par exemple, une liste des méthodes les plus importantes peut être utile.
 
     """
 
     app_name = "memo"
-    display_name = "Memo"
+    display_name = "Mémo"
 ```
 
-Let's quickly go over this code.  If it looks obscure to you, there are really good Python tutorials on the Internet that would help you understand the Python syntax more easily.  I highly recommend reading one of them before going on.
+Détaillons un peu ce que fait ce code. Si il vous paraît trop obscur de prime abord, vous trouverez de très nombreux tutoriels de qualité sur le langage Python pour vous permettre de comprendre plus intuitivement la syntaxe. Je recommande fortement d'en lire un avant de continuer ce document.
 
-1. We begin by several lines wrapped in `"""` quotes.  This is a **docstring**, and at this point it serves to explain what the file is.  Since our file will contain an app, it's a good moment to explain about the app: what it does, who did it, how it works.  Don't write a novel in it either, documentation is good, but over-doing it might be a bad idea.
-2. We then import from the `auto.apps.base` module.  This module contains several things that we will need for our application.  For the time being, we just use `BaseApp`.  We'll explore the other classes in the following sections of this document.
-3. We then define the app structure.  In order to have a working app, we need to define a class inheriting from `BaseApp` with a valid `app_name` class variable.  So we define the `Memo` class, inheriting from `BaseApp`.  Remember some documentation in the class itself too, it will not hurt.
-4. We define some class variables that will be used by the system: `app_name` contains, strangely enough, the name of your application.  It should be a lower-case string identifying your application.  Two applications cannot have the same `app_name`.  `display_name` contains a prettier version of your app name, the one that will be shown to users.  It's usually the application name with an upper-case letter at the beginning.  This is not an identifier, and several apps can have the same display name, although it might get confusing for users.
+1. Tout en haut se trouve la ligne décrivant l'encodage du fichier. N'y touchez pas, recopiez-la simplement. Veillez à ce que votre éditeur soit bien configuré pour écrire en utf-8.
+2. Au début du fichier se trouvent plusieurs lignes entourées par des signes `"""`. C'est ce qu'on appelle une **docstring**, et à cet endroit elle permet simplement de donner des informations sur le module.  Puisque notre module contiendra une app, c'est un bon moment pour décrire cette app : dire ce qu'elle permet de faire, qui l'a faite, comment l'utiliser. N'écrivez pas un roman à cet endroit non plus, la documentation n'ayant d'intérêt que si elle n'est pas trop longue.
+3. On importe ensuite trois classes depuis le module `auto.apps.base`. Ce module contient le mécanisme de base d'une app. Pour l'instant, nous n'utilisons que `BaseApp`. Nous explorerons les autres classes bien plus à fond dans la suite de ce document.
+4. Nous définissions ensuite la structure de l'app. Afin d'avoir une app utilisable, il nous faut créer une classe héritant de `BaseApp`, contenant au moins une variable de classe appelée `app_name`. C'est le strict minimum. Ainsi, on définit la classe `Memo`, qui hérite de `BaseApp`. Vous pourriez ajouter un peu de documentation dans la classe même, cela ne peut pas faire de mal.
+5. On définit plusieurs variables de classe qui sont utilisées par l'interface AvenOS : `app_name` contient le nom unique de l'application. Ce devrait être une `str` en minuscule contenant uniquement des lettres sans accent. Utiliser le nom du fichier (sans l'extension) peut être une bonne idée. Deux applications ne peuvent pas avoir le même `app_name`, sans quoi l'une écrasera l'autre. `display_name` contient une version plus lisible et agréable du nom de l'application. C'est une autre `str`, et vous pouvez y mettre des lettres accentuées, des minuscules ou majuscules, sans aucun problème. C'est le nom qui sera affiché à l'utilisateur. Par convention, la première lettre de l'application est en majuscule, même si ce n'est pas une obligation. À la différence de `app_name`, `display_name` n'est pas un identifiant unique : deux applications peuvent avoir le même `display_name`, bien que ce puisse être problématique pour les utilisateurs.
 
-### That's it, let's run!
+### Et c'est tout, ajoutons notre application
 
-You can close this file for the time being.  Reload Evennia (or restart it).  Connect to it.  Before using your phone, you need to add your application: a phone doesn't have all possible applications, it would be confusing.  You can do that really quickly using `@py`:
+Vous pouvez fermer ce fichier pour l'instant. Rechargez Evennia (en utilisant la commande @reload`). Avant d'utiliser votre téléphone (avec `use`), vous devez ajouter l'application au téléphone "un téléphone (ou ordinateur) n'a pas toutes les applications par défaut). Ajouter l'application à un objet est cependant très simple en utilisant `@py` :
 
-    @py self.search("phone").types.get("computer").apps.add("memo")
+    @py self.search("aven").types.get("computer").apps.add("memo")
 
-> Wow, what did that do?
+> Wow, une longue commande assez peu intuitive !
 
-I won't detail the behavior of the line here, though you might understand it more with time and practice.  Basically, it gets the phone you should have in your inventory, get the "computer" type in the phone (that's a type where applications are defined), access the installed apps on this device and add one (again, substitute your application name instead of `memo`, you have to specify your application's `app_name`, the lower-case identifier).
+Inutile de trop s'attarder sur le détail de cette commande ici, car vous n'en aurez besoin qu'une fois lors de l'ajout de l'application. Vous la comprendrez mieux avec du temps et de la pratique. Pour simplifier, on cherche l'objet (le téléphone ici). On cherche son type "computer" (les applications étant stockées dans ce type). On accède aux applications conservées sur le téléphone et on en ajoute une, utilisant le nom de l'application (son `app_name`).
 
-And then type `use phone`.  The Aven interface should open but this time, you should see your new application's display name in it.
+Vous pouvez à présent entrer la commande `use aven`. L'interface AvenOS devrait s'ouvrir, mais cette fois, vous devriez voir votre application dans la liste, son `display_name`.
 
-> I can't launch my application.  If I enter the application's name, I get a funny error about a "missing screen".
+> Je ne peux pas ouvrir l'application. Si j'entre "memo", le jeu me retourne une erreur étrange à propos d'un "écran inexistant".
 
-Correct.  That was the real minimum, and we're far from done.  That was the basic code to have you add an application, and I hope you'll agree, it's not too difficult.  From here, things are getting a bit more difficult and interesting.
+En effet. Le code que je vous ai montré jusqu'ici était le minimum nécessaire et nous n'avons pas du tout fini. C'était le code simple et minimal pour avoir une application, et j'espère que vous serez d'accord, c'est un code très court et intuitif. Nous allons maintenant ajouter un peu de contenu dans notre application.
 
-## The structure of every app
+## La structure de toute application
 
-A basic app is structured around three important concepts:
+Une app est structurée autour de trois concepts essentiels :
 
-- The app class: this is the class we created just above.  It contains some information on the application.  It might not contain anything else and is often the shortest class in the file.  However, without it, nothing would work.
-- One or more screen classes: a screen describes what is displayed on the interface at a given point.  For instance, if you enter "use phone", then "text", the text app will open.  The screen will show you the list of messages you have received and offer you to create a new message.  This is a screen.  If you type "new", a new screen will appear to create a new message.  If you type "send" after having typed a message, you will go back to the previous screen (showing you your messages).  This concept of screen is really important.  An application could have only one screen, but it usually has more than just one.
-- Some commands: when you open a screen, you get access to some commands.  When you entered "use phone" and "text" in the previous example, the main screen of the text app appeared.  It defines the "new" command.  You can enter "new" to create a new message.  If you do, you will go to a different screen and will have other commands: "send", "cancel", "to" and so on.  A command in your app is just an [Evennia command](https://github.com/evennia/evennia/wiki/Commands) with some default values.
+- La classe de l'application : c'est la classe que nous avons créé juste au-dessous. Elle contient des informations sur l'application-même. Elle peut très bien ne rien contenir d'autre. C'est souvent la classe la plus courte dans le fichier. Cependant, sans elle, rien ne marcherait.
+- Une ou plusieurs classes d'écran (screen) : un écran décrit ce qui est affiché sur l'interface à un certain moment. Par exemple, si vous entrez `use aven`, puis `texte`, l'application "texte" (text) s'ouvrira. L'écran vous montrera la liste des messages que vous avez reçu ou envoyé, et vous proposera de créer un nouveau message. Ceci est un écran. Si vous entrez `new` pour créer un nouveau message, un nouvel écran apparaîtra contenant les champs nécessaires. Après avoir préparé et envoyé le message, cet écran se refermera et vous serez de retour dans l'écran principal de l'application, vous montrant la liste des messages. Ce concept d'écran est essentiel. Une application peut n'avoir qu'un seul écran, mais elle en possède souvent plus d'un.
+- Une ou plusieurs commandes : en ouvrant un écran dans l'application, l'utilisateur aura accès à plusieurs commandes propres à cet écran. Suivant le même exemple, si vous avez entré `use aven` et `texte` pour ouvrir l'application "texte", l'écran principal s'affiche. Cet écran contient la commande "new", qu'un utilisateur peut utiliser pour créer un nouveau message. Si vous entrez "new", vous vous déplacerez dans un nouvel écran et aurez accès à de nouvelles commandes : "send", "cancel", "to" et ainsi de suite. Une commande est tout simplement une [commande d'Evennia](https://github.com/evennia/evennia/wiki/Commands) avec quelques valeurs par défaut.
 
-So in summary: an app has an app class, and one or more screen classes.  A screen can have some commands.
+En résumé : une application possède une classe-mère (héritant de `BaseApp`) et un ou plusieurs écrans (screen). Un écran peut posséder plusieurs commandes.
 
-If you're okay with this, let's move on.  If not, you can read this section again, or if you prefer, just look at one of the defined apps in the "auto/apps" folder.  Open the "auto/apps/contact.py" file to see the contact app, for instance.
+Si ces explications vous semblent claires, vous pouvez passer à la suite. Sinon, n'hésitez pas à relire cette section ou à avancer malgré tout, certaines choses pourront vous sembler plus claires en lisant des exemples concrets. N'hésitez pas à lire d'autres fichiers d'exemple également.
 
-### The first screen
+### Notre premier écran
 
-An app cannot work without at least one screen.  For the purpose of this example, we'll keep things simple.  A screen displays some information (a text-based dialog box, for instance) and offers some commands.  Let's add a very, very simple screen (you can run this code in your "memo" app, here is the full code).
+Une application ne peut fonctionner sans écran, il lui en faut au moins un. Pour l'instant, nous allons garder l'exemple aussi simple que possible. Un écran affiche plusieurs informations propres au contexte (une boîte de dialogue en texte brut, par exemple) et propose plusieurs commandes pour interagir dans ce contexte. Ajoutons notre premier écran (vous pouvez copier ce code dans votre fichier "memo.py").
 
 ```python
-"""
-Memo app: store short text messages for the application user.
+# -*- coding: utf-8 -*-
 
-Give more details on what it does here.  You can write several lines.  Remember
-to keep your lines shorter than 75 characters.  Take a look at the other files
-for examples of what should be included here.
+"""
+App mémo : conserve des notes courtes entrées par l'utilisateur de l'application.
+
+Entrez plus de détails sur l'application ici. Vous pouvez écrire plusieurs
+lignes. De préférence, gardez vos lignes plus courtes que 75 caractères.
+Regardez les exemples d'autres fichiers pour voir les informations qui sont
+généralement écrites ici.
 
 """
 
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
 
-## Application class
+## Classe de l'application
 
 class Memo(BaseApp):
 
     """
-    Memo app.
+    App mémo.
 
-    You can add more technical details here, on how to use it for a developer,
-    the possible methods and such.
+    Vous pouvez ajouter davantage de détails ici à l'adresse des développeurs.
+    Par exemple, une liste des méthodes les plus importantes peut être utile.
 
     """
 
     app_name = "memo"
-    display_name = "Memo"
-    start_screen = "MainScreen"
+    display_name = "Mémo"
+    start_screen = "EcranPrincipal"
 
-## Screens
 
-class MainScreen(BaseScreen):
+## Écrans de l'application
 
-    """Main screen, displaying hello!."""
+class EcranPrincipal(BaseScreen):
+
+    """Écran principal, affichant 'bonjour'."""
 
     def get_text(self):
-        """Return the text to be displayed."""
+        """Retourne le texte à afficher quand on ouvre l'écran."""
         return """
-                Memo app!
+                App mémo !
 
-                This is my first application, doesn't it look good?
+                C'est ma première application, n'est-elle pas belle ?
 
-                Of course it doesn't do much at this point.
+                Bien entendu, elle ne fait pas grand chose pour l'heure.
 
-                Memo app, by me, BSD license
+                App mémo, de moi, licence BSD.
             """
 ```
 
-> Do I need to run the complicated `@py` command again?
+> Dois-je entrer de nouveau la commande compliquée `@py` ?
 
-No, this was just to add the app.  Just reload (using `@reload` for instance), open the interface again (`use phone`) and then, enter `memo` to open the memo application.  This time, it opens, and what do you see?
+Non, c'était simplement nécessaire pour ajouter l'application. Il suffit maintenant de recharger le jeu (entrez la commande `@reload`), ouvrez de nouveau l'interface AvenOS (`use aven`) puis ouvrez votre app (`memo`). Cette fois, votre app s'ouvre et que voyez-vous ?
 
 ```
-Memo app! (BACK to go back, EXIT to exit, HELP to get help)
+App mémo! (BACK pour revenir à l'écran précédent, EXIT pour quitter, HELP pour obtenir de l'aide)
 
-This is my first application, doesn't it look good?
+C'est ma première application, n'est-elle pas belle ?
 
-Of course it doesn't do much at this point.
+Bien entendu, elle ne fait pas grand chose pour l'heure.
 
-Memo app, by me, BSD license
+App mémo, de moi, licence BSD.
 ```
 
-You see the text you have entered in `get_text` with some alterations:
+Vous voyez le texte que vous avez entré dans `get_text`, avec quelques modifications :
 
-1. At the first line of your text (usually the screen name), a header has been added.  This header contains three commands (or links): back, exit, and help.  These commands are accessible out-of-the-box, you don't have to create them.  `back` allows you to go back to the previous screen.  `exit` closes the interface.  `help` gives you more information on the screen.  This header can be disabled, but in most cases, you will need it (keep the first line of `get_text` purposefully short).
-2. Although the text was entered with some indentation, it has been removed.  Actually, it is not (try to enter a line with greater indentation), but the method that displays the text and calls `get_text` removes some of the initial indentation to make it easier to edit and visually nicer.  (Take a look at [textwrap.dedent](https://docs.python.org/2/library/textwrap.html) if you want to know how it works.)
+1. À la première ligne, après le nom de votre écran, se trouve maintenant une en-tête (header). Cette en-tête contient trois commandes (ou boutons) : back qui permet de retourner à l'écran précédent, exit qui permet de quitter l'interface sans attendre, et help qui permet d'obtenir de l'aide spécifique sur cet écran. Vous n'avez pas besoin de créer ces trois commandes, elles sont disponibiles automatiquement peu importe l'écran. Elles peuvent être désactivées (et l'en-tête peut être retiré) en modifiant certaines variables de notre classe. En principe, il est préférable de laisser l'en-tête. Souvenez-vous de garder la première ligne de `get_text` courte au possible.
+2. Bien que le texte ait été entré avec plusieurs niveaux d'indentation, les espaces en début de ligne ont disparues. Ce n'est pas tout à fait vrai, en réalité : vous pouvez essayer d'entrer d'avantage d'indentation sur une ligne pour voir l'effet. Mais la méthode appelant `get_text` retire automatiquement une partie de l'indentation pour rendre l'édition du code plus simple et plus jolie (jetez un coup d’œil à [textwrap.dedent](https://docs.python.org/2/library/textwrap.html) si vous voulez savoir comment cela marche.)
 
-There's something else that we did, and it's important.  Our app must know what screen to open (it cannot guess, as I mentioned, there is often more than one screen).  This is done through another class variable in our `Memo` class.  Here is a reminder:
+Nous avons fait quelque chose d'autre également, quelque chose d'important. Notre application doit savoir quel écran ouvrir (elle ne peut le deviner, il y a souvent plusieurs écrans par application). Une autre variable de notre classe `Memo` est utilisée : quand un utilisateur entre `memo` pour ouvrir l'app, l'application ouvre son écran principal.
 
 ```python
 class Memo(BaseApp):
@@ -167,642 +175,665 @@ class Memo(BaseApp):
     """..."""
 
     app_name = "memo"
-    display_name = "Memo"
-    start_screen = "MainScreen"
+    display_name = "Mémo"
+    start_screen = "EcranPrincipal"
 ```
 
-The `start_screen` class variable of our app class contains the name of the screen to open.  It has to be the name of the class.  It can be a full path if the screen is in a different file, like `"auto.apps.base.mainScreen"`.  It is most common to simply specify the class name like here: `"MainScreen"`.  A class of this name will be sought in the same module.
+La variable de classe `start_screen` de notre app doit contenir le nom de l'écran à ouvrir (le nom de la classe héritant de `BaseScreen`). C'est souvent le nom de la classe elle-même, mais ce peut être un chemin absolu si vous souhaitez rediriger vers une autre application (comme `"auto.apps.base.MainScreen"`). Souvent cependant, on précise juste le nom de la classe : la classe en question sera cherchée dans le même module (votre module `memo.py` sera exploré pour trouver une classe `EcranPrincipal` qui hérite de `BaseScreen`).
 
-For the time being, our screen doesn't do anything, except displaying some information.  Obviously, a screen must do something, probably have some buttons (commands).
+Pour l'instant, notre écran ne fait pas grand chose, à part afficher du texte. De toute évidence, un écran doit faire quelque chose, supporter une ou plusieurs commandes (boutons).
 
-## A working example
+## Un exemple fonctionnel
 
-### Designing the app structure
+### Décrire la structure de l'app
 
-It's a good time to think about what we want our app to look like.  Here, we will create a simple `memo` app that allows to add, remove and edit memos.  A memo is simply a note with some text.  So our main screen could look like this:
-
-```
-Memos (BACK to go back, EXIT to exit, HELP to get help)
-
-Create a NEW memo.
-
-(Insert the list of current memos here).
-
-Memos: 15
-```
-
-This is a rough draft, of course, but it will allow us to see the screen and command process.
-
-In other words, we want a command, named `new`, that creates a new memo.  We also want to open memos to edit them.  And perhaps, after that, we should add a command to delete a memo, that might be good!
-
-So the first question we ought to ask ourselves is: how many screens should we need?  Only one?  Well, if we create a new memo, we want it to happen in a new screen where we can edit text.  It will still be more comfortable than doing so in the main screen.  You can do it all in one screen, this really depends on your app structure.  For the example, we'll split it into two screens: the main screen, and the memo screen (to add/edit a memo).
-
-Next question: what commands should we need?  Well, the new command, obviously, to go from the main screen to the memo screen.  And a command to open an existing memo... perhaps "edit"?  It's a possibility.  However, it would make more sense to have an app like this:
+C'est un bon moment pour réfléchir à l'aspect futur de notre app. Ici, nous voudrions créer une app simple, `mémo`, qui permet d'ajouter, éditer et supprimer de courtes notes (mémos). Un mémo sera donc tout simplement cela : une note avec un champ de texte. Notre écran principal pourrait donc ressembler à ceci :
 
 ```
-Memos (BACK to go back, EXIT to exit, HELP to get help)
+Mémos (BACK pour revenir à l'écran précédent, EXIT pour quitter, HELP pour obtenir de l'aide)
 
-Create a NEW memo.
+( Entrez NEW pour créer un nouveau mémo. )
 
- 1 - Don't forget to feed the animals and plants before we leave tomorrow.
- 2 - Stella's phone is 000-0000, call before Saturday.
- 3 - Electricity bill due on 3/12, no more delay!
+(Insérer la liste de mémos ici.)
 
-Memos: 3
+Mémos : 15
 ```
 
-If you enter "new", you can add a memo.  If you enter a number, you can open an existing memo to edit it.  We could create commands for every memo, but we'll do it another way, by redirecting user input to check that a number was entered or not.
+Ce n'est qu'un premier brouillon, bien entendu, mais il nous permettra de voir la connexion entre écran et commande.
 
-### Let's consider storage
+Dans cet exemple, nous voudrions une commande, "new", qui permet de créer un nouveau mémo. Nous voudrions aussi pouvoir ouvrir nos mémos individuellement pour pouvoir les éditer. Et peut-être qu'après, nous pourrions avoir une commande pour supprimer un mémo.
 
-Here is a question you may have wondered: where will we store our memos?  It's a valid question.  The app system provides several ways to quickly store information in different places.  We can store information on the app or on the screen.
+La première question que l'on doit se poser ici : combien d'écrans voulons-nous avoir ? Seulement un ? Peut-être... mais quand on créera un nouveau mémo, ou l'éditera, on voudrait avoir un affichage différent de l'écran d'accueil. Bien entendu, nous pourrions le faire depuis l'écran principal, mais ce serait moins confortable et intuitif pour l'utilisateur. Dans notre cas, nous allons donc diviser en deux écrans : l'écran principal qui affiche tous les mémos et l'écran d'un mémo qui permet d'ajouter/éditer un mémo.
 
-> What's the difference?
+Question suivante : de quelles commandes aurons-nous besoin ? La commande "new", de toute évidence, permettant d'aller de l'écran d'accueil vers l'écran d'un nouveau mémo. Pourquoi pas une commande pour ouvrir un mémo existant... peut-être "edit" ? On pourrait, en effet. Mais ici, je vous propose une structure plus simple :
 
-Usually, we store on the app when we:
+```
+Mémos (BACK pour revenir à l'écran précédent, EXIT pour quitter, HELP pour obtenir de l'aide)
 
-1. Want information that might be accessed by several screens.
-2. Want to keep information about the app itself.
-3. Need persistent and accurate information that should remain until we remove it.
+( Entrez NEW pour créer un nouveau mémo.
+  Ou un numéro de mémo pour l'éditer. )
 
-We store on the screen when we:
+ 1 - Ne pas oublier de nourir les animaux et les plantes avant de partir demain.
+ 2 - Le téléphone de Stella est 000-0000, apeler avant samedi.
+ 3 - La facture d'électricité est à payer avant le 12 mars, plus de délai !
 
-1. Want information that will only be true for this screen.
-2. Don't need vital information, we could do if it's lost by accident.
+Mémos: 3
+```
 
-So it would make more sense to create our memos in the app: memos would be accessible from different screens, but we don't want them to get deleted or replaced by accident.
+Si vous entrez "NEW", vous pouvez créer un nouveau mémo. Si vous entrez un numéro, vous ouvrirez un mémo existant et pourrez l'éditer. Nous pourrions créer une commande pour chaque numéro, mais ce ne serait pas le plus intuitif. Nous allons implémenter cette option plus simplement, en redirigeant l'entrée de l'utilisateur et vérifier qu'il s'agisse d'un nombre.
 
-> What could we store on screens then?
+### Stockage de données
 
-Field editing is a very common case.  In our `MemoScreen`, we will edit the text field.  So we'll need to temporarily store the memo to quickly modify it.  You will find a lot of examples.
+Peut-être vous êtes-vous demandé : où allons-nous stocker nos mémos ? C'est une question légitime. Le système des apps sur AvenOS permet de facilement conserver des données à plusieurs endroits. Nous pouvons conserver des informations dans l'app elle-même ou dans un écran de l'app.
 
-In both cases, storage is accessible through the `db` property, either on the app or the screen.  It will return a dictionary (or a `_SaverDict`, actually) in which you can write information that will be saved automatically.  It will be persistent data: if you reload or restart Evennia, the data will persist.  The downside is that you cannot store anything in it.  We'll avoid storing objects, for instance, we'll simply store dictionaries.  Look at this example:
+> Quelle est la différence ?
+
+En règle générale, on garde les données sur l'app quand :
+
+1. On veut conserver des informations dont plusieurs écrans auront besoin.
+2. On veut conserver des informations sur l'app elle-même, qui peuvent être accessibles depuis d'autres apps si besoin.
+3. On a besoin d'informations permanentes et valides jusqu'à ce qu'on les supprime explicitement.
+
+D'un autre côté, on conserve les données sur l'écran quand :
+
+1. On veut garder des informations qui ne seront valables que pour cet écran spécifiquement.
+2. Les informations conservées ne sont pas "vitales", on peut éventuellement faire sans si besoin.
+
+Ainsi, dans notre cas, ce serait plus logique de conserver les mémos sur l'app elle-même : les mémos sont accessibles depuis différents écrans de l'app, et on ne veut certainement pas qu'il soit supprimé ou remplacé par erreur.
+
+> Que pourrions-nous conserver sur un écran, finalement ?
+
+L'édition de champ de texte est un excellent exemple d'information qu'il serait préférable de conserver sur un écran. Dans notre classe `EcranMemo`, qui permet d'ajouter un nouveau mémo ou éditer un mémo existant, nous allons conserver le texte en cours d'édition. Nous avons aussi besoin de conserver le mémo en cours d'édition pour l'éditer rapidement. Vous verrez de nombreux exemples de cas où conserver sur un écran est davantage pratique et logique.
+
+Dans les deux cas, l'information peut être conservée en utilisant la propriété `db`, soit sur l'app, soit sur l'écran. La propriété `db` contient un dictionnaire (ou un `_SaverDict` pour être précis)i dans lequel vous pouvez écrire des informations qui seront sauvegardées automatiquement. Vous verrez plusieurs exemples dans la suite de ce tutoriel. Voici notre écran principal avec une gestion simple des données :
 
 ```python
-class MainScreen(BaseScreen):
+class EcranPrincipal(BaseScreen):
 
-    """Main screen, displaying hello!."""
+    """Écran principal, affichant 'bonjour'."""
 
     def get_text(self):
-        """Return the text to be displayed."""
+        """Retourne le texte à afficher."""
         memos = self.app.db.get("memos", [])
-        string = "Memos"
-        string += "\n\nCreate a NEW memo."
-        string += "\n"
+        texte = "Mémos"
+        texte += "\n\n( Entrez NEW pour créer un nouveau mémo."
+        texte += "\n  Ou un numéro pour éditer un mémo existant. )\n"
 
-        # Add the existing memos
+        # Ajouter les mémos existants
         i = 1
-        for line in memos:
-            text = line.get("text")
-            string += "\n {i} - {text}".format(i=i, text=text)
-             i += 1
+        for ligne in memos:
+            contenu = ligne.get("contenu")
+            texte += "\n {i} - {contenu}".format(i=i, contenu=contenu)
+            i += 1
 
-        # Display the bottom line
-        string += "\n\nMemos: {}".format(len(memos))
-        return string
+        # Affiche la dernière ligne
+        texte += "\n\nMémos: {}".format(len(memos))
+        return texte
 ```
 
-We have changed the way our text is displayed.  This is less readable and less pretty, but it allows us to simply add information on the current memos, and that's the part that really interests us right now.
+Nous avons changé la façon dont notre texte est affiché. Le texte est un peu moins lisible sous cette forme, mais il permet davantage de dynamisme. Notez que vous pouvez combiner le confort et le dynamisme assez simplement, en utilisant par exemple la méthode `.format()`.
 
-Our first line in `get_text` might be worth a second look: `memos = self.app.db.get("memos", [])` .  `self.app` contains the app (an object created on our `Memo` class).  So `self.app.db` contains a dictionary of persistent information stored on the app.  So we use it like a normal dictionary: here, we get a value (called `memos`) and specify a default value (it might be empty, it will always be if you don't add new memos).
+Notre première ligne dans `get_text` mérite une seconde d'attention : `memos = self.app.db.get("memos", [])` .  `self.app` contient l'app (un objet créé depuis notre classe `Memo`).  Ainsi, `self.app.db` contient un dictionnaire des données persistantes conservées sur l'app elle-même.  On l'utilise donc comme un dictionnaire tout ce qu'il y a de plus normal : nous essayons de récupérer une valeur (appelée `memos`) et précisons une valeur par défaut (la case du dictionnaire pourrait ne pas exister, elle n'existera pas si vous ouvrez l'app et n'avez pas encore enregistré de mémo).
 
-So `memos` contains a list.  A list of what?  Well, a list... of dictionaries!  Remember, we will avoid storing objects here, though that would be nicer.  So we're going to store a dictionary for each memo.  A few lines below, we browse through the list and get the dictionaries inside.  We get the `"text"` key in the dictionary and display it.
+ainsi, `memos` contient une liste. Elle peut être vide si la case n'existe pas dans le dictionnaire. Si elle ne l'est pas, que contient-elle ? Et bien... chaque case de la liste est un autre dictionnaire ! Dans Evennia, on évite de conserver des objets directement dans la base de donnée. Cela aurait été plus lisible, mais il est préférable de conserver chaque mémo comme un dictionnaire. Noter qu'on aurait pu conserver le texte du mémo tout simplement : chaque case de la liste aurait pu être une chaîne (`str`). Cela aurait été plus clair. Mais conserver des dictionnaires nous permettra d'ajouter d'autres champs pour chaque mémo. Quelques lignes plus tard, on parcourt notre liste. `ligne` contient donc un dictionnaire (un mémo). On cherche la case `contenu` dans ce dictionnaire et l'utilisons comme le texte contenu dans le mémo.
 
-> Can I try this code?
-
-You can... but I would suggest adding a memo beforehand: that will make things more interesting.
-
-Update the `MainScreen` class with the code I provided just above.  Reload Evennia (with `@reload` for instance).  If you haven't done so already, open the interface (`use phone`).
-
-Before you open the `memo` app, however, we're going to add a memo.  This code will do the trick (copy/paste it as is in your client).
-
-    @py self.search("phone").types.get("computer").apps.get("memo").db["memos"] = [{"text": "Don't forget to feed the animals and plants before we leave tomorrow."}]
-
-Then, open the memo app by entering: "memo".
+Si cela vous aide, voici un exemple possible de contenu dans `self.apps.db` :
 
 ```
-Memos (BACK to go back, EXIT to exit, HELP to get help)
-
-Create a NEW memo.
-
- 1 - Don't forget to feed the animals and plants before we leave tomorrow.
-
-Memos: 1
+"memos": [
+    { "contenu": "Ne pas oublier de nourrir les animaux et les plantes avant de partir demain." },
+    { "contenu": "Le téléphone de Stella est 000-0000, appeler avant samedi."},
+    { "contenu": "La facture d'électricité est à payer avant le 12 mars, plus de délai !" }
+]
 ```
 
-> Wow, it works!  Can I add other memos to test?
+> Puis-je essayer ce code de l'écran ?
 
-Sure, go ahead!  Use the same command I gave you above and change the text at the end (since there are some symbols, I advise copy/pasting and simply editing the text between the double quotes at the end).
+Vous pouvez, oui. Mettez à jour le code de l'écran avec l'exemple de la classe `EcranPrincipal` donné au-dessus. Cela dit, je vous conseille d'ajouter un mémo à la main pour rendre le test plus intéressant :
 
-> I add memos, but I have to go back and open the memo app to see them again.
+Après avoir mis à jour `EcranPrincipal`, rechargez Evennia (avec `@reload` par exemple). Si ce n'est pas déjà fait, ouvrez l'interface AvenOS (`use aven`).
 
-Yes, you can update the screen by entering "back", then "memo" again to open the app.  However, you can simply press your RETURN key without any text, and the screen will update.
+Avant d'ouvrir l'app `mémo`, nous allons ajouter un mémo à la main. La commande suivante devrait s'en charger (vous pouvez la copier-coller dans votre client).
 
-### Let's add a second screen
+    @py self.search("aven").types.get("computer").apps.get("memo").db["memos"] = [{"contenu": "Ne pas oublier de nourrir les animaux et les plantes avant de partir demain."}]
 
-> All that is good... but we still can't add new memos and edit existing ones, except using the ugly shortcut with the `@py` command.
+Vous pouvez maintenant ouvrir votre app en entrant `memo`.
 
-That's what we're going to do in this section.  And to do so, we'll add a new screen!
+```
+Mémos (BACK pour revenir à l'écran précédent, EXIT pour quitter, HELP pour obtenir de l'aide)
 
-> Why a new screen?  Couldn't we edit our memos right in the main screen?
+( Entrez NEW pour créer un nouveau mémo.
+  Ou un numéro pour éditer un mémo existant. )
 
-We could.  You could do so.  But users might appreciate a different screen.  Your application isn't that big for the time being, but if you add other fields, a new screen will just be easier.  And it's not that hard to do, really.  Besides, when you create a new memo, you will use the same screen, so that makes more sense in the end.
+ 1 - Ne pas oublier de nourrir les animaux et les plantes avant de partir demain.
 
-So what to do in our screen?
+Mémos: 1
+```
 
-I propose a very simple screen: it will open on a memo and will allow to edit its text.  If you type text in the screen, it will update the text in the memo and close the screen.
+> Incroyable, cela marche ! Puis-je ajouter d'autres mémos pour tester ?
 
-Let's code a rough screen to do just that.  In the file, below your `MainScreen` class, add a new screen:
+Vous pouvez, je vous conseilleais simplement d'utiliser une autre commande, car maintenant, la liste existe bel et bien :
+
+    @py self.search("aven").types.get("computer").apps.get("memo").db["memos"].append({"contenu": "<insérer votre texte ici>"}]
+
+> J'en ai ajouté de nouveaux, mais je dois quitter l'écran avec BACK et y retourner pour voir les changements.
+
+En effet, vous pouvez mettre à jour l'écran en fermant l'écran (BACK) et ouvrir l'écran à nouveau (memo). Plus simplement, vous pouvez appuyer sur ENTRÉE sans aucune commande, cela mettra à jour l'écran.
+
+### Ajoutons un second écran
+
+> Tout ça c'est bien beau mais on ne peut toujours pas ajouter de nouveaux mémos, sauf en utilisant la commande contre-intuitive avec `@py`.
+
+C'est ce que nous allons faire ici. Et pour y arriver, nous allons ajouter un nouvel écran !
+
+> Pourquoi un nouvel écran ? Ne pourrions-nous éditer les mémos directement dans l'écran principal ?
+
+Vous pourriez. Mais les utilisateurs de l'app pourraient apprécier un nouvel écran. Notre app mémo n'est peut-être pas très grande pour l'instant, mais elle peut très bien grandir au-delà de ce que vous aviez imaginé. Rappelez-vous : AvenOS doit rester flexible et intuitif pour les utilisateurs. Et c'est plus intuitif d'entrer une commande courte (ou de cliquer dessus) que d'entrer une commande avec plusieurs paramètres pour se simplifier la tâche. Dans tous les cas, ajouter un nouvel écran n'est vraiment pas bien dur. Et j'ajouterai que nous utiliserons le même écran pour créer un nouveau mémo ou en éditer un existant.
+
+Donc... que doit-on faire dans ce nouvel écran ?
+
+Je vous propose un écran très simple : un écran juste pour éditer le texte du mémo. Quand vous ouvrez l'écran, le texte du mémo apparaît. Si vous entrez du texte, le texte du mémo est mis à jour et l'écran est refermé.
+
+Essayons donc de coder notre écran. Dans votre fichier "memo.py", sous la classe `EcranPrincipal`, ajoutons notre écran :
 
 ```python
-class MemoScreen(BaseScreen):
+class EcranMemo(BaseScreen):
 
-    """Add or edit a memo.
+    """Ajoute ou édite un mémo.
 
-    This screen will allow to add or edit an existing memo.  If you
-    type text in it, the text of the memo will be updated and the
-    screen will close.
+    Cet écran permet d'ajouter un nouveau mémo ou éditer un mémo existant.
+    Si l'utilisateur entre du texte dans cet écran, le texte du mémo
+    sera mis à jour et l'écran se refermera.
 
     """
 
-    back_screen = MainScreen
+    back_screen = EcranPrincipal
 
     def get_text(self):
-        """Return the text to be displayed by the screen."""
+        """Retourne le texte à afficher."""
         memo = self.db.get("memo", {})
         if memo:
-            title = "Memo editing"
+            titre = "Édition d'un mémo"
         else:
-            title = "New memo"
-        text = memo.get("text", "(Enter the text of the memo here.)")
-        if "text" in self.db:
-            text = self.db["text"]
+            titre = "Nouveau mémo"
+        contenu = memo.get("contenu", "(Entrez le texte de votre mémo ici.)")
+        if "contenu" in self.db:
+            contenu = self.db["contenu"]
 
         return """
-            {title}
+            {titre}
 
-            Text:
-                {text}
+            Texte:
+                {contenu}
 
-                    SAVE
-        """.format(title=title, text=text)
+                    SAVE pour sauvegarder
+        """.format(titre=titre, contenu=contenu)
 ```
 
-It doesn't look too different from what we have had so far.  Notice a few things, however:
+Cet exemple n'est pas trop différent de ce que nous avons vu jusqu'à présent. Sauf quelques petites choses qu'il est bon de noter :
 
-1. This time, we add a class variable named `back_screen` to our class.  It contains the screen to which we should go back if we type "back".  This is a good habit to take, to always have a `back_screen`, except for the app `start_screen` to which it's not necessary.  The `back_screen` is normally not used: whenever you browse through applications, the screens that opened are kept and typing "back" always goes back to the previous screen.  In some cases, however, there's no explicit back screen, hence this class variable.
-2. We assume our memo is stored on the screen itself, under the key `"memo"`.  This memo should be a dictionary.  If the screen doesn't have any, it will simply assume an empty memo.  The title will vary: if the memo exists, it will mark "editing", if not it will indicate "new memo".  Which is quite correct.
-3. The text can also be stored on the screen.  We'll see why later, for the time being, just notice that the text can be stored on `self.db` too.
+1. Cette fois-ci, nous créons une variable de classe appelée `back_screen`. Elle contient l'écran auquel nous devrions aller si nous entrons la commande "back". C'est une bonne habitude à prendre : toujours avoir un `back_screen` configuré, sauf pour l'écran d'accueil (celui spécifié par la classe variable `start_screen` dans l'app) pour qui cela n'est pas nécessaire. La variable `back_screen` n'est normalement pas utilisée. Quand l'utilisateur navigue d'écran en écran, la liste des écrans est conservée et "back" permet juste de revenir à l'écran précédent dans la liste. Dans certains cas, cependant, il n'y a pas d'écran précédent explicite, et la variable `back_screen` sera utilisée comme choix par défaut.
+2. On part du principe que notre mémo est conservé sur notre écran, dans la case `memo`. Ce mémo devrait être un dictionnaire. Si la case n'existe pas, l'écran part du principe qu'il s'agit d'un mémo vide. Si cette case existe, il affichera "édition" dans le titre, sinon "nouveau" pour indiquer que le mémo n'a pas encore été enregistré.
+3. Le texte du mémo peut aussi être conservé sur l'écran, dans la case "contenu". Nous verrons plus en détail pourquoi stocker le texte à part, pour l'instant, souvenez-vous simplement que `self.db` peut contenir la case `contenu`.
 
-Okay, our screen works... but how can we access it to check?  The only connected screen we have is `MainScreen` for the time being.
+> Bien... notre écran marche mais comment y accéder pour le vérifier ? Notre seul écran pour l'instant est `EcranPrincipal`.
 
-### Changing screen
+### Changer d'écran
 
-There are three main ways to change between screens, and all of them are screen methods:
+Il y a trois moyens pour changer l'écran actuel, et toutes trois sont des méthodes sur la classe `BaseScreen` :
 
-- `back()`: this method will just close the current screen and go back to the previous screen.  It's a very common feature and you'll see it used before long.
-- `move_to()`: this allows to change from screen to screen.  It needs to know to which screen we need to go.  It has some options we'll discuss later.  Interestingly, this is not the method we use most often.
-- `next`: this has exactly the same effect has `move_to`, and the same options, except that it keeps track of the new screen in the screen tree.
+- `back()`: cette méthode referme l'écran actuel et cherche l'écran précédent, comme la commande "back". C'est une fonctionnalité fréquemment utilisée.
+- `move_to()`: Cette méthode permet de se déplacer vers un nouvel écran. Elle a besoin de savoir vers quel écran l'on veut se déplacer. Elle possède certaines options que nous détaillerons plus tard. Contrairement à l'apparence, ce n'est pas la méthode que nous utilisons le plus fréquemment.
+- `next`: cette méthode a exactement le même comportement que `move_to`, sauf qu'elle écrit le nouvel écran dans la liste des écrans visitées (le screen tree).
 
-Remember, the screen tree is there to remember what screen you opened.  When you use your phone, it creates an element in the screen tree.  When you open the `text` application, it creates another element.  If you type `new` to create a new text, it opens a new screen and adds a new element to the screen tree.  If then you type "back", the screen tree will be read to know what was the previous screen.  We don't need to trouble ourselves that much about the screen tree, we just need to know that `next` will write in it and remember the screens we have opened, that's why we prefer to use it except in some cases.
+Pour rappel, le screen tree est ici pour se souvenir de tous les écrans ouverts par l'utilisateur. Quand vous ouvrez l'interface AvenOS, un élément est ajouté dans le screen tree. Si vous ouvrez une application, un nouvel élément est ajouté dans le screen tree. Et ainsi de suite. Si vous entrez la commande "back", le screen tree sera lu pour savoir quel est l'écran précédent. Le dernier élément du screen tree sera retiré.
 
-> Why would I want to redirect to a screen without it being accessible through "back"?
+> Pourquoi voudrais-je rediriger vers un autre écran sauf que celui-ci apparaisse dans le screen tree ?
 
-This doesn't often happen.  Usually, you will use the `next()` method.  But when you use a very generic screen, like displaying a "yes or no" dialog, you don't mean to store this dialog in the screen tree.
+C'est assez rare, en effet. La plupart du temps, vous utiliserez la méthode `next` qui écrit dans le screen tree. Quand vous utilisez des écrans très génériques, comme des boîtes de dialogue ou confirmation, vous pourriez vouloir ouvrir un écran sans que celui-ci ne soit accessible si l'utilisateur entre "back".
 
-So let's look at `next` in more details now.  Remember that `move_to` has the same options:
+Regardons la méthode `next` de plus près. Souvenez-vous : `move_to` a exactement les mêmes paramètres :
 
-- `screen`: the new screen (either a screen class, or a path leading to this class).
-- `app`: the application for this new screen.  By default, it will be the same application in which the current screen is opened, and we don't often need to change it.
-- `db`: an optional dictionary containing data to be sent to the new screen.  This data will be stored in the screen `.db` property.
+- `screen`: le nouvel écran à ouvrir. Ce peut être une classe dérivée de `BaseScreen` ou bien un chemin menant à cette classe (comme `EcranPrincipal` ou `auto.apps.base.MinScreen`).
+- `app`: l'application du nouvel écran. Si vous ne précisez pas cette option, ce sera la même application que l'écran actuel, ce qui est souvent le comportement souhaité.
+- `db`: un dictionnaire optionnel contenant les données à écrire dans le nouvel écran. Ces données seront écrites dans la propriété `db` du nouvel écran.
 
-In our example, the screen will be `MemoScreen`, since we want to redirect to the memo screen.  However, `MemoScreen` needs some data, remember?
+Dans notre exemple, le paramètre `screen` sera `EcranMemo`, puisque nous voulons rediriger vers cet écran. Cependant, `EcranMemo` a besoin de quelques données, souvenez-vous.
 
-- `memo` is a dictionary containing the memo to be edited.
-- `text` is an optional text string containing the current text of the memo.
+- `memo` est un dictionnaire contenant le mémo en cours d'édition.
+- `contenu` est un champ de texte optionnel contenant le texte actuel du mémo.
 
-So we'll use `.next` like this:
+Nous utiliserons donc `.next()` de cette façon :
 
 ```python
-screen.next("MemoScreen", db=dict(memo=memo, text=text))
+screen.next("EcranMemo", db=dict(memo=memo, contenu=contenu))
 ```
 
-Let's put this code where it belongs.
+Voyons maintenant où mettre cette ligne de code.
 
-### Redirecting user input
+### Rediriger l'entrée utilisateur
 
-Perhaps you remember that I suggested, for the main screen, that we could add to the memo, to edit it, just by entering a number.  "Entering a number" means we need to catch user input and do something.  There's a really simple method in the screen you can override to achieve just that.  Its name is `no_match`, and it expects one argument: the string entered by the user.
+Peut-être vous souvenez-vous : j'ai conseillé de pouvoir éditer un mémo actuel en entrant simplement un numéro. "Entrer un nombre" signifie que nous aurons besoin de récupérer les commandes qu'envoie l'utilisateur. Il y a une méthode très simple dans `BaseScreen` que vous pouvez remplacer pour ce faire. Son nom est `no_match`, et elle ne prend qu'un argument : le texte entré par l'utilisateur dans une `str`.
 
-So we will add this method to our `MainScreen` and redirect to the `MemoScreen` if the entered string is a valid number.
+Nous allons donc ajouter cette méthode à notre `EcranPrincipal` pour rediriger sur `EcranMemo` si l'utilisateur a entré un nombre valide.
 
 ```python
 # ...
 ## Screens
-class MainScreen(BaseScreen):
+class EcranPrincipal(BaseScreen):
 
-    """Main screen, displaying hello!."""
+    """Écran principal, affichant 'bonjour'."""
 
     def get_text(self):
-        """Return the text to be displayed."""
+        """Retourne le texte à afficher."""
         memos = self.app.db.get("memos", [])
-        string = "Memos"
-        string += "\n\nCreate a NEW memo."
-        string += "\n"
+        texte = "Mémos"
+        texte += "\n\n( Entrez NEW pour créer un nouveau mémo."
+        texte += "\n  Ou un numéro pour éditer un mémo existant. )\n"
 
-        # Add the existing memos
+        # Ajouter les mémos existants
         i = 1
-        for line in memos:
-            text = line.get("text")
-            string += "\n {i} - {text}".format(i=i, text=text)
+        for ligne in memos:
+            contenu = ligne.get("contenu")
+            texte += "\n {i} - {contenu}".format(i=i, contenu=contenu)
             i += 1
 
-        # Display the bottom line
-        string += "\n\nMemos: {}".format(len(memos))
-        return string
+        # Affiche la dernière ligne
+        texte += "\n\nMémos: {}".format(len(memos))
+        return texte
 
-    def no_match(self, string):
-        """Called when no command matches the user input.
+    def no_match(self, texte):
+        """Appelée quand aucune commande ne correspond à l'entrée utilisateur.
 
-        We need to test `string` to see if it's a valid number, and,
-        if so, redirect to the memo screen to edit this memo.
+        Nous avons besoin de tester `texte` pour voir si cette chaîne
+        contient un nombre valide. Si oui, redirige vers l'écran `EcranMemo`.
 
         """
-        # Remember the memos, the list of dictionaries, should be in `self.db`
+        # Souvenez-vous, la liste des mémos doit se trouver dans `self.db`
         memos = self.app.db.get("memos", [])
 
-        # Try to convert input
+        # Essaye de convertir l'entrée utilisateur
         try:
-            number = int(string)
-            assert number > 0
-            memo = memos[number - 1]
+            nombre = int(texte)
+            assert nombre > 0
+            memo = memos[nombre - 1]
         except (ValueError, AssertionError, IndexError):
-            self.user.msg("Invalid number.")
+            self.user.msg("Ce nombre n'est pas valide.")
         else:
-            text = memo.get("text")
-            # Open the MemoScreen
-            self.next("MemoScreen", db=dict(memo=memo, text=text))
+            contenu = memo.get("contenu")
+            # Ouvre EcranMemo
+            self.next("EcranMemo", db=dict(memo=memo, contenu=contenu))
 
         return True
 
 # ...
 ```
 
-I give you the entire class of the `MainScreen`.  Remember that you also need the `Memo` class (above the `MainScreen`) and `MemoScreen` (below the `MainScreen`).
+Je vous donne ici le code complet de la classe `EcranPrincipal`. Souvenez-vous : vous avez aussi besoin de la classe `Memo` (au-dessus) et l'autre écran (`EcranMemo`) au-dessous. Si vous commencez à être perdu, vous trouverez le code complet du fichier dans une autre section.
 
-Reload the game again, then open the app: `use phone`, then `memo`.  Then press `1`.  If you have at least one memo, the first one should open and you will see the `MemoScreen`:
+Rechargez Evennia. Ouvrez AvenOS, puis votre app "mémo". Puis entrez `1`. Si vous avez au moins un mémo d'enregistré, celui-ci devrait s'ouvrir dans `EcranMemo`.
 
 ```
-Memo editing (BACK to go back, EXIT to exit, HELP to get help)
+Édition d'un mémo (BACK pour revenir à l'écran précédent, EXIT pour quitter, HELP pour obtenir de l'aide)
 
-Text:
-    Don't forget to feed the animals and plants before we leave tomorrow.
+Texte:
+    Ne pas oublier de nourrir les animaux et les plantes avant de partir demain.
 
-        SAVE
+        SAVE pour sauvegarder
 ```
 
-It works!  The new screen opens and we see the text of our memo... we cannot edit it yet, but one step at a time.  Let's go back to the `no_match` method beforehand, for there might be some things that are not self-explanatory:
+Cela marche ! Le nouvel écran s'ouvre et on voit bien le texte de notre mémo... on ne peut l'éditer encore, mais une chose à la fois. Revenons un peu sur la méthode `no_match` d'abord, certaines choses pourraient ne pas être explicites.
 
-- Once again, notice that `no_match` takes one argument besides `self`: the string entered by the user.  This method is called if no command matches the user input.
-- We get the `memos` the same way as before.  It will be a list of dictionaries.  It may not exist (so we get an empty list if not).
-- We then convert the user input and do some additional things.  The user input will be a number between 1 and N, but we have to check it's a number, it's not too low, and it's not too high.  Doing it in a `try/except` like this is a Pythonic way of testing the input.
-- If an error occurs, we send it to `self.user`.  This contains the object (character) using the device at this point.  You have already seen `self.app` which points to the application.
-- If the conversion was successful, we have a `memo` variable that contains one of the list element.  Remember that `memos` contains a list of dictionaries, so `memo` will contain a dictionary.  We create the `text` variable as well, which will contain the text of the memo to be edited.
-- Finally we call `self.next` to redirect to a different screen.  The parameters shouldn't surprise you at this point, I hope.
-- The `no_match` method has to return `True` or `False`.  `True` means "I handled the input`, `False` means "I didn't handle it, display an error".  Since in our case we display the error right in our `no_match` method, we return `True` no matter what.
+- Une fois encore, n'oubliez pas que `no_match` prend un argument à part `self`: le texte entré par l'utilisateur. Cette méthode est appelée si aucune commande ne correspond à l'entrée de l'utilisateur.
+- On obtient les mémos de la même façon qu'avant. Ce sera une liste de dictionnaires. Elle pourrait ne pas exister, on s'assure donc d'avoir une liste quoiqu'il arrive.
+- On convertit ensuite l'entrée de l'utilisateur et faisons quelques vérifications en plus. L'entrée de l'utilisateur doit être un nombre entre 1 et N, mais nous devons vérifier qu'il s'agisse bien d'un numéro valide. Le faire ainsi dans un bloc `try/except` est une façon très "pythonique" de vérifier la validité de l'entrée.
+- Si une erreur se produit, on envoie un message d'explication à l'utilisateur, contenu dans `self.user`. Cet attribut contient le personnage (Character) utilisant l'interface à ce moment. Comme nous l'avons vu, vous avez aussi `self.app` qui pointe vers un objet de l'app (`Memo` ici).
+- Si il n'ý a pas eu d'erreur, on a une variable `memo` qui contient un élément de la liste des mémos, c'est-à-dire un dictionnaire (un mémo). On crée aussi la variable `contenu` qui contient le contenu du mémo.
+- Pour finir, on appelle `self.next` pour rediriger vers `EcranMemo`. Les paramètres ne devraient normalement pas vous surprendre à ce stade.
+- La méthode `no_match` doit retourner `True` or `False`. `True` indique que l'entrée utilisateur a été lue et traitée, `False` indique qu'il faut envoyer un message d'erreur à l'utilisateur. Puisqu'ici nous traitons le cas où l'entrée n'est pas valide, on retourne `True` quoiqu'il arrive.
 
-And that's it!  We can now edit a memo (at least see its content and open the new screen).
+Et voilà. On peut maintenant éditer un mémo (en tous cas, l'ouvrir et voir son texte dans notre nouvel écran).
 
-You could try to use the `no_match` method on the `MemoScreen` to try and update the memo text right away.  It's not too difficult to do, and will offer you a good exercise.  You already have everything to code this method.  I advise you to try and code it yourself before you look at the solution below.  But don't hesitate to do so if you're stuck.
+Vous pourriez essayer de créer la méthode `no_match` sur `EcranMemo`, pour mettre à jour le texte du mémo. Ce n'est pas bien difficile et offre un bon exercice. Vous avez déjà tout ce qu'il faut pour coder cette méthode. Je vous conseille d'essayer de coder cette méthode avant de regarder la solution un peu plus bas. Cela dit, n'hésitez pas à regarder la solution si vous êtes bloqués.
 
-Again, what should we want in our `MemoScreen`?  If we enter some text, we could just modify the memo text... that would be simple!  Let's do that first, and we'll update it later.
+Là encore, demandons-nous, que doit-on faire dans notre `EcranMemo`? Simplement, si l'utilisateur entre du texte, on pourrait mettre à jour le texte du mémo. Faisons cela pour commencer, on mettra à jour cette méthode ensuite.
 
 ```python
-class MemoScreen(BaseScreen):
+class EcranMemo(BaseScreen):
 
-    """Add or edit a memo.
+    """Ajoute ou édite un mémo.
 
-    This screen will allow to add or edit an existing memo.  If you
-    type text in it, the text of the memo will be updated and the
-    screen will close.
+    Cet écran permet d'ajouter un nouveau mémo ou éditer un mémo existant.
+    Si l'utilisateur entre du texte dans cet écran, le texte du mémo
+    sera mis à jour et l'écran se refermera.
 
     """
 
-    back_screen = MainScreen
+    back_screen = EcranPrincipal
 
     def get_text(self):
-        """Return the text to be displayed by the screen."""
+        """Retourne le texte à afficher."""
         memo = self.db.get("memo", {})
         if memo:
-            title = "Memo editing"
+            titre = "Édition d'un mémo"
         else:
-            title = "New memo"
-        text = memo.get("text", "(Enter the text of the memo here.)")
-        if "text" in self.db:
-            text = self.db["text"]
+            titre = "Nouveau mémo"
+        contenu = memo.get("contenu", "(Entrez le texte de votre mémo ici.)")
+        if "contenu" in self.db:
+            contenu = self.db["contenu"]
 
         return """
-            {title}
+            {titre}
 
-            Text:
-                {text}
+            Texte:
+                {contenu}
 
-                    SAVE
-        """.format(title=title, text=text)
+                    SAVE pour sauvegarder
+        """.format(titre=titre, contenu=contenu)
 
-    def no_match(self, string):
-        """Called when no command matches the user input."""
+    def no_match(self, texte):
+        """Cette méthode est appelée quand aucune commande ne correspond."""
         memo = self.db.get("memo", {})
-        memo["text"] = string
+        memo["contenu"] = texte
 
-        # Close the screen and go back to the previous one
+        # Ferme cet écran et revient à l'écran précédent
         self.back()
         return True
 ```
 
-> Wow, our `no_match` method is really short!
+> Et bien, cette méthode `no_match` est très courte.
 
-- We get the memo.  Again, remember, it's stored in the screen's `db`.  It's a dictionary.
-- We just put the text in the dictionary's `text` key.
-- And then we call `self.back()` to close the screen and go back.
-- Don't forget to return `True`!
+- On récupère le mémo. Là encore, souvenez-vous qu'il s'agit d'un dictionnaire sauvegardé dans la propriété `db`, case `"memo"`.
+- On place simplement l'entrée de l'utilisateur dans la case `contenu` du mémo.
+- Puis on appelle `self.back()` pour fermer l'écran actuel et revenir à l'écran précédent.
+- N'oubliez pas de retourner `True`.
 
-> And that's it?
+> Et c'est tout ?
 
-That's it.  Reload, edit a memo, type in some text, hit RETURN, and your text will be saved, the memo changed, and you should find yourself back in `MainScreen` with the updated memos.
+C'est tout. Rechargez le jeu, ouvrez votre app, éditez un mémo, entrez un texte différent, appuyez sur ENTRÉE et le mémo devrait être mis à jour. Vous serez de retour dans l'écran d'accueil.
 
-> We just changed a dictionary... how could that be stored?
+> On a juste changé un dictionnaire... comment cela peut-il être sauvegardé automatiquement ?
 
-Everything that is stored in `.db` (in an app or screen) is persistent.  Modifying just a key of this dictionary will save the dictionary automatically.  You don't have to worry about that much, it's a nice feature of Evennia itself.
+Tout ce qui se trouve dans `db` (que ce soit dans l'app ou dans l'écran) est persistant. Modifier une simple clé dans le dictionnaire provoquera l'enregistrement automatique du dictionnaire dans la base de données. Vous n'avez pas besoin de trop vous tracasser à propos du mécanisme, c'est une fonctionnalité très pratique d'Evennia.
 
-### And a screen command
+### Et une commande d'écran
 
-For our app to be usable, we should also create a command: the "new" command that will be used to create a new memo.  Creating a command in a screen is just creating an Evennia command, but we use `AppCommand` as a parent.  The rest remains the same, mostly.  At the bottom of our file, add a new section and create this command:
+Pour que notre app soit réellement utilisable, nous devrions aussi créer une commande : la commande "new", accessible dans "EcranPrincipal", permettant de créer un nouveau mémo. Créer une commande d'écran n'est pas différent de créer une commande dans Evennia, sauf qu'on utilise `AppCommand` comme parent. À la fin du fichier "memo.py", créez une nouvelle section et ajoutez les lignes suivantes :
 
 ```python
 # ...
 
-## Commands
+## Commandes
 
 class CmdNew(AppCommand):
 
     """
-    Create a new memo.
+    Crée un nouveau mémo.
 
-    Usage:
+    Usage :
       new
 
     """
 
     key = "new"
+    aliases = ["nouveau"]
 
     def func(self):
-        """Command body."""
-        screen = self.screen
-        screen.next("MemoScreen")
+        """Corps de la commande."""
+        ecran = self.screen
+        ecran.next("EcranMemo")
 ```
 
-If you know Evennia commands, nothing much should surprise you... except something: what is this `self.screen`?  It's something that is specific to the `AppCommand`: they know from what screen they have been called.  And that will make our life way easier.  So now that we have the screen, we can just redirect to the `MemoScreen`.
+Si vous êtes familier des commandes dans Evennia, rien ne devrait trop vous surprendre... sauf une petite chose. C'est quoi cette variable `self.screen` qu'on utilise dans le corps ? C'est un petit plus des `AppCommand`, elles savent quelle écran les a appelé. Et avoir cette information nous rendra la vie plus bien simple. Puisque nous avons accès à l'écran, nous pouvons maintenant rediriger vers `EcranMemo`.
 
-> Why don't we provide arguments in `db` this time?
+> Pourquoi on ne spécifie pas d'argument dans `db` cette fois ?
 
-Good question: since we want to create a new memo, the memo itself doesn't exist yet.  We'll need to create it when we hit RETURN.
+Bonne quesiton. Puisque l'on souhaite créer un nouveau mémo, le mémo (dans son dictionnaire) n'existe pas encore à ce stade. On aura besoin de le créer quand on appuie sur ENTRÉE.
 
-There's one last thing: we need to tell the screen that it has access to the command.  This is another class variable in the screen class: `commands` is a list that contains the names of the commands to be added for this screen.  In which screen do we need the "new" command?  The `MainScreen`:
+Il reste une dernière chose : nous devons dire à l'écran utilisant cette commande qu'il a accès à notre `AppCommand`. On utilise une autre variable de classe pour ce faire : `commands`, qui contient une liste de noms d'`AppCommand` à utiliser dans cet écran. Dans quel écran doit-on avoir accès à notre commande "new"? `EcranPrincipal` :
 
 ```python
-class MainScreen(BaseScreen):
+class EcranPrincipal(BaseScreen):
 
-    """Main screen, displaying hello!."""
+    """Écran principal, affichant 'bonjour'."""
 
     commands = ["CmdNew"]
 
     # ...
 ```
 
-If you have difficulty in finding the right places to update, you will find the full application in the following section.
+Là encore, si vous commencez à vous perdre et ne trouvez pas les emplacements à mettre à jour, vous trouverez le code complet de l'app dans une section un peu plus bas.
 
-All we did was to define the `commands` class variable in our screen, with the list of commands.  Here, we just have `CmdNew`,  so we have `commands = ["CmdNew"] .
+Tout ce que nous avons fait, c'est créer une variable de classe `commands` dans notre écran, contenant la liste des commandes utilisables dans cet écran. Nous n'avons qu'une commande utilisable dans `EcranPrincipal` pour l'heure.
 
-Let's reload and open the app again!
+Rechargeons Evennia et ouvrons l'app de novueau !
 
-Use your phone, then enter `memo`, then `new` to create a new memo.  You should see the following text:
+Utilisez votre téléphone, ouvrez l'application, puis entrez `new` pour créer un nouveau mémo. Vous devriez voir le texte suivant :
 
 ```
-New memo (BACK to go back, EXIT to exit, HELP to get help)
+Nouveau mémo (BACK pour revenir à l'écran précédent, EXIT pour quitter, HELP pour obtenir de l'aide)
 
-Text:
-    (Enter the text of the memo here.)
+Texte:
+    (Entrez le texte de votre mémo ici.)
 
-        SAVE
+        SAVE pour sauvegarder
 ```
 
-> If I enter some text, nothing happens, the screen closes!
+> Si j'entre du texte et appuie sur ENTRÉE, rien ne se passe, l'écran se ferme.
 
-That's because our `MemoScreen` wants a memo, and since the memo isn't created yet, we don't have it.  So nothing happens.  Let's modify the `no_match` method in the `MemoScreen`:
+C'est parce que `EcranMemo` veut un mémo, et jusqu'ici notre mémo n'existe pas. Donc rien ne se passe dans ce cas. Ajoutons cette gestion dans la méthode `no_match` de `EcranMemo` :
 
 ```python
-class MemoScreen(BaseScreen):
+class EcranMemo(BaseScreen):
 
-    """Add or edit a memo.
+    """Ajoute ou édite un mémo.
 
-    This screen will allow to add or edit an existing memo.  If you
-    type text in it, the text of the memo will be updated and the
-    screen will close.
+    Cet écran permet d'ajouter un nouveau mémo ou éditer un mémo existant.
+    Si l'utilisateur entre du texte dans cet écran, le texte du mémo
+    sera mis à jour et l'écran se refermera.
 
     """
 
-    back_screen = MainScreen
+    back_screen = EcranPrincipal
 
     # ...
-    def no_match(self, string):
-        """Called when no command matches the user input."""
+
+    def no_match(self, texte):
+        """Cette méthode est appelée quand aucune commande ne correspond."""
         memo = self.db.get("memo", {})
 
         if memo:
-            memo["text"] = string
+            memo["contenu"] = texte
         else:
-            # If the memo is empty, create a new one
+            # Si le mémo est vide (n'existe pas), crée un nouveau
             if "memos" not in self.app.db:
                 self.app.db["memos"] = []
-            self.app.db["memos"].insert(0, {"text": string})
+            self.app.db["memos"].insert(0, {"contenu": texte})
 
-        # Close the screen and go back to the previous one
+        # Ferme l'écran et revient au menu précédent
         self.back()
         return True
 ```
 
-> What is different in the new `no_match` method?
+> Quelle est la nouveauté dans cette nouvelle méthode `no_match` ?
 
-Instead of changing the memo text, we check that the memo exists (if it doesn't, it's an empty dictionary).  If it doesn't exist, we add the memo to the app, in `self.app.db["memos"]`.  If you reload and try to create a new memo and edit an existing one, both should now work!
+Au lieu de changer une case du mémo quoiqu'il arrive, on vérifie si le mémo existe. Si ce n'est pas le cas (le mémo est un dictionnaire vide), on en ajoute un, dans `self.app.db["memos"]`. Si vous rechargez Evennia et esszyez de créer un nouveau mémo ou d'en éditer un existant, les deux devraient à présent marcher !
 
-### To conclude this example
+### Pour conclure cet exemple
 
-This is just a first example, but it showed you the application class, the screen classes, the command classes, how they worked together, and how to store data.  Don't hesitate to look at the code for some other applications.  Be aware that they might be much longer in the end.  Here is the complete code of our `auto/apps/memo.py` file for reference:
+C'était juste un premier exemple, mais il a permit de montrer la classe de l'application, les classes d'écran et les classes de commande, comment elles interagissent l'une avec l'autre, et comment sauvegarder des données. N'hésitez pas à regarder le code d'autres apps. Ces autres apps peuvent être plus longues et un peu plus complexes que cet exemple. Voici le code complet de l'exemple :
 
 ```python
-"""
-Memo app: store short text messages for the application user.
+# -*- coding: utf-8 -*-
 
-Give more details on what it does here.  You can write several lines.  Remember
-to keep your lines shorter than 75 characters.  Take a look at the other files
-for examples of what should be included here.
+"""
+App mémo : conserve des notes courtes entrées par l'utilisateur de l'application.
+
+Écrans:
+    EcranPrincipal : écran affichant la liste des mémos enregistrés.
+    EcranMemo: écran affiché pour créer ou éditer un mémo.
+Commandes :
+    CmdNew: Commande pour créer un nouveau mémo.
 
 """
 
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
 
-## Application class
+## Classe de l'application
 
 class Memo(BaseApp):
 
     """
-    Memo app.
+    App mémo.
 
-    You can add more technical details here, on how to use it for a developer,
-    the possible methods and such.
+    Vous pouvez ajouter davantage de détails ici à l'adresse des développeurs.
+    Par exemple, une liste des méthodes les plus importantes peut être utile.
 
     """
 
     app_name = "memo"
-    display_name = "Memo"
-    start_screen = "MainScreen"
+    display_name = "Mémo"
+    start_screen = "EcranPrincipal"
 
-## Screens
 
-class MainScreen(BaseScreen):
+## Écrans de l'application
 
-    """Main screen, displaying hello!."""
+class EcranPrincipal(BaseScreen):
+
+    """Écran principal, affichant 'bonjour'."""
 
     commands = ["CmdNew"]
 
     def get_text(self):
-        """Return the text to be displayed."""
+        """Retourne le texte à afficher."""
         memos = self.app.db.get("memos", [])
-        string = "Memos"
-        string += "\n\nCreate a NEW memo."
-        string += "\n"
+        texte = "Mémos"
+        texte += "\n\n( Entrez NEW pour créer un nouveau mémo."
+        texte += "\n  Ou un numéro pour éditer un mémo existant. )\n"
 
-        # Add the existing memos
+        # Ajouter les mémos existants
         i = 1
-        for line in memos:
-            text = line.get("text")
-            string += "\n {i} - {text}".format(i=i, text=text)
+        for ligne in memos:
+            contenu = ligne.get("contenu")
+            texte += "\n {i} - {contenu}".format(i=i, contenu=contenu)
             i += 1
 
-        # Display the bottom line
-        string += "\n\nMemos: {}".format(len(memos))
-        return string
+        # Affiche la dernière ligne
+        texte += "\n\nMémos: {}".format(len(memos))
+        return texte
 
-    def no_match(self, string):
-        """Called when no command matches the user input.
+    def no_match(self, texte):
+        """Appelée quand aucune commande ne correspond à l'entrée utilisateur.
 
-        We need to test `string` to see if it's a valid number, and,
-        if so, redirect to the memo screen to edit this memo.
+        Nous avons besoin de tester `texte` pour voir si cette chaîne
+        contient un nombre valide. Si oui, redirige vers l'écran `EcranMemo`.
 
         """
-        # Remember the memos, the list of dictionaries, should be in `self.db`
+        # Souvenez-vous, la liste des mémos doit se trouver dans `self.db`
         memos = self.app.db.get("memos", [])
 
-        # Try to convert input
+        # Essaye de convertir l'entrée utilisateur
         try:
-            number = int(string)
-            assert number > 0
-            memo = memos[number - 1]
+            nombre = int(texte)
+            assert nombre > 0
+            memo = memos[nombre - 1]
         except (ValueError, AssertionError, IndexError):
-            self.user.msg("Invalid number.")
+            self.user.msg("Ce nombre n'est pas valide.")
         else:
-            text = memo.get("text")
-            # Open the MemoScreen
-            self.next("MemoScreen", db=dict(memo=memo, text=text))
+            contenu = memo.get("contenu")
+            # Ouvre EcranMemo
+            self.next("EcranMemo", db=dict(memo=memo, contenu=contenu))
 
         return True
 
 
-class MemoScreen(BaseScreen):
+class EcranMemo(BaseScreen):
 
-    """Add or edit a memo.
+    """Ajoute ou édite un mémo.
 
-    This screen will allow to add or edit an existing memo.  If you
-    type text in it, the text of the memo will be updated and the
-    screen will close.
+    Cet écran permet d'ajouter un nouveau mémo ou éditer un mémo existant.
+    Si l'utilisateur entre du texte dans cet écran, le texte du mémo
+    sera mis à jour et l'écran se refermera.
 
     """
 
-    back_screen = MainScreen
+    back_screen = EcranPrincipal
 
     def get_text(self):
-        """Return the text to be displayed by the screen."""
+        """Retourne le texte à afficher."""
         memo = self.db.get("memo", {})
         if memo:
-            title = "Memo editing"
+            titre = "Édition d'un mémo"
         else:
-            title = "New memo"
-        text = memo.get("text", "(Enter the text of the memo here.)")
-        if "text" in self.db:
-            text = self.db["text"]
+            titre = "Nouveau mémo"
+        contenu = memo.get("contenu", "(Entrez le texte de votre mémo ici.)")
+        if "contenu" in self.db:
+            contenu = self.db["contenu"]
 
         return """
-            {title}
+            {titre}
 
-            Text:
-                {text}
+            Texte:
+                {contenu}
 
-                    SAVE
-        """.format(title=title, text=text)
+                    SAVE pour sauvegarder
+        """.format(titre=titre, contenu=contenu)
 
-    def no_match(self, string):
-        """Called when no command matches the user input."""
+    def no_match(self, texte):
+        """Cette méthode est appelée quand aucune commande ne correspond."""
         memo = self.db.get("memo", {})
 
         if memo:
-            memo["text"] = string
+            memo["contenu"] = texte
         else:
-            # If the memo is empty, create a new one
+            # Si le mémo est vide (n'existe pas), crée un nouveau
             if "memos" not in self.app.db:
                 self.app.db["memos"] = []
-            self.app.db["memos"].insert(0, {"text": string})
+            self.app.db["memos"].insert(0, {"contenu": texte})
 
-        # Close the screen and go back to the previous one
+        # Ferme l'écran et revient au menu précédent
         self.back()
         return True
 
 
-## Commands
+## Commandes
 
 class CmdNew(AppCommand):
 
     """
-    Create a new memo.
+    Crée un nouveau mémo.
 
-    Usage:
+    Usage :
       new
+
     """
 
     key = "new"
+    aliases = ["nouveau"]
 
     def func(self):
-        """Command body."""
-        screen = self.screen
-        screen.next("MemoScreen")
+        """Corps de la commande."""
+        ecran = self.screen
+        ecran.next("EcranMemo")
 ```
 
-Notice that we didn't do everything we had planned: there's no way to delete a memo.  When you type text in the `MemoScreen`, it edits the memo text directly, there's no way to type several lines and the "save" button is never used.  But you can now do that on your own, that will be good practice!  The rest of this documentation focuses on more advanced and specific details that you do not need to create your applications, but that might become useful in some cases.
+Remarquez, nous n'avons pas fait tout ce que nous voulions faire. On ne peut supprimer un mémo. Quand on édite un mémo, on ne peut entrer plusieurs lignes de texte, le bouton SAVE ne sert à rien. Mais vous pouvez maintenant améliorer cette application, ce sera un bon entraînement !
 
-## Advanced features
+## Fonctionnalités avancées
 
-This section contains more specific explanations on various topics.  You might not need them in your app, but if you do, you will find the process explained here.  As usual, for a complete reference, read the code itself which is heavily documented.
+Cette section contient plusieurs explications avancées dédiées à certains sujets. Vous n'aurez probablement pas besoin de toutes les utiliser dans votre app, mais si vous avez besoin de l'une d'entre elles, cette section vous aidera. Comme toujours, le meilleur moyen d'obtenir de la documentation de référence est de lire le code, qui est abondamment documenté.
 
-### Generic screens
-#### Ask the user confirmation
-#### Display a message with an OK command
-#### A screen for app settings
-### Notifications and app status
+### Les écrans génériques
+#### Demander confirmation à l'utilisateur
+#### Afficher une boîte de dialogue avec un simple bouton OK
+#### Un écran générique pour les options d'une app
+### Notifications et statut d'app
 
 An app can send notifications to alert the device of incoming information.  The text app, for instance, sends a notification to the recipients of a text when it is sent.  Additionally, an app can have a status (mark the number of items that should be read).  It is usually done through the app's display name (like "Text(3)" to say that 3 texts ought to be read).
 
 Both systems (notifications and status) are independent.  An app can have none, either, or both of them.
 
-#### The app status in its display name
+#### Le statut de l'app dans son nom affiché
 
 Changing the app status is quite simple: we used `display_name` as a class variable so far, defined on the app itself.  However, it can also have a `get_display_name` method that will return the name to be displayed.  This allows to display a name that will vary depending on the context.  Here, for instance, is the `Text` application `get_display_name` to give you an example:
 
@@ -827,37 +858,38 @@ class TextApp(BaseApp):
 
 Don't worry about the two first lines of this method: it will simply get the phone number of the object and then, query the number of unread messages.  You will definitely adapt this example.  The next lines show you how to return a different name depending on status (the number of unread texts, in our case).
 
-#### Sending notifications
+#### Envoyer des notifications
 
 
-### Games and invitations
-### Paying within an app
-## Developing apps
+### Jeux et invitations
+### Payer depuis une app
+## Développement
 ### Troubleshooting
 
-> My app doesn't load and doesn't appear in my phone.
+> Mon app ne se charge pas et n'apparaît pas sur mon téléphone.
 
-There could be some reasons preventing an app from loading.  The first step is to see if it has been loaded.  You can do so through a `@py` command:
+Il peut y avoir plusieurs choses empêchant une app de se charger convenablement. La première chose à faire est de vérifier si l'app a été chargée. Vous pouvez le faire grâcce à une commande `@py` :
 
     @py __import__("auto").types.high_tech.APPS
 
-This command should show a Python dictionary containing, as keys, the folder, and as values, another dictionary with `{name: class}.  If you don't find your app in this folder, check your logs.
+Cette commande devrait afficher un dictionnaire Python contenant en clé les dossiers, et en valeur un autre dictionnaire contenant en clé le nom des apps et en valeur la classe de l'application. Si vous ne voyez pas votre app dans ce dictionnaire, vérifiez les logs.
 
-The `app` logger can be found in `server/logs/app.log`.  It should contain some debugging information.  It will contain any error happening when importing your app in the game.
+Le logger des apps se trouve dans `server/logs/app.log`. Ce fichier contient plusieurs informations de debug. Il contient aussi les erreurs qui se produisent au chargement des applications.
 
     11:59 [WARNING] Error while loading auto.apps.text: invalid syntax (text.py, line 677)
 
-If you fix the error and reload, assuming you have no other syntax errors, the app should load correctly.  Errors while using the app are stored as normal tracebacks.
+Si vous corrigez l'erreur et rechargez Evennia, admettant que vous n'ayez pas d'autre erreur, l'app devrait se charger convenablement. Les erreurs qui se produisent quand on utilise l'app sont gérées comme des traceback normaux.
 
-> My app just doesn't load and it has no error in it!
+> Mon app ne se charge pas et il n'y a aucune erreur dedans, aucune information dans les logs.
 
-Some files are not even read by the app system.  It's possible you have created one of them without noticing.  Here are the rules.  Apps should be stored in a file:
+Certains fichiers ne sont même pas lus par le système responsable de charger les apps. Il est possible que vous ayez créé un tel fichier sans le savoir. Voici les règles. Les apps devraient se trouver dans des fichiers :
 
-- With the `.py` extension.  Other extensions in the file system are ignored.
-- Within the `auto/apps` directory or a sub-folder.  If a sub-folder, remember to add an empty `__init__.py` file, otherwise, it won't be imported.
-- Must contain only valid Python in its name.  An app with a file called `some-stuff.py` will not be loaded (a dash in the file name isn't a valid Python identifier).
-- Not start with an underscore.  Names like "_app.py" will be ignored (the leading underscore is taken as a "private" file and won't be loaded).
-- Not be "base.py".  This file usually contains abstract classes and is not read automatically.
+- Avec l'extension `.py`. D'autres extensions dans le répertoire sont ignorées.
+- Dans le dossier `auto.apps` ou dans un sous-répertoire. Si vous avez placé votre fichier dans un sous-dossier, n'oubliez pas de mettre un fichier `__init__.py` dedans (il peut être vide).
+- Doit contenir seulement un nom valide en Python. Une app nommée `quelquechose-de-bien.py` ne sera pas chargée, à cause des tirets dans son nom.
+- Ne commence pas par un souligné (_). Les fichiers dont le nom commence par `_` sont ignorés.
+- Ne doit pas être "base.py". Ce fichier est spécial pour le système et n'est pas directement chargé.
 
-### Testing apps for stability
-### Send an app to the main Avenew code
+### Tester les apps pour leur stabilité
+### Envoyer une app à Avenew
+
