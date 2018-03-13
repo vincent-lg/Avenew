@@ -11,7 +11,7 @@ from evennia.utils.utils import crop, inherits_from
 from commands.command import Command
 
 ## Constants
-CATEGORY = "Object manipulation"
+CATEGORY = "Manipulation des objets"
 
 class CmdGet(Command):
     """
@@ -57,7 +57,7 @@ class CmdGet(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|yWhat do you want to pick up?|n")
+            self.msg("|yQue voulez-vous ramasser ?|n")
             return
 
         # Extract from and into
@@ -98,7 +98,7 @@ class CmdUse(Command):
 
         # First, check that what is being used isn't a character
         if inherits_from(obj, "typeclasses.characters.Character"):
-            self.msg("Wow, perhaps you should ask permission before trying that!")
+            self.msg("Hmm, il faudrait peut-être demander la permission avant d'essayer de faire cela !")
             return
 
         # It needs to have a type handler anyway
@@ -107,7 +107,7 @@ class CmdUse(Command):
             types = obj.types.can("use")
 
         if not types:
-            self.msg("What do you want to do with {}?".format(obj.get_display_name(self.caller)))
+            self.msg("Que voulez-vous faire avec {} ?".format(obj.get_display_name(self.caller)))
             return
 
         types[0].use(self.caller)
@@ -154,10 +154,10 @@ class CmdAddress(Command):
         # If there's no argument, display the list of notifications
         if not self.args.strip():
             if not notifications:
-                self.msg("You don't seem to have waiting notifications on any of your devices.")
+                self.msg("Il semble que vous n'ayiez aucune notification sur aucun de vos appareils.")
                 return
 
-            msg = "Waiting notifications:"
+            msg = "Notifications en attente :"
             i = 0
             for notification in notifications:
                 i += 1
@@ -174,7 +174,7 @@ class CmdAddress(Command):
         # An argument has been entered
         args = self.args.strip()
         if not args.isdigit():
-            self.msg("Enter a number to address this notification.")
+            self.msg("Entrez un nombre pour répondre à cette notification.")
             return
 
         # Get the notifications
@@ -183,13 +183,13 @@ class CmdAddress(Command):
             assert args > 0
             notification = notifications[args - 1]
         except (AssertionError, IndexError):
-            self.msg("Invalid notification number.  Enter |hADDRESS|n without argument to see your current notifications.")
+            self.msg("Le nombre entré est invalide.")
             return
 
         # Try to see if the device can be used
         obj = notification.obj
         if not obj.types.can("use"):
-            self.msg("You cannot address this notification on {}.".format(obj.get_display_name(self.caller)))
+            self.msg("Vous ne pouvez adresser cette notification sur {}.".format(obj.get_display_name(self.caller)))
             return
 
         notification.address(self.caller)

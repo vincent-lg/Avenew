@@ -13,6 +13,7 @@ from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
 from commands.high_tech import ComputerCmdSet
 from world.log import app as log
+from world.utils import latinify
 
 class BaseApp(object):
 
@@ -318,7 +319,7 @@ class BaseScreen(object):
             text = dedent(text.strip("\n"))
             if type(self).show_header:
                 lines = text.splitlines()
-                lines[0] = lines[0] + " ({back} to go back, {exit} to exit, {help} to get help)".format(
+                lines[0] = lines[0] + " ({back} pour revenir à l'écran précédent, {exit} pour quitter, {help} pour obtenir de l'aide)".format(
                         back=self.format_cmd("back"), exit=self.format_cmd("exit"), help=self.format_cmd("help"))
                 text = "\n".join(lines)
 
@@ -524,17 +525,17 @@ class MainScreen(BaseScreen):
 
     can_back = False # At this point we shouldn't try to get back
     show_header = False
-    short_help = "Welcome to the interface main screen."
+    short_help = "Bienvenue dans AvenOS !"
     long_help = """
-        From here, you can enter the first letter of an installed app to
-        open it.  If the |ytext|n app is installed on your device, for instance,
-        you could open it by entering |ytext|n.  You can also exit the interface
-        by using the |yexit|n command.  If you want to display the screen on
-        which you are at any time, press RETURN without any text.  In other
-        screens, you can use the |yback|n command to go back to the previous
-        screen.  If you need additional help at any time in a screen, use the |yhelp|n command without
-        argument to see the screen help, or with argument to get help on
-        a command inside the screen.
+        Depuis cet écran, vous pouvez entrer les premières lettres d'une
+        application pour l'ouvrir. Par exemple, si l'application |ytexte|n est
+        installée, vous pouvez l'ouvrir en entrant |ytexte|n ou même |ytex|n. Vous
+        pouvez quitter cette interface à tout moment pour revenir au jeu en utilisant
+        la commande |yexit|n. Si vous souhaitez voir de nouveau le texte de l'écran
+        sur lequel vous êtes, appuyez sur ENTRÉE sans avoir précisé de commande.
+        Quand vous serez sur un autre écran, vous pourrez entrer |yback|n pour revenir
+        à l'écran précédent dans la liste. À tout moment, vous pouvez utiliser |yhelp|n
+        pour obtenir de l'aide sur cet écran, ou sur une commande spécifique.
     """
 
     def get_text(self):
@@ -552,31 +553,31 @@ class MainScreen(BaseScreen):
             string += " " * (15 - len(no_ansi_text))
 
         string = string.rstrip(" ") + "\n\n" + dedent("""
-            Enter the first letters to open this app.  Type |hEXIT|n to quit the interface."
+            Entrez les premières lettres de l'app à ouvrir. Utilisez |yexit|n pour quitter.
         """.lstrip("\n"))
         return string
 
     def no_match(self, string):
         """A no match has been entered, perhaps an application name."""
-        string = string.strip()
+        string = latinify(string.strip())
         app = self.type.apps.get(string, "app")
         if not app:
             string = string.lower()
             matches = []
             for app in self.type.apps:
-                if type(app).folder == "app" and strip_ansi(app.display_name).lower().startswith(string):
+                if type(app).folder == "app" and latinify(strip_ansi(app.display_name)).lower().startswith(string):
                     matches.append(app)
 
             # If only one match, just move there
             if len(matches) == 1:
                 app = matches[0]
             elif len(matches) == 0:
-                self.user.msg("|gNo app name matches these letters.|n")
+                self.user.msg("|gAucun nom d'app ne correspond à ces lettres.|n")
                 return True
             else:
                 names = [type(app).display_name for app in matches]
                 names.sort(key=lambda name: name.lower())
-                self.user.msg("Which app do you want to open? {}".format(", ".join(names)))
+                self.user.msg("Quelle app souhaitez-vous ouvrir ? {}".format(", ".join(names)))
                 return True
 
         screen = type(app).start_screen
@@ -588,5 +589,5 @@ class AppCommand(Command):
 
     """An applicaiton-specific command."""
 
-    help_category = "Application-specific"
+    help_category = "Application"
 

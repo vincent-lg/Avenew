@@ -64,7 +64,7 @@ class TextApp(BaseApp):
     """
 
     app_name = "text"
-    display_name = "Text"
+    display_name = "Texte"
     start_screen = "MainScreen"
 
     @lazy_property
@@ -77,9 +77,9 @@ class TextApp(BaseApp):
         number = self.get_phone_number(self.obj)
         unread = Text.objects.get_nb_unread(number)
         if unread:
-            return "Text({})".format(unread)
+            return "Texte({})".format(unread)
 
-        return "Text"
+        return "Texte"
 
     @classmethod
     def get_phone_number(cls, obj, pretty=False):
@@ -152,17 +152,18 @@ class MainScreen(BaseScreen):
 
     commands = ["CmdNew", "CmdSettings"]
     back_screen = "auto.apps.base.MainScreen"
-    short_help = "Screen to display your text messages."
+    short_help = "Écran d'accueil pour afficher vos messages."
     long_help = """
-        From here, you can use the |ynew|n command to create a new text message.
-        You should also see the list of texts you already have, assuming you
-        have any.  In front of every text message, you should see a number.
-        Enter this number to open this text, to read or reply to it.
-        You can also use the |ysettings|n command to open the settings screen,
-        to change configuration for your text app.
-        As in any screen, use the |yback|n command to go back to the previous
-        screen, or the |yexit|n command to exit the interface.  You can obtain
-        additional help with the |yhelp|n command.
+        D'ici, vous pouvez utiliser la commande |ynew|n pour créer un nouveau
+        message. Vous devriez également voir la liste des messages que vous avez reçus
+        ou envoyés, si vous en avez reçu ou envoyé au moins un. Devant chaque message
+        se trouve un numéro. Entrez ce numéro pour ouvrir la conversation, afin de
+        la lire ou y répondre. Vous pouvez également utiliser la commande |ysettings|n
+        pour ouvrir et modifier les options de l'app.
+        Comme dans la plupart des écrans, vous pouvez utiliser la commande |yback|n
+        pour revenir à l'écran précédent, ou la commande |yexit|n pour quitter l'interface
+        et revenir au jeu. Vous pouvez également accéder à l'aide de l'écran en entrant
+        la commande |yhelp|n.
     """
 
     def get_text(self):
@@ -171,19 +172,19 @@ class MainScreen(BaseScreen):
             number = self.app.get_phone_number(self.obj)
             pretty_number = self.app.get_phone_number(self.obj, pretty=True)
         except ValueError:
-            self.msg("Your phone number couldn't be found.")
+            self.msg("|gImpossible de trouver votre numéro de téléphone.|n")
             self.back()
             return
 
         # Load the threads (conversations) to which "number" participated
         threads = Text.objects.get_threads_for(number)
-        string = "Texts for {}".format(pretty_number)
+        string = "Textes pour {}".format(pretty_number)
         string += "\n"
         self.db["threads"] = {}
         stored_threads = self.db["threads"]
         if threads:
             len_i = 3 if len(threads) < 100 else 4
-            string += "  Create a {new} message.\n".format(new=self.format_cmd("new"))
+            string += "  ( Entrez {new} pour créer un nouveau message. )\n".format(new=self.format_cmd("new"))
             i = 1
             table = EvTable(pad_left=0, border="none")
             table.add_column("S", width=2)
@@ -205,23 +206,23 @@ class MainScreen(BaseScreen):
 
                 content = text.content.replace("\n", "  ")
                 if text.sender == number:
-                    content = "]You] " + content
+                    content = "[Moi] " + content
                 content = crop(content, 35)
-                status = " " if thread.has_read(number) else "|rU|n"
+                status = " " if thread.has_read(number) else "|rN|n"
                 table.add_row(status, self.format_cmd(str(i)), sender, content, text.sent_ago.capitalize())
                 i += 1
             lines = unicode(table).splitlines()
             del lines[0]
             lines = [line.rstrip() for line in lines]
             string += "\n" + "\n".join(lines)
-            string += "\n\n(Type a number to open this text.)"
+            string += "\n\n( Entrez un numéro pour lire cette conversation. )"
         else:
-            string += "\n  You have no texts yet.  Want to create a {new} one?".format(new=self.format_cmd("new"))
+            string += "\n  Vous n'avez aucun message pour l'heure. Entrez {new} pour en créer un.".format(new=self.format_cmd("new"))
 
-        string += "\n\n(Enter {settings} to edit the app settings).".format(settings=self.format_cmd("settings"))
+        string += "\n\n( Entrez {settings} pour accéder aux options de l'app ).".format(settings=self.format_cmd("settings"))
         count = Text.objects.get_texts_for(number).count()
         s = "" if count == 1 else "s"
-        string += "\n\nText app: {} saved message{s}.".format(count, s=s)
+        string += "\n\nApp texte: {} message{s} enregistré{s}.".format(count, s=s)
         return string
 
     def no_match(self, string):
@@ -235,7 +236,7 @@ class MainScreen(BaseScreen):
         if string.isdigit():
             thread = int(string)
             if thread not in self.db["threads"]:
-                self.user.msg("This is not a number in your current threads.")
+                self.user.msg("|yCe n'es tpas un nombre dans vos conversations actuelles.|n")
                 self.display()
             else:
                 thread = self.db["threads"][thread]
@@ -249,7 +250,7 @@ class MainScreen(BaseScreen):
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
-        self.user.msg("Enter a thread number to oepn it.")
+        self.user.msg("Entrez un nombre pour ouvrir une conversation..")
 
 
 class NewTextScreen(BaseScreen):
@@ -268,22 +269,24 @@ class NewTextScreen(BaseScreen):
 
     commands = ["CmdSend", "CmdCancel", "CmdTo", "CmdClear"]
     back_screen = MainScreen
-    short_help = "Screen to write a text message."
+    short_help = "Écran pour rédiger un message."
     long_help = """
-        The first thing to do is to set the recipient, if not set already.
-        To do so, use the |yto|n command.  You can specify it a phone number,
-        like |yto 555-1234|n, or a contact name, like |yto annabeth|n.
-        Type text to simply add it to the text content to be sent.  For instance:
-            |yhello, how is it going?|n
-        If you want to delete the content you have typed, you can use the
-        |yclear|n command.  When you want to send your message, simply use the
-        |ysend|n command.  Notice that if you have the |yautosend|n setting
-        turned on, the text that you type will be automatically sent whenever
-        you press RETURN.  Therefore, the |ysend|n and |yclear|n commands are
-        not necessary here.
-        As in any screen, use the |yback|n command to go back to the previous
-        screen, or the |yexit|n command to exit the interface.  You can obtain
-        additional help with the |yhelp|n command.
+        La première chose à faire est d'ajouter un destinataire si ce n'est pas
+        déjà le cas. Pour ce faire, utilisez la commande |yto|n en précisant en
+        paramètre le numéro ou le nom du contact à ajouter. Par exemple :
+            |yto Annabeth|n ou |yto 555-1234|n
+        Vous pouvez ensuite entrer du texte simplement pour l'ajouter à votre message.
+        Par exemple :
+            |ySalut, comment ça va ?|n
+        Si vous voulez supprimer le texte que vous avez entré, vous pouvez utiliser
+        la commande |yclear|n. Quand vous voudrez envoyer votre message, utilisez
+        simplement la commande |ysend|n. Si vous avez l'option |yautosend|n d'activée,
+        le texte que vous entrerez sera automatiquement envoyé quand vous appuyerez sur
+        ENTRÉE, et vous n'utiliserez donc pas les commandes |yclear|n et |ysend|n.
+        Comme dans la plupart des écrans, vous pouvez utiliser la commande |yback|n
+        pour revenir à l'écran précédent, ou la commande |yexit|n pour quitter l'interface
+        et revenir au jeu. Vous pouvez également accéder à l'aide de l'écran en entrant
+        la commande |yhelp|n.
     """
 
     def get_text(self):
@@ -291,15 +294,15 @@ class NewTextScreen(BaseScreen):
         number = self.app.get_phone_number(self.obj)
         pretty_number = self.app.get_phone_number(self.obj, pretty=True)
         screen = """
-            New message
+            Nouveau message
 
-            From: {}
-              To: {}
+            De  : {}
+              À : {}
 
-            Text message (use {clear} to clear your current text):
+            Texte du message (utilisez {clear} pour effacer le texte actuel) :
                 {}
 
-                {send}                                             {cancel}
+                {send} pour envoyer                            {cancel} pour annuler
         """
         recipients = list(self.db.get("recipients", []))
         for i, recipient in enumerate(recipients):
@@ -343,8 +346,8 @@ class NewTextScreen(BaseScreen):
         # Try to get the sender's phone number
         group = "text.thread.{}".format(text.thread.id)
         sender = TextApp.format(obj, text.sender)
-        message = "{obj} emits a short beep."
-        title = "New message from {}".format(sender)
+        message = "{obj} émet un beep très court."
+        title = "Nouveau message de {}".format(sender)
         content = text.content
         screen = "auto.apps.text.ThreadScreen"
         db = {"thread": text.thread}
@@ -377,23 +380,22 @@ class ThreadScreen(BaseScreen):
 
     commands = ["CmdSend", "CmdClear", "CmdContact"]
     back_screen = MainScreen
-    short_help = "Screen to see a thread, and reply to it."
+    short_help = "Écran permettant de voir une conversation ainsi que d'y répondre."
     long_help = """
-        This screen displays a thread, a list of messages between several
-        recipients (probably you and someone else).  You should see the list
-        of more recent messages here.  You can also reply to this thread
-        right away and send your reply.
-        Type text to simply add it to the text content to be sent.  For instance:
-            |yhello, how is it going?|n
-        If you want to delete the content you have typed, you can use the
-        |yclear|n command.  When you want to send your message, simply use the
-        |ysend|n command.  Notice that if you have the |yautosend|n setting
-        turned on, the text that you type will be automatically sent whenever
-        you press RETURN.  Therefore, the |ysend|n and |yclear|n commands are
-        not necessary here.
-        As in any screen, use the |yback|n command to go back to the previous
-        screen, or the |yexit|n command to exit the interface.  You can obtain
-        additional help with the |yhelp|n command.
+        Cet écran affiche une liste de messages dans la même conversation entre
+        plusieurs personnes (probablement vous et quelqu'un d'autre). Vous devriez
+        voir la liste des messages les plus récents ici. Vous disposez également d'un
+        champ de texte pour rédiger une réponse et l'envoyer tout de suite.
+        Entrez du texte pour ajouter du contenu à votre message de réponse. Vous pouvez
+        utiliser la commande |yclear|n pour supprimer ce texte. Pour envoyer votre message
+        de réponse, entrez simplement la commande |ysend|n. Si vous avez l'option
+        |yautosend|n d'activée, votre réponse sera envoyée dès que vous entrez du texte
+        et appuyez sur ENTRÉE. Vous n'aurez donc pas besoin des commandes |yclear|n
+        et |ysend|n.
+        Comme dans la plupart des écrans, vous pouvez utiliser la commande |yback|n
+        pour revenir à l'écran précédent, ou la commande |yexit|n pour quitter l'interface
+        et revenir au jeu. Vous pouvez également accéder à l'aide de l'écran en entrant
+        la commande |yhelp|n.
     """
 
     def get_text(self):
@@ -401,20 +403,20 @@ class ThreadScreen(BaseScreen):
         self.db["go_back"] = False
         thread = self.db.get("thread")
         if not thread:
-            self.user.msg("Can't display the thread, an error occurred.")
+            self.user.msg("Impossible d'afficher la conversation, une erreur est survenue.")
             return
 
         number = self.app.get_phone_number(self.obj)
         screen = dedent("""
-            Messages with {}
-            |lccontact|ltCONTACT|le to edit the contact for this conversation.
+            Messages avec {}
+            ( Utilisez |lccontact|ltCONTACT|le pour éditer la fiche de contact de cette personne. )
 
             {}
 
-            Text message (use {clear} to clear your current text):
+            Texte du message (utilisez {clear} pour supprimer votre texte actuel) :
                 {}
 
-                {send}
+                {send} pour envoyer
         """.strip("\n"))
         texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
         if texts:
@@ -428,7 +430,7 @@ class ThreadScreen(BaseScreen):
         for text in texts:
             sender = text.sender
             if sender == number:
-                sender = "You"
+                sender = "Moi"
             elif self.app.contact:
                 sender = self.app.contact.format(sender)
             sender = "|c" + sender + "|n"
@@ -469,35 +471,36 @@ class SettingsScreen(BaseScreen):
 
     commands = []
     back_screen = "auto.apps.text.MainScreen"
-    short_help = "Screen to edit settings of the text app."
+    short_help = "Écran des options de l'app texte."
     long_help = """
-        You can set settings of your text app here.  Simply enter the
-        setting name if you want to turn it on or off.  Some settings might
-        require additional arguments that you have to specify after the
-        setting name, like |ylog 3|n.
-        Available settings:
-            |yautosend|n   Allow to auto-send a message when pressing RETURN.
-        As in any screen, use the |yback|n command to go back to the previous
-        screen, or the |yexit|n command to exit the interface.  You can obtain
-        additional help with the |yhelp|n command.
+        Vous pouvez modifier les options de l'app texte ici. Entrez simplement le nom
+        de l'option si vous voulez l'activer ou la désactiver. Certaines options
+        pourraient nécessiter un paramètre en plus que vous devrez préciser après
+        le nom de l'option et un espace, comme |yresultats 20|n
+        Options disponibles :
+            |yautosend|n   Permet d'envoyer automatiquement un message quand on appuie sur ENTRÉE.
+        Comme dans la plupart des écrans, vous pouvez utiliser la commande |yback|n
+        pour revenir à l'écran précédent, ou la commande |yexit|n pour quitter l'interface
+        et revenir au jeu. Vous pouvez également accéder à l'aide de l'écran en entrant
+        la commande |yhelp|n.
     """
 
     def get_text(self):
         """Display the app."""
         string = """
-            Text settings
+            Options de l'app texte
 
             {autosend}          :                                          {autosend_value}
-                                  If turned on, when you type in a new message and press the |wRETURN|n
-                                  key, the text will be sent automatically, instead
-                                  of you having to type |ySEND|n.
+                                  Si cette option est activée, quand vous entrez un
+                                  nouveau message et appuyez sur ENTRÉE, le message sera envoyé
+                                  automatiquement, au lieu d'avoir à utiliser la commande |ysend|n.
 
-            You can customize some settings of the text app here.  Just enter the name
-            (or the beginning of the name) of the setting to toggle it.  Sometimes, you will
-            have to specify an argument after a space to change the settings.
+            Vous pouvez changer des options de l'app texte ici. Entrez simplement
+            le nom (ou les premières lettres du nom) de l'option à modifier. Parfois, vous
+            aurez besoin de préciser une valeur en paramètre pour modifier cette option.
         """.format(
                 autosend=self.format_cmd("autosend"),
-                autosend_value="yes" if self.app.db.get("autosend", False) else "no",
+                autosend_value="oui" if self.app.db.get("autosend", False) else "non",
         )
         return string
 
@@ -515,7 +518,7 @@ class SettingsScreen(BaseScreen):
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
-        self.user.msg("Enter a setting name to change it.")
+        self.user.msg("Entrez le nom d'une option pour la modifier.")
 
 
 ## Commands
@@ -523,9 +526,9 @@ class SettingsScreen(BaseScreen):
 class CmdSettings(AppCommand):
 
     """
-    Open the text app settings.
+    Ouvre les options de l'app texte.
 
-    Usage:
+    Usage :
         settings
     """
 
@@ -539,13 +542,14 @@ class CmdSettings(AppCommand):
 class CmdNew(AppCommand):
 
     """
-    Compose a new text message.
+    Compose un nouveau message.
 
-    Usage:
+    Usage :
         new
     """
 
     key = "new"
+    aliases = ["nouveau"]
 
     def func(self):
         self.screen.next(NewTextScreen)
@@ -554,16 +558,18 @@ class CmdNew(AppCommand):
 class CmdSend(AppCommand):
 
     """
-    Send the current text message.
+    Envoie le message en cours de composition.
 
-    Usage:
+    Usage :
         send
 
-    This will send the text message on your screen to the selected
-    recipients, who might already be members of the conversation.
+    Cette commande enverra le texte affiché à l'écran (le message en cours de
+    composition) aux destinataires spécifiés.
+
     """
 
     key = "send"
+    aliases = ["envoyer"]
 
     def func(self):
         """Execute the command."""
@@ -571,13 +577,13 @@ class CmdSend(AppCommand):
         sender = screen.app.get_phone_number(screen.obj)
         recipients = list(screen.db.get("recipients", []))
         if not recipients:
-            self.msg("You haven't specified at least one recipient.")
+            self.msg("Vous devez configurer au moins un destinataire.")
             screen.display()
             return
 
         content = screen.db.get("content")
         if not content:
-            self.msg("This text is empty, write something before sending it.")
+            self.msg("Ce message est vide, écrivez quelque chose avant de l'envoyer.")
             screen.display()
             return
 
@@ -586,7 +592,7 @@ class CmdSend(AppCommand):
         thread = text.thread
         thread.read = ""
         thread.mark_as_read(sender)
-        self.msg("Thanks, your message has been sent successfully.")
+        self.msg("Merci, votre message a bien été envoyé.")
         if screen.db.get("go_back", True):
             screen.back()
         else:
@@ -602,53 +608,55 @@ class CmdSend(AppCommand):
 class CmdCancel(AppCommand):
 
     """
-    Cancel and go back to the list of texts.
+    Annule et revient à la liste des messages.
 
-    Usage:
+    Usage :
         cancel
     """
 
     key = "cancel"
+    aliases = ["annuler"]
 
     def func(self):
         """Execute the command."""
         screen = self.screen
-        self.msg("Your text was cancelled.  Going back to the previous screen.")
+        self.msg("Votre message a été annulé. Retour à l'écran précédent.")
         screen.back()
 
 
 class CmdTo(AppCommand):
 
     """
-    Add or remove a recipient.
+    Ajoute ou retire un destinataire.
 
-    Usage:
-        to <phone number or contact>
+    Usage :
+        to <numéro de téléphone ou nom de contact>
 
-    If the phone number, or contact, is already present, remove it.
+    Si le numéro de téléphone ou contact précisé est déjà présent, il est
+    retiré de la liste des destinataires.
 
-    Usage:
+    Par exemple :
         to 555-1234
 
-    If your device has access to a contact app, you can add and remove
-    recipients by their names:
-
-    Usage:
+    Si votre appareil a accès à une app contact, vous pouvez ajouter et
+    retirer des contacts en entrant simplement leur nom, ou un fragment de leur nom.
         to Martin
 
-    You don't have to specify the full name of the contact.  If more than one
-    contact matches the letters you have specified, you will be given the list
-    of possibilities and will have to specify more letters next time.
+    Vous n'avez pas besoin de préciser le nom complet du contact. Si plus
+    d'un contact correspond aux lettres que vous avez entré, la liste des
+    possibilités sera affichée et vous devrez entrer davantage de lettres
+    pour l'ajouter.
     """
 
     key = "to"
+    aliases = ["a", "à"]
 
     def func(self):
         """Execute the command."""
         screen = self.screen
         number = self.args.strip()
         if not number:
-            self.msg("Specify a phone number or contact name of a recipient, to add or remove him.")
+            self.msg("Précisez un numéro de téléphone ou nom de contact pour l'ajouter ou le supprimer en tant que destinataire.")
             return
 
         # First of all, maybe it's a contact name
@@ -657,12 +665,12 @@ class CmdTo(AppCommand):
             if len(matches) == 1:
                 number = matches[0].phone_number
             elif len(matches) >= 2:
-                self.msg("This contact name isn't specific enough.  It could be:\n  {}\nPlease specify.".format("\n  ".join([contact.name for contact in matches])))
+                self.msg("Ce nom de contact n'est pas assez spécifique. Choix possibles :\n  {}\nEssayez à nouveau.".format("\n  ".join([contact.name for contact in matches])))
                 return
 
         number = number.replace("-", "")
         if not number.isdigit() or len(number) != 7:
-            self.msg("This is not a valid phone number.")
+            self.msg("Ce n'est pas un nombre valide.")
             return
 
         # Add or remove
@@ -671,23 +679,23 @@ class CmdTo(AppCommand):
         recipients = screen.db["recipients"]
         if number in recipients:
             recipients.remove(number)
-            self.msg("This contact was removed from the list of recipients.")
+            self.msg("Cette personne a été retirée de la liste des destinataires.")
         else:
             recipients.append(number)
-            self.msg("This contact was added to the list of recipients.")
+            self.msg("Cette personne a été ajoutée à la liste des destinataires.")
         screen.display()
 
 
 class CmdClear(AppCommand):
 
     """
-    Erases your current text message and start over.
+    Efface votre message en cours.
 
-    Usage:
+    Usage :
         clear
 
-    Use this command to clear the text you had begun to type, and start over
-    again.
+    Utilisez cette commande pour supprimer le texte que vous aviez entré, et
+    vous permet de recommencer.
     """
 
     key = "clear"
@@ -704,18 +712,19 @@ class CmdClear(AppCommand):
 class CmdContact(AppCommand):
 
     """
-    Open the contact dialog for a recipient in this conversation.
+    Ouvre l'applicaiton contact pour un destinataire dans cette conversation.
 
-    Usage:
-        contact [number]
+    Usage :
+        contact [numéro]
 
-    This command will open the contact dialog for the recipient in the current
-    conversation.  This will allow to create a new contact if the recipient has
-    none yet.  If more than one recipient are present in this conversation, the |hCONTACT|n
-    command will show you a list of possible contacts in a numbered list, and ask you to enter
-    |hCONTACT|n followed by the number of the contact you want to open.  For instance:
-
-        contact 2
+    Cette commande ouvre la fiche du contact précisé, si votre appareil a une
+    application contact installée. Si un seul destinataire est présent, vous n'avez
+    pas besoin de préciser de paramètre, entrez |ycontact|n tout simplement.
+    Cette commande vous permettra de créer une fiche de contact pour ce destinataire,
+    ou bien de la modifier si elle existe déjà. Si plus d'un destinataire est présent
+    dans cette conversation, la commande |ycontact|n vous affichera une liste de
+    choix avec un numéro devant chacun. Vous devrez choisir le contact que vous souhaitez
+    éditer en entran ce numéro, comme |ycontact 2|n.
     """
 
     key = "contact"
@@ -725,12 +734,12 @@ class CmdContact(AppCommand):
         screen = self.screen
         recipients = list(screen.db.get("recipients", []))
         if not recipients:
-            self.msg("There are no recipient in this conversation yet.  Use the |hTO|n command to add recipients.")
+            self.msg("Il n'y a aucun destinataire configuré dans ce message. Utilisez la commande |yto|n pour ajouter des destinataires.")
             return
 
         contact_app = screen.app.contact
         if not contact_app:
-            self.msg("You do not have the contact application.")
+            self.msg("L'application contact n'est pas accessible depuis cet appareil.")
             return
 
         if len(recipients) == 1:
@@ -742,7 +751,7 @@ class CmdContact(AppCommand):
         # Otherwise, choose a contact
         args = self.args.strip()
         if not args:
-            string = "Specify a contact number after |hCONTACT|n:\n"
+            string = "Précisez un numéro après |yCONTACT|n :\n"
             for i, recipient in enumerate(recipients):
                 string += "\n{:>2}: {}".format(i + 1, contact_app.format(recipient))
             self.msg(string)
@@ -754,7 +763,7 @@ class CmdContact(AppCommand):
             assert args > 0
             recipient = recipients[args - 1]
         except (ValueError, AssertionError, IndexError):
-            self.msg("Invalid contact number.")
+            self.msg("Numéro de contact invalide.")
         else:
             screen, db = contact_app.edit(recipient)
             self.screen.next(screen, contact_app, db=db)

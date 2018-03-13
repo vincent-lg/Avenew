@@ -111,9 +111,9 @@ class CmdNoMatch(Command):
             if screen.previous:
                 screen.back()
             else:
-                self.msg("You cannot go back.")
+                self.msg("Vous ne pouvez revenir à l'écran précédent.")
         elif raw_string.lower() == "exit" and screen.can_quit:
-            self.msg("You quit the interface of {}.".format(screen.obj.get_display_name(self.caller)))
+            self.msg("Vous quittez l'interface AvenOS pour {}.".format(screen.obj.get_display_name(self.caller)))
             screen.close()
             screen.type.quit()
         else:
