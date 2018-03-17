@@ -288,30 +288,33 @@ class MainScreen(BaseScreen):
     """
 
     commands = ["CmdNew"]
-    short_help = "Screen to display the contact list."
+    short_help = "Écran affichant la liste des contacts."
     long_help = """
-        From here, you can use the |ynew|n command to create a new contact.
-        You should also see the contact list you already have, assuming you
-        have any.  In front of every contact name, you should see a number.
-        Enter this number to open this contact, to edit or delete it.
-        As in any screen, use the |yback|n command to go back to the previous
-        screen, or the |yexit|n command to exit the interface.  You can obtain
-        additional help with the |yhelp|n command.
+        Depuis cet écran, vous pouvez utiliser la commande |ynew|n pour créer un
+        nouveau contact. Vous devriez également voir la liste de vos contacts, si
+        vous avez enregistré au moins un contact auparavant. Chaque contact, trié
+        alphabétiquement, se trouve placé après un numéro. Utilisez ce numéro pour
+        ouvrir la fiche du contact, pour l'éditer ou lui envoyer un message. Par
+        exemple : |y3|n.
+        Comme dans la plupart des écrans, vous pouvez utiliser la commande |yback|n
+        pour revenir à l'écran précédent, ou la commande |yexit|n pour quitter l'interface
+        et revenir au jeu. Vous pouvez également accéder à l'aide de l'écran en entrant
+        la commande |yhelp|n.
     """
 
     def get_text(self):
         """Display the app."""
         number = self.obj.tags.get(category="phone number")
         if not number or not isinstance(number, basestring):
-            self.msg("Your phone number couldn't be found.")
+            self.msg("Votre numéro de téléphone n'a pas pu être trouvé.")
             self.back()
             return
 
         contacts = self.app.contacts
-        string = "Contact list"
+        string = "Liste de vos contacts"
         string += "\n"
         if contacts:
-            string += "  Create a {new} contact.\n".format(new=self.format_cmd("new"))
+            string += "  ( Utilisez la commande {new} pour créer un nouveau contact. )\n".format(new=self.format_cmd("new"))
             i = 1
             for contact in contacts:
                 name = contact.name
@@ -319,17 +322,17 @@ class MainScreen(BaseScreen):
                 if number:
                     number = self.app.format(number, False)
                 else:
-                    number = "|gnot set yet|n"
+                    number = "|ginconnu|n"
 
                 string += "\n  {{{i}}} {:<30} ({})".format(name, number, i=self.format_cmd(str(i), str(i).rjust(2)))
                 i += 1
-            string += "\n\n(Type a number to open or edit this contact.)"
+            string += "\n\n( Entrez un numéro pour ouvrir une fiche de contact. )"
         else:
-            string += "\n  You have no contacts yet.  Want to create a {new} one?".format(new=self.format_cmd("new"))
+            string += "\n  Vous n'avez aucun contact enregistré. Utilisez la commande {new} pour en créer un.".format(new=self.format_cmd("new"))
 
         count = len(contacts)
         s = "" if count == 1 else "s"
-        string += "\n\nContact app: {} saved contact{s}.".format(count, s=s)
+        string += "\n\nApp contact : {} contact{s} enregistré{s}.".format(count, s=s)
         return string
 
     def no_match(self, string):
@@ -346,7 +349,7 @@ class MainScreen(BaseScreen):
                 assert contact > 0
                 contact = contacts[contact - 1]
             except (AssertionError, IndexError):
-                self.user.msg("This is not a number in your current contacts.")
+                self.user.msg("|rCe numéro de contact n'est pas valide.|n")
                 self.display()
             else:
                 self.next(ContactScreen, db=dict(
@@ -361,7 +364,7 @@ class MainScreen(BaseScreen):
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
-        self.user.msg("Enter a contact number to oepn it.")
+        self.user.msg("|rEntrez le numéro d'une fiche de contact pour l'éditer.|n")
 
 
 class ContactScreen(BaseScreen):
@@ -374,20 +377,23 @@ class ContactScreen(BaseScreen):
     """
 
     commands = ["CmdFirst", "CmdLast", "CmdNumber", "CmdDone"]
-    short_help = "Screen to edit a contact."
+    short_help = "Écran pour éditer une fiche de contact."
     long_help = """
-        From here, you can change elements of a contact, its first name,
-        last name, and phone number.  Use the |yfirst|n, |ylast|n, and
-        |ynumber|n commands respectively to do so.  In each case, you will need
-        to specify the new first name, last name or phone number as argument.
-        For instance, here are the commands to type to set a contact:
+        Vous pouvez modifier les différents champs d'une fiche de contact.
+        La commande |yfirst|n permet de modifier le prénom du contact. La commande
+        |ylast|n permet de modifier le nom de famille du contact. La commande
+        |ynumber|n permet de changer le numéro de téléphone du contact. Pour ces
+        commandes, précisez le nouveau prénom, nom ou numéro de téléphone en
+        paramètre. Par exemple, voici les commandes à entrer pour modifier
+        complètement un contact :
             |yfirst Annabeth|n
             |ylast Chase|n
             |ynumber 551-0821|n
-        To save your modifications, use the |ydone|n command without anu argument.
-        As in any screen, use the |yback|n command to go back to the previous
-        screen, or the |yexit|n command to exit the interface.  You can obtain
-        additional help with the |yhelp|n command.
+        Pour enregistrer vos modifications, utilisez la commande |ydone|n.
+        Comme dans la plupart des écrans, vous pouvez utiliser la commande |yback|n
+        pour revenir à l'écran précédent, ou la commande |yexit|n pour quitter l'interface
+        et revenir au jeu. Vous pouvez également accéder à l'aide de l'écran en entrant
+        la commande |yhelp|n.
     """
 
     @property
@@ -404,17 +410,17 @@ class ContactScreen(BaseScreen):
         first = self.db.get("first_name", contact.first_name if contact else "")
         last = self.db.get("last_name", contact.last_name if contact else "")
         number = self.db.get("phone_number", contact.phone_number if contact else "")
-        string = "Contact {}".format(contact.name) if contact else "New contact"
+        string = "Contact {}".format(contact.name) if contact else "Nouveau contact"
         string += "\n"
-        string += "\n  |wFIRST|n name: {}".format(first)
-        string += "\n  |wLAST|n name: {}".format(last)
-        string += "\n  Phone |wNUMBER|n: {}".format(number)
-        string += "\n\n    {done} to save.".format(done=self.format_cmd("done"))
+        string += "\n  Prénom         : {} (utilisez |yfirst|n pour changer ce champ)".format(first)
+        string += "\n  Nom de famille : {} (utilisez |ylast|n pour changer ce champ)".format(last)
+        string += "\n  Téléphone      : {} (utilisez |ynumber|n pour modifier ce champ)".format(number)
+        string += "\n\n( Utilisez la commande {done} pour sauvegarder vos modifications. )".format(done=self.format_cmd("done"))
         return string
 
     def wrong_input(self, string):
         """A wrong input has been entered."""
-        self.user.msg("Use the |wFIRST|n, |wLAST|wn, |wNUMBER|n, or |nDONE|n commands.")
+        self.user.msg("Utilisez les commandes |yfirst|n, |ylast|wn, |ynumber|n ou |ydone|n.")
 
 
 ## Commands
@@ -422,17 +428,19 @@ class ContactScreen(BaseScreen):
 class CmdNew(AppCommand):
 
     """
-    Create a new contact.
+    Crée un nouveau contact.
 
-    Usage:
+    Usage :
         new
 
-    This will create a new contact, prompting you to set its first name, last
-    name and phone number,  You will need to enter |wDONE|n after you have set
-    this information, in order to save the new contact.
+    Cette commande vous permet de créer une nouvelle fiche de contact. Vous
+    devrez ensuite préciser le prénom, nom de famille et numéro de téléphone
+    de ce contact. Vous n'aurez toutefois pas besoin de préciser toutes ces
+    informations pour enregistrer la fiche de contact.
     """
 
     key = "new"
+    aliases = ["nouveau"]
 
     def func(self):
         self.screen.next(ContactScreen)
@@ -441,22 +449,27 @@ class CmdNew(AppCommand):
 class CmdFirst(AppCommand):
 
     """
-    Change the first name of this contact.
+    Modifie le prénom de ce contact.
 
-    Example:
+    Usage :
+        first <nouveau prénom>
+
+    Exemple :
         first James
 
-    Don't forget you need to type the \hDONE\n command when your
-    modifications have been done on the contact and you want to save them.
+    N'oubliez pas : vous devrez utiliser la commande |ydone|n après avoir changé
+    un ou plusieurs champs du contact, sans quoi vos modifications ne seront
+    pas enregistrées.
     """
 
     key = "first"
+    aliases = ["prénom", "prenom"]
 
     def func(self):
         screen = self.screen
         name = self.args.strip()
         if not name:
-            self.msg("Specify the first name of this contact to change it.")
+            self.msg("Précisez le prénom du contact pour le modifier..")
             return
 
         screen.db["first_name"] = name
@@ -466,22 +479,27 @@ class CmdFirst(AppCommand):
 class CmdLast(AppCommand):
 
     """
-    Change the last name of this contact.
+    Modifie le nom de famille de ce contact.
 
-    Example:
-        last Bangles
+    Usage :
+        last <nouveau nom de famille>
 
-    Don't forget you need to type the \hDONE\n command when your
-    modifications have been done on the contact and you want to save them.
+    Exemple :
+        last Bond
+
+    N'oubliez pas : vous devrez utiliser la commande |ydone|n après avoir changé
+    un ou plusieurs champs du contact, sans quoi vos modifications ne seront
+    pas enregistrées.
     """
 
     key = "last"
+    aliases = ["nom de famille", "nom"]
 
     def func(self):
         screen = self.screen
         name = self.args.strip()
         if not name:
-            self.msg("Specify the last name of this contact to change it.")
+            self.msg("Précisez le nom de famille de ce contact pour le modifier.")
             return
 
         screen.db["last_name"] = name
@@ -491,27 +509,32 @@ class CmdLast(AppCommand):
 class CmdNumber(AppCommand):
 
     """
-    Change the phone number of this contact.
+    Modifie le numéro de téléphone de ce contact.
 
-    Example:
+    Usage :
+        number <nouveau numéro de téléphone>
+
+    Exemple :
         number 555-1234
 
-    Don't forget you need to type the \hDONE\n command when your
-    modifications have been done on the contact and you want to save them.
+    N'oubliez pas : vous devrez utiliser la commande |ydone|n après avoir changé
+    un ou plusieurs champs du contact, sans quoi vos modifications ne seront
+    pas enregistrées.
     """
 
     key = "number"
+    aliases = ["numéro", "numero"]
 
     def func(self):
         screen = self.screen
         number = self.args.strip()
         if not number:
-            self.msg("Specify the phone number of this contact to change it.")
+            self.msg("Précisez le numéro de téléphone de ce contact pour le modifier.")
             return
 
         number = number.replace("-", "")
         if len(number) != 7 or not number.isdigit():
-            self.msg("This is not a valid phone number.")
+            self.msg("|rCela n'est pas un numéro de téléphone valide.|n")
             return
 
         screen.db["phone_number"] = number
@@ -521,19 +544,19 @@ class CmdNumber(AppCommand):
 class CmdDone(AppCommand):
 
     """
-    Save the modifications and return to the contact list.
+    Enregistre vos modifications et revient à l'écran précédent.
 
-    Usage:
+    Usage :
         done
 
-    In the screen allowing to edit a contact, if you make modifications
-    and quit the screen, your modifications will be lost.  Remember
-    to use this command to save them.
-
+    Si vous faites des modifications à un contact sans les enregistrer, en
+    utilisant la commande |yback|n ou |yexit|n directement, vos modifications
+    sur le contact seront perdues. N'oubliez donc pas d'utiliser |ydone|n
+    pour enregistrer vos modifications.
     """
 
     key = "done"
-    aliases = ["save"]
+    aliases = ["save", "enregistrer", "sauvegarder"]
 
     def func(self):
         screen = self.screen
@@ -541,15 +564,15 @@ class CmdDone(AppCommand):
         first = screen.db.get("first_name", "")
         last = screen.db.get("last_name", "")
         if not first and not last:
-            self.msg("You should set at least a first name or last name before saving.")
+            self.msg("|rVous devez préciser au moins un prénom ou un nom de famille avant d'enregistrer.|n")
             return
 
         number = screen.db.get("phone_number", "")
         if contact:
             screen.app.update(contact, first, last, number)
-            self.msg("Your modifications have been successfully saved.")
+            self.msg("Vos modifications ont bien été enregistrées.")
         else:
             screen.app.add(first, last, number)
-            self.msg("Your contact has just been added.")
+            self.msg("Votre nouveau contact vient d'être ajouté.")
         screen.app.sort()
         screen.back()
