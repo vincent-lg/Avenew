@@ -37,14 +37,6 @@ SERVERNAME = "Avenew One"
 # Django web features
 ######################################################################
 
-
-## Protocols
-# Activate SSL protocol (SecureSocketLibrary)
-SSL_ENABLED = True
-
-# IRC
-IRC_ENABLED = True
-
 ## Commands
 # UnloggedinCmdSet
 CMDSET_UNLOGGEDIN = "commands.unloggedin.UnloggedinCmdSet"
