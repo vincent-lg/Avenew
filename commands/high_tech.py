@@ -11,6 +11,7 @@ from evennia.commands.cmdhandler import CMD_NOINPUT, CMD_NOMATCH
 from evennia.utils.utils import class_from_module, delay
 
 from commands.command import Command
+from commands.help import CmdHelp
 from world.log import main
 
 # Commands
@@ -33,32 +34,32 @@ class CmdText(Command):
         self.caller.msg("That was some text here!")
 
 
-class CmdHelp(Command):
+class HTCmdHelp(CmdHelp):
 
     """
     Display help in a computer or phone interface.
     """
 
-    key = "help"
-    help_category = "General"
-
     def func(self):
         """Execute the command."""
         screen = getattr(self, "screen", None)
-        if not screen:
-            self.msg("|rSorry, the screen in which you are is not clear.  Please report to admin.|n")
-            return
+        if self.args.strip():
+            super(CmdHelp, self).func()
+        else:
+            if not screen:
+                self.msg("|rSorry, the screen in which you are is not clear.  Please report to admin.|n")
+                return
 
-        text = screen.short_help
-        text += "\n\nCommands you can use here:"
-        if screen.commands:
-            for cmd in screen.commands:
-                text += "\n  |y" + cmd.key.ljust(15) + "|n" + cmd.__doc__.strip().splitlines()[0]
-        text += "\n  |yback|n           Go back to the previous screen."
-        text += "\n  |yhelp|n           Get help on the screen or a command in it."
-        text += "\n  |yexit|n           Exit the interface."
-        text += "\n\n" + dedent(screen.long_help)
-        self.msg(text)
+            text = screen.short_help
+            text += "\n\nCommands you can use here:"
+            if screen.commands:
+                for cmd in screen.commands:
+                    text += "\n  |y" + cmd.key.ljust(15) + "|n" + cmd.__doc__.strip().splitlines()[0]
+            text += "\n  |yback|n           Go back to the previous screen."
+            text += "\n  |yhelp|n           Get help on the screen or a command in it."
+            text += "\n  |yexit|n           Exit the interface."
+            text += "\n\n" + dedent(screen.long_help)
+            self.msg(text)
 
 
 
@@ -154,7 +155,7 @@ class ComputerCmdSet(CmdSet):
                 cmd.screen = screen
                 self.add(cmd)
 
-        cmds = [CmdNoInput(), CmdNoMatch(), CmdHelp()]
+        cmds = [CmdNoInput(), CmdNoMatch(), HTCmdHelp()]
         for cmd in cmds:
             if screen:
                 cmd.screen = screen
