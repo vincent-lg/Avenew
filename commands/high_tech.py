@@ -51,13 +51,13 @@ class HTCmdHelp(CmdHelp):
                 return
 
             text = screen.short_help
-            text += "\n\nCommands you can use here:"
+            text += "\n\nCommandes dispnoibles dans cet écran :"
             if screen.commands:
                 for cmd in screen.commands:
                     text += "\n  |y" + cmd.key.ljust(15) + "|n" + cmd.__doc__.strip().splitlines()[0]
-            text += "\n  |yback|n           Go back to the previous screen."
-            text += "\n  |yhelp|n           Get help on the screen or a command in it."
-            text += "\n  |yexit|n           Exit the interface."
+            text += "\n  |yback|n           Revient à l'écran précédent."
+            text += "\n  |yhelp|n           Donne de l'aide sur l'écran ou une commande précise."
+            text += "\n  |yexit|n           Quitte l'interface."
             text += "\n\n" + dedent(screen.long_help)
             self.msg(text)
 
