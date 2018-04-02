@@ -58,6 +58,7 @@ class Room(AvenewObject, EventRoom):
         "describe": (["room", "character"], DESCRIBE),
     }
     repr = "representations.room.RoomRepr"
+    building_menu = "menu.building.room.RoomBuildingMenu"
 
     @classmethod
     def get_room_at(cls, x, y, z):

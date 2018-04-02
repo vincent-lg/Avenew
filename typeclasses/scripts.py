@@ -234,3 +234,22 @@ class AvEventHandler(EventHandler):
                 callbacks[name].extend(callback_list)
 
         return callbacks
+
+
+class Net(DefaultScript):
+
+    """The main NET object, both storage and global net.
+
+    This is a representation of the virtual, global NET used by AvenOS.
+    It can be a global storage to apps (storing something common to
+    several devices, for instance).  In theory, only one object of this
+    class is created: the global script.  If it already exists in the database,
+    it's retrieved.  Otherwise, it is created.
+
+    """
+
+    def at_script_creation(self):
+        """Hook called when the script is created."""
+        self.key = "global_NET"
+        self.desc = "Global NET script"
+        self.persistent = True
