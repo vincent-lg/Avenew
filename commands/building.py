@@ -63,7 +63,7 @@ class CmdBuildingMenu(Command):
             log_trace("Cannot load the building menu: {}".format(menu_class))
             return
 
-        menu = menu_class(self.caller, obj)
+        menu = menu_class(self.caller, obj, persistent=True)
         menu.open()
 
 

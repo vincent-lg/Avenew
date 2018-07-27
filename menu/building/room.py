@@ -3,6 +3,7 @@
 """Building menu for rooms."""
 
 from menu.building.building_menu import BuildingMenu
+from menu.building.callbacks import add_menu_choices
 
 class RoomBuildingMenu(BuildingMenu):
 
@@ -18,6 +19,7 @@ class RoomBuildingMenu(BuildingMenu):
         """)
         self.add_choice_edit()
         self.add_choice("exits", key="x", glance=glance_exits, text=text_exits, on_nomatch=nomatch_exits)
+        add_menu_choices(self, self.obj)
         self.add_choice_quit()
 
         # Exit level
