@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titleblock %}Builder batch update{% endblock %}
+{% block content %}
+<h2>Builder batch building</h2>
+<p>Batch building allows builders to upload a YML file with content to build.</p>
+<form enctype="multipart/form-data" method="post" action=""/builder/batch/">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit" />
+</form>
+{% endblock %}
