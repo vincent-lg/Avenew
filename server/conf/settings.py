@@ -66,6 +66,8 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 # Web
 INSTALLED_APPS += (
         "evennia_wiki",
+        "web.evapp",
+        "web.builder",
         "web.help_system",
         "web.text",
 )

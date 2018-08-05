@@ -150,6 +150,17 @@ class PRoom(AvenewObject, DefaultObject):
             room.tags.remove(old_name, category="proom")
             room.tags.add(new_name, category="proom")
 
+    def add_room(self, room):
+        """Add an existing room to this prototype."""
+        room.tags.add(self.key, category="proom")
+        room.db.prototype = self
+
+    def remove_room(self, room):
+        """Remove an existing room from this prototype."""
+        if room.tags.get(self.key, category="proom"):
+            room.tags.remove(self.key, category="proom")
+            room.db.prototype = None
+
     def create(self, key=None):
         """Create a room on this prototype."""
         key = key or self.key

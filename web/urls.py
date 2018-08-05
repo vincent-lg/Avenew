@@ -10,6 +10,8 @@ from evennia.web.urls import urlpatterns
 
 # eventual custom patterns
 custom_patterns = [
+    url(r'^builder/', include('web.builder.urls',
+            namespace='builder', app_name='builder')),
     url(r'^help/', include('web.help_system.urls',
             namespace='help_system', app_name='help_system')),
     url(r'^wiki/', include('evennia_wiki.urls',

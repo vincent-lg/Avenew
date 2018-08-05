@@ -29,7 +29,7 @@ descriptions.  To do so, specify a keyword starting with a $ sign in
 the text description.  In this event, you will then need to create a
 variable with the same name, containing the text to be displayed.
 For instance, if you have in your description:
-    The terrain slopes to $slope.
+    The terrain slopes $slope.
 In the descrive event, you could have something like:
     slope = "east"
 The final description will display:
@@ -78,6 +78,24 @@ class Room(AvenewObject, EventRoom):
                 db_tags__db_key=str(x), db_tags__db_category="coordx").filter(
                 db_tags__db_key=str(y), db_tags__db_category="coordy").filter(
                 db_tags__db_key=str(z), db_tags__db_category="coordz")
+        if rooms:
+            return rooms[0]
+
+        return None
+
+    @classmethod
+    def get_room_with_ident(cls, ident):
+        """
+        Return the room with the given identifier or None if not found.
+
+        Args:
+            ident (str): the room identifier.
+
+        Return:
+            The room with this identifier (Room) or None if not found.
+
+        """
+        rooms = cls.objects.get_by_attribute(key="ident", value=ident)
         if rooms:
             return rooms[0]
 
@@ -181,6 +199,39 @@ class Room(AvenewObject, EventRoom):
         if z is not None:
             self.tags.add(str(z), category="coordz")
 
+    @property
+    def ident(self):
+        """Return the room identifier."""
+        return self.db.ident
+
+    @ident.setter
+    def ident(self, ident):
+        """Change the room ident."""
+        old = self.db.ident
+        self.db.ident = None
+
+        # Check that no other room has this identifier
+        if self.get_room_with_ident(ident):
+            self.db.ident = old
+            raise ValueError("the specified ident {} is being used by another room".format(repr(ident)))
+
+        self.db.ident = ident
+
+    @property
+    def prototype(self):
+        """Return the room prototyype or None."""
+        return self.db.prototype
+
+    @prototype.setter
+    def prototype(self, prototype):
+        """Change the room prototype."""
+        if self.db.prototype:
+            self.db.prototype.remove_room(self)
+
+        if prototype:
+            prototype.add_room(self)
+        self.db.prototype = prototype
+
     def return_appearance(self, looker):
         """
         This formats a description. It is the hook a 'look' command
@@ -212,21 +263,34 @@ class Room(AvenewObject, EventRoom):
         desc = self.db.desc
         if desc:
             # Format the string
-            description = ""
-            for line in desc.splitlines():
-                if len(line) >= 75:
-                    line = "\n".join(wrap("   " + line, 75))
-                description += "\n" + line
+            description = desc
 
-            # Now process through the keywords
+            # Process through the description keywords ($example)
+            vars = {}
+            if self.db.prototype:
+                if self.db.prototype.db.desc:
+                    vars["parent"] = self.db.prototype.db.desc
+
             self.callbacks.call("describe", self, looker)
             match = RE_KEYWORD.search(description)
             while match:
                 keyword = match.group()[1:]
-                var = self.callbacks.get_variable(keyword)
+                if keyword in vars:
+                    var = vars[keyword]
+                else:
+                    var = self.callbacks.get_variable(keyword)
+
                 start, end = match.span()
                 description = description[:start] + var + description[end:]
                 match = RE_KEYWORD.search(description)
+
+            # Wrap the description
+            final = ""
+            for line in description.splitlines():
+                if len(line) >= 75:
+                    line = "\n".join(wrap("   " + line, 75))
+                final += "\n" + line
+            description = final
         else:
             description = ""
 

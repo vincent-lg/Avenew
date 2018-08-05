@@ -9,7 +9,7 @@ from evennia.utils import create, search
 from logic.geo import direction_between
 from typeclasses.characters import Character
 from typeclasses.objects import Object
-from typeclasses.prototypes import PChar
+from typeclasses.prototypes import PChar, PRoom
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad, Vehicle
 
@@ -31,17 +31,21 @@ ALIASES = {
 }
 
 # Functions
-def get_room(x, y, z):
-    """Get or create the given room."""
-    room = Room.get_room_at(x, y, z)
+def get_room(ident):
+    """Get or create the given room.
+
+    Args:
+        ident (str): the room identifier.
+
+    """
+    room = Room.get_room_with_ident(ident)
+
     if room:
         return room
 
     # Create the room
     room = create.create_object(ROOM_TYPECLASS, "Nowhere")
-    room.x = x
-    room.y = y
-    room.z = z
+    room.ident = ident
     return room
 
 def get_exit(room, direction, destination, name=None, aliases=None):
@@ -65,6 +69,15 @@ def get_pchar(key):
         pchar = create.create_object("typeclasses.prototypes.PChar", key=key)
 
     return pchar
+
+def get_proom(key):
+    """Get or create the PRoom."""
+    try:
+        proom = PRoom.objects.get(db_key=key)
+    except PRoom.DoesNotExist:
+        proom = create.create_object("typeclasses.prototypes.PRoom", key=key)
+
+    return proom
 
 def get_crossroad(x, y, z):
     """Return or create the given crossroad."""

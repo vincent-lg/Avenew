@@ -3,6 +3,15 @@
 {% block content %}
 <h2>Builder batch building</h2>
 <p>Batch building allows builders to upload a YML file with content to build.</p>
+{% if messages %}
+<h2>Results</h2>
+<ul>
+{% for message in messages %}
+<li>Line {{ message.0 }}: {{message.1 }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<h2>Form</h2>
 <form enctype="multipart/form-data" method="post" action=""/builder/batch/">
     {% csrf_token %}
     {{ form }}
