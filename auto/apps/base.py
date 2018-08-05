@@ -6,14 +6,18 @@ Module containing abstract classes for applications.
 
 from textwrap import dedent, wrap
 
-from evennia import Command
+from evennia import Command, ScriptDB
 from evennia.utils.ansi import strip_ansi
+from evennia.utils.create import create_script
 from evennia.utils.evform import EvForm
 from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
 from commands.high_tech import ComputerCmdSet
 from world.log import app as log
 from world.utils import latinify
+
+## Constants
+NET = None
 
 class BaseApp(object):
 
@@ -33,6 +37,7 @@ class BaseApp(object):
         self.obj = obj
         self.user = user
         self.type = type
+        self.__class__.NET = get_NET()
 
     def __repr__(self):
         return "<App {} ({} folder)>".format(type(self).app_name, type(self).folder)
@@ -591,3 +596,23 @@ class AppCommand(Command):
 
     help_category = "Application"
 
+def get_NET():
+    """Return the storage and NET singleton object.
+
+    The NET is both a global storage and an object with NET-specific
+    methods.  See the `Net` class in `typeclasses/scripts`..  This function
+    only retrieves the net (writes in `NET`) or create it if it doesn't
+    already exist.
+
+    """
+    global NET
+    if NET:
+        return NET
+
+    try:
+        NET = ScriptDB.objects.get(db_key="global_NET")
+    except ScriptDB.DoesNotExist:
+        print "Creating the net..."
+        NET = create_script("typeclasses.scripts.Net")
+
+    return NET

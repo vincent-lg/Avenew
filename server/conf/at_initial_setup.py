@@ -18,6 +18,8 @@ does what you expect it to.
 
 from evennia import AccountDB
 
+from typeclasses.rooms import Room
+
 def at_initial_setup():
     """
     Function called at initial_setup.
@@ -27,3 +29,10 @@ def at_initial_setup():
     """
     account = AccountDB.objects.get(id=1)
     account.db.valid = True
+
+    # Set the central room
+    room = Room.objects.get(id=2)
+    room.x = 0
+    room.y = 0
+    room.z = 2
+    room.ident = "central"

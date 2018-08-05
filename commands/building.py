@@ -7,15 +7,65 @@ from textwrap import dedent
 from evennia import ObjectDB
 from evennia.commands.default.muxcommand import MuxCommand
 from evennia.utils.create import create_object
+from evennia.utils.logger import log_trace
 from evennia.utils.utils import class_from_module, inherits_from
-
 from evennia.contrib.unixcommand import UnixCommand
-
 from auto.types.typehandler import TYPES
+from commands.command import Command
 from logic.geo import NAME_DIRECTIONS, coords_in, coords, get_direction
 from typeclasses.prototypes import PRoom, PObj
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad
+
+class CmdBuildingMenu(Command):
+
+    """
+    Global editing commands to open a building menu.
+
+    Syntax:
+        @edit [obj]
+
+    You can specify any object in argument.  If you don't specify an object, the
+    current location will be selected.  If a building menu has been associated
+    with this object, it will open, allowing you to edit various fields of the
+    said object.
+
+    """
+
+    key = "@edit"
+    locks = "cmd:id(1) or perm(Builders)"
+    help_category = "Building"
+
+    def func(self):
+        """Command body."""
+        # Search for the actual object
+        args = self.args.strip()
+        if args:
+            objs = self.caller.search(args, quiet=True)
+            if not objs or len(objs) > 1:
+                obj = self.caller.search(args, global_search=True)
+                if not obj:
+                    return
+            else:
+                obj = objs[0]
+        else:
+            obj = self.caller.location
+
+        # Get the building menu for this object type
+        menu_class = getattr(obj, "building_menu", None)
+        if menu_class is None:
+            self.msg("|r{} doesn't have access to a building menu.|n".format(obj))
+            return
+
+        try:
+            menu_class = class_from_module(menu_class)
+        except Exception:
+            log_trace("Cannot load the building menu: {}".format(menu_class))
+            return
+
+        menu = menu_class(self.caller, obj, persistent=True)
+        menu.open()
+
 
 class CmdEdit(MuxCommand):
 
@@ -59,6 +109,14 @@ class CmdEdit(MuxCommand):
     aliases = ["@"]
     locks = "cmd:id(1) or perm(Builders)"
     help_category = "Building"
+    arg_regex = ".+"
+
+    def access(self, srcobj, access_type="cmd", default=False):
+        """Accessing the command when in building menu isn't possible."""
+        if srcobj.cmdset.has("building_menu"):
+            return False
+
+        return super(CmdEdit, self).access(srcobj, access_type, default)
 
     def func(self):
         """Main function for this command."""

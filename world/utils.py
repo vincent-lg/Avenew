@@ -6,8 +6,12 @@ Utility functions, specific to Avenew but generic enough to be ported to other p
 Functions:
     latinify(unicode[, default][, mapping]): return a unicode string containing only ASCII.
     show_list(strings, width=4, **kwargs): return a formatted list.
+    load_YAML(string): read a YAML file, returning a collection with systematic line numbers.
 
 """
+
+from yaml import compose_all, nodes
+from collections import OrderedDict
 
 _UNICODE_MAPPING = {
     u"\u00bc": "OE",
@@ -112,3 +116,58 @@ def show_list(strings, width=4, vertical=False, length=None, begin="",
             ret += entry.ljust(length)
 
     return ret
+
+def load_YAML(stream):
+    """Load a YAML content, returning the data in a nested tuple.
+
+    Args:
+        stream (Stream): the stream object, str or file.
+
+    The returned collection, assuming no error occurred, is of the form
+    (line_number, name, value) where `value` can be nested depending on
+    the type of value found in the content.
+
+    """
+    content = compose_all(stream)
+    collection = []
+    for document in content:
+        line = document.start_mark.line + 1
+        value = read_node(document)
+        value["--begin"] = line
+        collection.append(value)
+
+    return collection
+
+def read_node(node):
+    """Recursively read the given YAML piece, returning an appropriate collection."""
+    line = node.start_mark.line + 1
+    if isinstance(node, nodes.ScalarNode):
+        tag = node.tag.split(":")[-1]
+        if tag in ["int", "float"]:
+            constructor = eval(tag)
+            value = constructor(node.value)
+        elif tag == "str":
+            value = node.value
+        else:
+            raise RuntimeError("cannot parse this scalar at line {}".format(line))
+
+        return (value, line)
+
+    if isinstance(node, nodes.MappingNode):
+        col = OrderedDict()
+        for node_name, node_value in node.value:
+            name = read_node(node_name)[0]
+            value = read_node(node_value)
+            col[name] = value
+
+        return col
+
+    if isinstance(node, nodes.SequenceNode):
+        col = []
+        for node_value in node.value:
+            value = read_node(node_value)
+            col.append(value)
+
+        return col
+
+    raise RuntimeError("cannot parse the node at line {}".format(line))

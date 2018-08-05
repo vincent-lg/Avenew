@@ -8,6 +8,7 @@ from textwrap import dedent
 
 from evennia import CmdSet
 from evennia.commands.cmdhandler import CMD_NOINPUT, CMD_NOMATCH
+from evennia.utils.ansi import strip_ansi
 from evennia.utils.utils import class_from_module, delay
 
 from commands.command import Command
@@ -32,6 +33,8 @@ class CmdText(Command):
     def func(self):
         """Execute the command."""
         self.caller.msg("That was some text here!")
+        menu = TestBuildingMenu(self.caller, self.caller.location)
+        menu.open()
 
 
 class HTCmdHelp(CmdHelp):
@@ -118,7 +121,7 @@ class CmdNoMatch(Command):
             screen.close()
             screen.type.quit()
         else:
-            ret = screen.no_match(raw_string)
+            ret = screen.no_match(strip_ansi(raw_string))
             if not ret:
                 screen.wrong_input(raw_string)
 
