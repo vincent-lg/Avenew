@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block titleblock %}Builder batch update{% endblock %}
+{% block titleblock %}Batch pour les bâtisseurs{% endblock %}
 {% block content %}
-<h2>Builder batch building</h2>
-<p>Batch building allows builders to upload a YML file with content to build.</p>
+<h2>Batch en YML</h2>
+<p>Bâtir par batch permet de créer de nombreuses salles ou autres informations (comme une zone complète) en mettant en ligne un simple fichier au format YAML.</p>
 {% if messages %}
-<h2>Results</h2>
+<h2>Résultat</h2>
 <ul>
 {% for message in messages %}
-<li>Line {{ message.0 }}: {{message.1 }}</li>
+<li>Ligne {{ message.0 }}: {{message.1 }}</li>
 {% endfor %}
 </ul>
 {% endif %}
-<h2>Form</h2>
+<h2>Mise en ligne</h2>
 <form enctype="multipart/form-data" method="post" action=""/builder/batch/">
     {% csrf_token %}
     {{ form }}
-    <input type="submit" value="Submit" />
+    <input type="submit" value="Mettre en ligne" />
 </form>
 {% endblock %}
