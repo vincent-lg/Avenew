@@ -18,7 +18,13 @@ does what you expect it to.
 
 from evennia import AccountDB
 
+try:
+    from server.conf.secret_at_initial_setup import secret_setup
+except ImportError:
+    secret_setup = None
+
 from typeclasses.rooms import Room
+from world.log import main
 
 def at_initial_setup():
     """
@@ -27,12 +33,20 @@ def at_initial_setup():
     This function makes sure account#1 (the superuser) is valid.
 
     """
-    account = AccountDB.objects.get(id=1)
-    account.db.valid = True
+    try:
+        account = AccountDB.objects.get(id=1)
+        account.db.valid = True
 
-    # Set the central room
-    room = Room.objects.get(id=2)
-    room.x = 0
-    room.y = 0
-    room.z = 2
-    room.ident = "central"
+        # Set the central room
+        room = Room.objects.get(id=2)
+        room.x = 0
+        room.y = 0
+        room.z = 2
+        room.ident = "central"
+
+        if secret_setup:
+            secret_setup()
+    except Exception:
+        main.exception("An error occurred at initial setup.")
+    else:
+        main.info("Successful at initial setup")
