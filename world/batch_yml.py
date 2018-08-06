@@ -52,12 +52,13 @@ def batch_YAML(content, author):
     messages = []
 
     if not isinstance(documents, list):
-        messages.append(1, NO_DOCUMENTS)
+        messages.append(3, 0, NO_DOCUMENTS)
         return 0
 
     for document in documents:
         to_do = []
         line = document.get("--begin", -1)
+        messages.append((1, line, ""))
         type = document.get("type", [None, None])[0]
 
         if type == "psalle":
@@ -65,7 +66,7 @@ def batch_YAML(content, author):
         elif type == "salle":
             to_do = parse_room(document, author, messages)
         else:
-            messages.append((line, "Type inconnu : {}".format(type)))
+            messages.append((1, line, "Type inconnu : {}".format(type)))
 
         # Apply to_do, if appropriate
         if to_do:
@@ -98,7 +99,7 @@ def parse_proom(document, author, messages):
     line = document.get("--begin", -1)
     ident = get_field(document, "ident", basestring, True, "", messages).strip()
     if not ident:
-        messages.append((line,
+        messages.append((2, line,
                 "Un prototype de salle (psalle) a besoin d'avoir un champ valide nommé 'ident'."))
         return
 
@@ -112,7 +113,7 @@ def parse_proom(document, author, messages):
         to_do.append((setattr, ["db.desc", desc], {}))
 
     # All is right, confirmation
-    messages.append((line, "Le prototype de salle '{}' a bien été créé ou mis à jour.".format(ident)))
+    messages.append((0, line, "Le prototype de salle '{}' a bien été créé ou mis à jour.".format(ident)))
 
     return to_do
 
@@ -122,7 +123,7 @@ def parse_room(document, author, messages):
     line = document.get("--begin", -1)
     ident = get_field(document, "ident", basestring, True, "", messages).strip()
     if not ident:
-        messages.append((line,
+        messages.append((2, line,
                 "Une salle a besoin d'avoir un champ valide nommé 'ident'."))
         return
 
@@ -143,16 +144,16 @@ def parse_room(document, author, messages):
     if coords:
         # Check that X, Y and Z are integers
         if len(coords) != 3:
-            messages.append((line, "Les coordonnées (champ 'coords') de cette salle doivent contenir une liste avec trois arguments : les coordonnées X, Y et Z. Exemple : coords: [1, 2, -5]"))
+            messages.append((1, line, "Les coordonnées (champ 'coords') de cette salle doivent contenir une liste avec trois arguments : les coordonnées X, Y et Z. Exemple : coords: [1, 2, -5]"))
         elif not all([coord is None or isinstance(coord, int) for coord in coords]):
-            messages.append((line, "Champ 'coords' : la seule valeur possible pour chacunes des coordonnées est une valeur nulle (none) ou un nombre entier."))
+            messages.append((1, line, "Champ 'coords' : la seule valeur possible pour chacunes des coordonnées est une valeur nulle (none) ou un nombre entier."))
         else:
             x, y, z = coords
 
             # Check that these coords are free or that the same ident is shared by both
             other = Room.get_room_at(x, y, z)
             if other and other.ident != ident:
-                messages.append((line, "Une autre salle (/{}, ident='{}') existe déjà à ces coordonnées (X={}, Y={}, Z={}). Ceci est considéré comme une erreu puisque deux salles ne peuvent avoir les mêmes coordonnées. Si elles possèdent également le même identifiant, la salle existante sera mise à jour avec les nouvelles coordonnées. Corrigez l'erreur avant de mettre en ligne ce fichier de nouveau.".format(other.id, other.ident, x, y, z)))
+                messages.append((1, line, "Une autre salle (/{}, ident='{}') existe déjà à ces coordonnées (X={}, Y={}, Z={}). Ceci est considéré comme une erreu puisque deux salles ne peuvent avoir les mêmes coordonnées. Si elles possèdent également le même identifiant, la salle existante sera mise à jour avec les nouvelles coordonnées. Corrigez l'erreur avant de mettre en ligne ce fichier de nouveau.".format(other.id, other.ident, x, y, z)))
             else:
                 to_do.append((setattr, ["x", x], {}))
                 to_do.append((setattr, ["y", y], {}))
@@ -169,7 +170,7 @@ def parse_room(document, author, messages):
         to_do.append((setattr, ["db.desc", desc], {}))
 
     # All is right, confirmation
-    messages.append((line, "La salle '{}' a été créée ou mise à jour avec succès.".format(ident)))
+    messages.append((0, line, "La salle '{}' a été créée ou mise à jour avec succès.".format(ident)))
 
     return to_do
 
@@ -202,14 +203,14 @@ def get_field(document, field_name, types, required=True, default=None, messages
                 types = [types]
 
             expected = ", ".join([str(t) for t in types])
-            messages.append((line,
+            messages.append((1, line,
                     "Le champ '{}' à la ligne {} n'est pas du bon type : {} attendu mais {} reçu".format(
                     field_name, line, expected, type(value))))
             return default
 
         return value
     elif required:
-        messages.append((line,
+        messages.append((1, line,
                 "Dans le document débutant à la ligne {}, le champ '{}' est attendu, et n'est pas présent dans le fichier mis en ligne.".format(line, field_name)))
 
     return default
