@@ -51,12 +51,13 @@ def batch_YAML(content, author):
     messages = []
 
     if not isinstance(documents, list):
-        messages.append(1, NO_DOCUMENTS)
+        messages.append(3, 0, NO_DOCUMENTS)
         return 0
 
     for document in documents:
         to_do = []
         line = document.get("--begin", -1)
+        messages.append((1, line, ""))
         type = document.get("type", [None, None])[0]
 
         if type == "proom":
@@ -64,7 +65,7 @@ def batch_YAML(content, author):
         elif type == "room":
             to_do = parse_room(document, author, messages)
         else:
-            messages.append((line, "Unknown type: {}".format(type)))
+            messages.append((1, line, "Unknown type: {}".format(type)))
 
         # Apply to_do, if appropriate
         if to_do:
@@ -97,7 +98,7 @@ def parse_proom(document, author, messages):
     line = document.get("--begin", -1)
     ident = get_field(document, "ident", basestring, True, "", messages).strip()
     if not ident:
-        messages.append((line,
+        messages.append((2, line,
                 "A proom needs to have a valid field name 'ident'."))
         return
 
@@ -111,7 +112,7 @@ def parse_proom(document, author, messages):
         to_do.append((setattr, ["db.desc", desc], {}))
 
     # All is right, confirmation
-    messages.append((line, "The proom '{}' was succesfully created or updated.".format(ident)))
+    messages.append((0, line, "The proom '{}' was succesfully created or updated.".format(ident)))
 
     return to_do
 
@@ -121,7 +122,7 @@ def parse_room(document, author, messages):
     line = document.get("--begin", -1)
     ident = get_field(document, "ident", basestring, True, "", messages).strip()
     if not ident:
-        messages.append((line,
+        messages.append((2, line,
                 "A room needs to have a valid field name 'ident'."))
         return
 
@@ -142,16 +143,16 @@ def parse_room(document, author, messages):
     if coords:
         # Check that X, Y and Z are integers
         if len(coords) != 3:
-            messages.append((line, "The room coordinates ('coords' field) expects three arguments: X, Y and Z in a list.  Example: coords: [1, 2, -5]"))
+            messages.append((1, line, "The room coordinates ('coords' field) expects three arguments: X, Y and Z in a list.  Example: coords: [1, 2, -5]"))
         elif not all([coord is None or isinstance(coord, int) for coord in coords]):
-            messages.append((line, "Field 'coords': the only acceptable value of each coordinate is either none or an integer"))
+            messages.append((1, line, "Field 'coords': the only acceptable value of each coordinate is either none or an integer"))
         else:
             x, y, z = coords
 
             # Check that these coords are free or that the same ident is shared by both
             other = Room.get_room_at(x, y, z)
             if other and other.ident != ident:
-                messages.append((line, "Another room (#{}, ident='{}') already exists at these coordinates (X={}, Y={}, Z={}).  This is considered to be an error since two rooms cannot share the same coordinates.  If they had the same ident, the former will be updated.  Fix the issue before proceeding.".format(other.id, other.ident, x, y, z)))
+                messages.append((1, line, "Another room (#{}, ident='{}') already exists at these coordinates (X={}, Y={}, Z={}).  This is considered to be an error since two rooms cannot share the same coordinates.  If they had the same ident, the former will be updated.  Fix the issue before proceeding.".format(other.id, other.ident, x, y, z)))
             else:
                 to_do.append((setattr, ["x", x], {}))
                 to_do.append((setattr, ["y", y], {}))
@@ -168,7 +169,7 @@ def parse_room(document, author, messages):
         to_do.append((setattr, ["db.desc", desc], {}))
 
     # All is right, confirmation
-    messages.append((line, "The room '{}' was succesfully created or updated.".format(ident)))
+    messages.append((0, line, "The room '{}' was succesfully created or updated.".format(ident)))
 
     return to_do
 
@@ -201,14 +202,14 @@ def get_field(document, field_name, types, required=True, default=None, messages
                 types = [types]
 
             expected = ", ".join([str(t) for t in types])
-            messages.append((line,
+            messages.append((1, line,
                     "The field '{}' at line {} isn't of the proper type: {} expected but {} received".format(
                     field_name, line, expected, type(value))))
             return default
 
         return value
     elif required:
-        messages.append((line,
+        messages.append((1, line,
                 "In the document beginning at line {}, the '{}' field is required, yet has not been specified.".format(line, field_name)))
 
     return default

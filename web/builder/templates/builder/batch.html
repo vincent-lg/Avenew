@@ -7,7 +7,13 @@
 <h2>Results</h2>
 <ul>
 {% for message in messages %}
-<li>Line {{ message.0 }}: {{message.1 }}</li>
+{% if message.2 %}
+<li>
+{% if message.1 > 0 %}
+Line {{ message.1 }}:
+{% endif %}
+{{ message.2|safe }}</li>
+{% endif %}
 {% endfor %}
 </ul>
 {% endif %}

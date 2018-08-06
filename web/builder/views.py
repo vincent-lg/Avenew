@@ -15,8 +15,29 @@ def batch(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            batch = request.FILES['file']
-            content.update({"messages": batch_YAML(batch, None)})
+            # Try to find the first builder in this account, which will be the author
+            author = None
+            if request.user.db._playable_characters:
+                for character in request.user.db._playable_characters:
+                    if character.check_permstring("builder"):
+                        author = character
+                        break
+
+            # If no author, don't execute the batch YML
+            if author is None:
+                content["messages"] = [(3, 0, "The logged-in account doesn't have a character who is a builder.")]
+            else:
+                batch = request.FILES['file']
+                messages = batch_YAML(batch, author)
+                documents = len([m for m in messages if m[0] == 1])
+                warnings = len([m for m in messages if m[0] == 2])
+                errors = len([m for m in messages if m[0] == 3])
+                message = "{} document{} applied, {} warning{}, {} error{}.".format(
+                        documents, "s" if documents > 1 else "",
+                        warnings, "s" if warnings > 1 else "",
+                        errors, "s" if errors > 1 else "")
+                messages.insert(0, (0, 0, message))
+                content["messages"] = messages
     else:
         form = UploadFileForm()
 
