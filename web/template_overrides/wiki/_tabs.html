@@ -1,0 +1,41 @@
+<nav>
+  <ul class="nav nav-tabs card-header-tabs">
+    <li class="nav-item">
+      <a class="nav-link{% if active_tab == "view" %} active{% endif %}" href="/wiki/{% firstof address page.address %}">Voir</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if active_tab == "edit" %} active{% endif %}" href="/wiki/_edit/{% firstof address page.address %}">Éditer</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if active_tab == "history" %} active{% endif %}" href="/wiki/_history/{% firstof address page.address %}">Historique</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if active_tab == "settings" %} active{% endif %}" href="/wiki/_settings/{% firstof address page.address %}">Paramètres</a>
+    </li>
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Pages filles</a>
+      <div class="dropdown-menu">
+        {% for child in page.children %}
+          <a class="dropdown-item" href="{{child.address}}">{{child}}</a>
+        {% endfor %}
+        <div class="dropdown-divider"></div>
+        <form class="form-inline dropdown-item">
+          <label for="addressInput">Adresse</label>
+          <input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" id="addressInput" />
+        </form>
+        <button class="btn btn-primary" onclick="addPage()">Ajouter une page fille</button>
+        <script language="javascript" type="text/javascript">
+          function addPage() {
+            address = document.getElementById('addressInput').value;
+            parent = "{{ page.address }}";
+            if(parent) {
+                address = parent + "/" + address;
+            }
+            address = "/wiki/_edit/" + address;
+            window.location.assign(address);
+          }
+        </script>
+      </div>
+    </li>
+  </ul>
+</nav>

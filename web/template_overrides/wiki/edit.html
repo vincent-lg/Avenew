@@ -1,0 +1,51 @@
+{% extends "wiki/base.html" %}
+{% block titleblock %}
+{% if page %}
+    Edition de {{ page.address }}
+{% elif address %}
+    Création de {{ address }}
+{% else %}
+    Création de la première page
+{% endif %}
+{% endblock %}
+{% block page_content %}
+
+{% load addclass %}
+
+<div class="card">
+  <div class="card-header">
+    <h2>
+      {% if page %}
+        Edition de {{ page.address }}
+      {% elif address %}
+          Création de {{ address }}
+      {% else %}
+          Création de la première page
+      {% endif %}
+    </h2>
+    {% include "wiki/_tabs.html" with active_tab="edit" %}
+  </div>
+  <div class="card-body">
+    <form action="/wiki/_edit/{{ address }}" method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-warning" role="alert">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        {% for field in form %}
+        <div class="form-group">
+          {{ field.errors }}
+          {{ field.label_tag }}
+          {{ field|addclass:'form-control' }}
+          {% if field.help_text %}
+            {{ field.help_text|addclass:'form-text text-muted' }}
+          {% endif %}
+        </div>
+        {% endfor %}
+        <p><input type="submit" value="Sauvegarder" /></p>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
