@@ -25,140 +25,140 @@ def write_wiki(address, title, text):
 
 #CODE
 
-write_wiki("doc/yaml", "Batch building in YML", """
-        Batch building refers to a way for builders to create a great many rooms, objects, characters and more through execution of a single
-        file.  Evennia offers two [batch processors](https://github.com/evennia/evennia/wiki/Batch-Processors),
-        [the batch-command processor](https://github.com/evennia/evennia/wiki/Batch-Command-Processor) and
-        [the batch-code processor](https://github.com/evennia/evennia/wiki/Batch-Code-Processor).  While both processors
-        are really powerful, builders can find them somewhat intimidating at first glance.  The former is used to run a list of commands in a file and is,
-        by definition, less easy to update, and can be challenging when writing descriptions (which occurs on a daily basis for builders).  The latter is
-        intended to run Python code and is less explicit to builders, although, obviously, it allows for more flexibility.
+write_wiki("doc/yaml", "Bâtissage de masse avec YML", """
+        Le bâtissage de masse désigne un outil permettant aux bâtisseurs de créer un grand nombre de salles, objets ou autre information, en
+        utilisant un seul fichier. Evennia propose deux [processeurs de bâtissage de masse](https://github.com/evennia/evennia/wiki/Batch-Processors),
+        [le processeur de bâtissage de masse par commande](https://github.com/evennia/evennia/wiki/Batch-Command-Processor) et
+        [le processeur de bâtissage de masse par code](https://github.com/evennia/evennia/wiki/Batch-Code-Processor). Bien que ces deux processeurs
+        soient vraiment puissants, les bâtisseurs peuvent les trouver un peu intimidants au premier abord. Le premier est utilisé pour exécuter une liste de commandes contenues dans un fichier et est,
+        par définition, plus délicat à mettre à jour, et poser problème lors de la rédaction de descriptions (qui se produit quotidiennement pour les bâtisseurs). Le second processeur est
+        utilisé pour exécuter du code Python et est moins intuitif pour les bâtisseurs, bien qu'évidemment, il soit plus flexible au final.
 
-        The batch-YML processor offers a third alternative, intended to be more intuitive to builders, easy to replicate and quite extensive.  This document
-        further describes the batch-YML processor and how to use it.
+        Le bâtissage de masse par YML offre une troisième alternative, visant à être plus intuitive pour les bâtisseurs, facile à mettre à jour et assez étendue. Ce document
+        décrit plus en détail le processeur YML et comment l'utiliser.
 
-        ## Basic principle of the batch-YML processor
+        ## Principe de base du processeur YML
 
-        The batch-YML processor expects a file containing text, formatted using the YAML language.
+        Le processeur YML attend un fichier contenant du texte, formaté à l'aide du langage YAML.
 
-        1. A file can contain several portions, traditionally, one per room/object/character.
-        2. The builder wishing to apply this batch file can connect to [/builder/batch](/builder/batch).  On this page is a very simple form allowing to upload the YML file.
-        3. Once sent, the file is read by the system, the rooms, objects, characters are created or updated, and the status of each task is sent back to the builder.
+        1. Un fichier peut contenir plusieurs parties, traditionnellement, une par salle / objet / personnage.
+        2. Le bâtisseur souhaitant appliquer ce fichier peut se connecter à [/builder/batch](/builder/batch). Sur cette page se trouve un formulaire très simple permettant de télécharger le fichier YML depuis le PC de l'utilisateur.
+        3. Une fois envoyé, le fichier est lu par le système, les salles, objets, personnages sont créés ou mis à jour et le statut de chaque tâche est envoyé au bâtisseur.
 
-        Thus, building using batch YML files is quite simple.  These files can be updated and uploaded again (to fix a description, an exit,
-        room coordinates, a callback...).
+        Ainsi, la création de masse à l'aide de fichiers YML est assez simple. Ces fichiers peuvent être mis à jour et téléchargés à nouveau (pour corriger une description, une sortie,
+        les coordonnées d'une salle, un callback...).
 
-        ## Basic YML syntax
+        ## Syntaxe YML de base
 
-        Although the YML language is quite simple, it needs to follow some precise rules.  As a general rule, it is recommended to use the examples below (copy/pasting them in a file and then changing the value of each field).  Here are the guiding rules applied to the batch-YML processor:
+        Bien que le langage YML soit assez simple, il doit suivre certaines règles précises. En règle générale, il est recommandé d'utiliser les exemples ci-dessous (copiez / collez-les dans un fichier, puis modifiez la valeur de chaque champ). Voici les règles générales à appliquer au processeur YML :
 
-        - Files should be encoded in utf-8.  If you try to enter non-ASCII characters in a different encoding, the file will most likely not be read correctly.
-        - A YML document is used to represent each single object, room, or character.  YML documents are separated by `---` (three dashes on a single line).
-        - Each document is a YML dictionary following the dictionary syntax (one key/value on each line as a rule).  See the examples below.
-        - The first field of each document should be `type` and contain the type of the object to be created (an object, a room, a prototype...).  Again, refer to the examples below.
-        - Respect the examples' indentation.  YML is a strict language that uses indentation to delimit data, much as Python itself does.
-        - Respect the examples' symbols.  Some may not be obvious but all are mandatory nevertheless.  Syntax errors will arise if these symbols are not present.
+        - Les fichiers doivent être encodés en utf-8. Si vous essayez d'entrer des caractères non-ASCII dans un encodage différent, le fichier ne sera probablement pas lu correctement.
+        - Un document YML est utilisé pour représenter chaque objet, salle ou personnage. Les documents YML sont séparés par `---` (trois tirets sur une ligne à part).
+        - Chaque document est un dictionnaire YML suivant la syntaxe du dictionnaire (une clé / valeur sur chaque ligne en règle générale). Voir les exemples ci-dessous.
+        - Le premier champ de chaque document doit être "type" et contenir le type de l'objet à créer (un objet, une salle, un prototype...). Encore une fois, reportez-vous aux exemples ci-dessous.
+        - Respecter l'indentation. YML est un langage strict qui utilise l'indentation pour délimiter les données, comme le fait Python lui-même.
+        - Respectez les symboles des exemples. Certains peuvent ne pas être évidents mais tous sont néanmoins obligatoires. Des erreurs de syntaxe surviendront si ces symboles ne sont pas présents.
 
-        All documents should begin by a line with `---` only (three drashes).
+        Tous les documents doivent commencer par une ligne avec `---` (trois tirets).
 
-        ## Detailed examples
+        ## Exemples détaillés
 
-        This section list examples of documents.  A YML document is meant to describe the creation of one piece of data (such as a room, an object, a prototype...).
+        Cette section liste des exemples de documents. Un document YML est destiné à décrire la création d'une donnée (une salle, un objet, un prototype, etc.).
 
-        ### Room (type room)
+        ### Salle (type salle)
 
-        #### Example
+        #### Exemple
 
         ```
         ---
-        type: room
-        ident: room_identifier
-        prototype: the_key_of_the_room_prototype_to_be_used_if_any
+        type: salle
+        ident: identifiant_salle
+        prototype: clé_du_prototype_de_salle_si_désiré
         coords: [0, 5, -8]
-        title: The room title
+        titre: Le titre de la salle
         description: |
-            This is the room description.  Notice that it is preferable to specify
-            it on several indented lines below the 'description' field, after
-            the vertical bar.  This vertical bar informs the YML parser that
-            the content of the field is on the lines below, indented to the
-            right.  Line breaks are to be kept.  However, in this case, simple
-            line breaks are ignored (replaced by spaces).
+            Ceci est la description de la salle. Notez qu'il est préférable de
+            spécifier sur plusieurs lignes en retrait sous le champ "description",
+            après la barre verticale. Cette barre verticale informe l'analyseur
+            YML que le contenu du champ est sur les lignes suivantes, identé vers
+            la droite. Les sauts de ligne doivent être conservés. Cependant, dans
+            ce cas, les sauts de ligne simples sont ignorés (remplacés par des espaces).
 
-            However, if you leave a blank, empty line, and begin the
-            description again (still indented), this will begin a new
-            paragraph.  Use this system if you need to create several
-            paragraphs in one description.
+            Cependant, si vous laissez une ligne vide, avant de poursuivre
+            la description (toujours identée), un nouveau paragraphe sera
+            créé dans cette description.
         ```
 
-        #### Fields
+        #### Champs
 
-        | Field | Presence | Value |
+        | Champ | Présence | Valeur |
         | ----- | -------- | ----- |
-        | type | Mandatory | Must be room |
-        | ident | Mandatory | The room identifier, a key that can only contain lowercase letters, digits, and the colon (`:` ) symbol. |
-        | prototype | Optional | The key of the room prototype (proom) to use.  This is not mandatory, as rooms can exist without prototype. |
-        | coords | Optional | The room coordinates in a list, with X, Y and Z as integers.  If this field is not present, the room will have no valid coordinates. |
-        | title | Optional | The room title. |
-        | description | Optional | The room description.  Notice that if the room has a prototype, and no description, it will use the prototype's description instead. |
+        | type | Obligatoire | Doit être salle |
+        | ident | Obligatoire | L'identifiant de la salle, une clé qui ne peut contenir que des lettres minuscules, des chiffres et le symbole deux-points (`:`). |
+        | prototype | Facultatif La clé du prototype de salle (proom) à utiliser. Ceci n'est pas obligatoire, car les salles peuvent exister sans prototype. |
+        | coords | Facultatif Les coordonnées de la salle dans une liste, X, Y et Z étant des nombres entiers. Si ce champ n'est pas présent, la salle n'aura pas de coordonnées valides. |
+        | titre | Facultatif Le titre de la salle. |
+        | description | Facultatif La description de la salle. Notez que si la salle possède un prototype, et aucune description, elle utilisera la description du prototype. |
 
-        #### Notes
+        #### Remarques
 
-        The room identifier (`ident` field) is important when updating.  The room that has the same identifier will be searched in the current game
-        when a document of type room is being read.  If a room with this identifier exists, the document is applied to it, to update it.  Otherwise, the room will be created.
-        Therefore, do not change identifiers after the first upload and be sure the identifiers you use are not being used in
-        the game.
+        L'identifiant de la salle (champ `ident`) est important lors de la mise à jour. La salle qui possède le même identifiant sera recherchée dans le jeu actuel
+        lorsqu'un document de type salle est téléchargé. Si une salle avec cet identifiant existe, le document lui est appliqué pour la mettre à jour. Sinon, la salle sera créée.
+        Par conséquent, ne modifiez pas les identifiants après le premier téléchargement, et assurez-vous que les identifiants que vous utilisez ne sont pas utilisés dans
+        le reste du jeu.
 
-        Assuming the identifiers remain the same, all fields (including coordinates) can be changed.  If you change the coordinates (`coords` field) of
-        any document and then upload it again, the room coordinates will be changed.  This will break if there is another room with the same coordinates,
-        but not the same identifier (`ident`).
+        En supposant que les identifiants restent les mêmes, tous les champs (y compris les coordonnées) peuvent être modifiés. Si vous changez les coordonnées (champ `coords`) de
+        tout document, puis le téléchargez à nouveau, les coordonnées de la salle seront modifiées. Cela ne fonctionnera pas cependant s'il y a une autre salle avec les mêmes coordonnées,
+        mais pas le même identifiant (`ident`).
 
-        ### Room prototype (type proom)
+        ### Prototype de salle (type psalle)
 
-        #### Example
+        #### Exemple
 
         ```
         ---
-        type: proom
-        ident: proom_identifier
+        type: psalle
+        ident: identifiant_du_prototype_de_salle
         description: |
-            The description of the prototype.  Again, in order to create two paragraphs, just insert an empty line between them.  For instance:
-            This is paragraph 1.
+            La description du prototype. Encore une fois, pour créer deux
+            paragraphes, insérez simplement une ligne vide entre eux. Par exemple :
+            C'est le paragraphe 1.
 
-            This is paragraph 2.
+            C'est le paragraphe 2.
         ```
 
-        #### Fields
+        #### Champs
 
-        | Field | Presence | Value |
+        | Champ | Présence | Valeur |
         | ----- | -------- | ----- |
-        | type | Mandatory | Must be proom |
-        | ident | Mandatory | The room prototype identifier, a key that can only contain lowercase letters, digits, and the colon (`:` ) symbol. |
-        | description | Optional | The room prototype description. |
+        | type | Obligatoire | Doit être psalle |
+        | ident | Obligatoire | L'identifiant du prototype de salle, une clé qui ne peut contenir que des lettres minuscules, des chiffres et le symbole deux-points (`:`). |
+        | description | Facultatif La description du prototype de salle. |
 
-        #### Notes
+        #### Remarques
 
-        The identifier specified in a proom document is the key to be used in the `prototype` field of a room document
-        that has a prototype.  Again, if the prototype doesn't exist, it is created, otherwise it is updated.  Therefore, you can
-        have room documents with a prototype that is not created, and a room prototype document below.  The first room that needs the specified prototype
-        will create it, it will then be updated.  However, it is good practice to place the room prototypes above the room documents.
+        L'identifiant spécifié dans un document psalle est la clé à utiliser dans le champ `prototype` d'un document de salle
+        qui définit un prototype. Encore une fois, si le prototype n’existe pas, il est créé, sinon il est mis à jour. Par conséquent, vous pouvez
+        avoir des documents de salle avec un prototype inexistant, et un document de prototype de salle plus bas dans le même fichier. La première salle qui a besoin du prototype spécifié
+        le créera, il sera mis à jour lors de la lecture du document psalle. Toutefois, il est recommandé de placer les prototypes de salle au-dessus des documents de salle l'utilisant.
 
-        If a room has a prototype but no description, its description will be borrowed from the prototype, and updated if the prototype changes.  A room description can also require the prototype's description.  Consider this basic example:
+        Si une salle possède un prototype mais aucune description, sa description sera empruntée au prototype et mise à jour si le prototype change. Une description de salle peut également demander la description du prototype. Considérez cet exemple simple :
 
         ```
         ---
-        type: proom
-        ident: sidewalk
+        type: psalle
+        ident: trottoir
         description: |
-            This is a sidewalk.
+            C'est un trottoir.
 
         ---
-        type: room
-        ident: sidewalk1
-        prototype: sidewalk
+        type: salle
+        ident: trottoir1
+        prototype: trottoir
         description: |
-            $parent  It is somewhat narrow.
+            $parent C'est un peu étroit.
         ```
 
-        If you upload a YML file with this code, the room (sidewalk1) will be created, its description will be: This is a sidewalk.  It is somewhat narrow.
+        Si vous téléchargez un fichier YML avec ce code, la salle (trottoir1) sera créée, sa description sera : Ceci est un trottoir. C'est un peu étroit.
 """)
 
