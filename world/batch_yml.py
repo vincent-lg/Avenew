@@ -171,10 +171,10 @@ def parse_room(document, author, messages):
         to_do.append((setattr, ["db.desc", desc], {}))
 
     # Handle the exits
-    exits = get_field(document, "exits", list, False, [], messages)
+    exits = get_field(document, "sorties", list, False, [], messages)
     for exit in exits:
         if not isinstance(exit, dict):
-            messages.append((1, line, "This room specifies exits, but not as a list of dictionaries.  Check your syntax."))
+            messages.append((1, line, "Cette salle définit des soties dans un format invalide. Le format attendu est une liste de dictionnaires. Vérifiez la syntaxe des exemples proposés."))
             break
 
         to_do.extend(parse_exit(exit, author, messages))
@@ -192,7 +192,7 @@ def parse_exit(document, author, messages):
     direction = get_field(document, "direction", basestring, True, "", messages).lower().strip()
     if not direction:
         messages.append((2, line,
-                "An exit needs to have a valid field name 'direction'."))
+                "Une sortie doit posséder un champ valide nommé 'direction'."))
         return []
 
     if isinstance(direction, unicode):
@@ -200,7 +200,7 @@ def parse_exit(document, author, messages):
 
     if direction not in NAME_DIRECTIONS.keys():
         messages.append((2, line,
-                "An exit was defined with an incorrect direction: '{}'.".format(direction)))
+                "Une sortie a été définie avec une direction incorrecte : '{}'.".format(direction)))
         return []
     args.append(direction)
 
@@ -215,12 +215,12 @@ def parse_exit(document, author, messages):
         args.append(room)
 
     # Handle the name
-    name = get_field(document, "name", basestring, False, "", messages).strip()
+    name = get_field(document, "nom", basestring, False, "", messages).strip()
     if name:
         kwargs["name"] = name
 
     # Handle the aliases
-    aliases = get_field(document, "aliases", list, False, [], messages)
+    aliases = get_field(document, "alias", list, False, [], messages)
     if aliases:
         for i, alias in enumerate(aliases):
             if not isinstance(alias, basestring):
@@ -229,7 +229,7 @@ def parse_exit(document, author, messages):
         kwargs["aliases"] = aliases
 
     # All is right, confirmation
-    messages.append((0, line, "The '{}' exit to '{}' was succesfully created or updated.".format(direction, destination)))
+    messages.append((0, line, "La sortie '{}' menant vers '{}' a bien été créée ou mise à jour.".format(direction, destination)))
 
     return [(get_exit, args, kwargs)]
 
