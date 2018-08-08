@@ -12,7 +12,7 @@ from math import fabs
 ## Constants
 NAME_DIRECTIONS = {
         "est": 0,
-        "sud-east": 1,
+        "sud-est": 1,
         "sud": 2,
         "sud-ouest": 3,
         "ouest": 4,
