@@ -29,6 +29,7 @@ def batch(request):
             else:
                 batch = request.FILES['file']
                 messages = batch_YAML(batch, author)
+                messages.sort(key=lambda m: m[1])
                 documents = len([m for m in messages if m[0] == 1])
                 warnings = len([m for m in messages if m[0] == 2])
                 errors = len([m for m in messages if m[0] == 3])

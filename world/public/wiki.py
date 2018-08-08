@@ -88,6 +88,15 @@ write_wiki("doc/yaml", "Batch building in YML", """
             description again (still indented), this will begin a new
             paragraph.  Use this system if you need to create several
             paragraphs in one description.
+        exits:
+            - direction: east
+              destination: room_identifier
+              name: slide
+              aliases: [s]
+            - direction: west
+              destination: room_identifier
+              name: door
+              aliases: [d, dr]
         ```
 
         #### Fields
@@ -100,6 +109,7 @@ write_wiki("doc/yaml", "Batch building in YML", """
         | coords | Optional | The room coordinates in a list, with X, Y and Z as integers.  If this field is not present, the room will have no valid coordinates. |
         | title | Optional | The room title. |
         | description | Optional | The room description.  Notice that if the room has a prototype, and no description, it will use the prototype's description instead. |
+        | exits | Optional | The room exits in a list.  Follow the example syntax.  See the section about exits for more details. |
 
         #### Notes
 
@@ -111,6 +121,53 @@ write_wiki("doc/yaml", "Batch building in YML", """
         Assuming the identifiers remain the same, all fields (including coordinates) can be changed.  If you change the coordinates (`coords` field) of
         any document and then upload it again, the room coordinates will be changed.  This will break if there is another room with the same coordinates,
         but not the same identifier (`ident`).
+
+        ### Exit
+
+        #### Example
+
+        ```
+        type: room
+        # ...
+        exits:
+            - direction: exit direction
+              destination: room_identifier
+              name: name of exit
+              aliases: [alias1, alias2, alias3]
+        ```
+
+        #### Fields
+
+        | Field | Presence | Value |
+        | ----- | -------- | ----- |
+        | direction | Mandatory | The exit's absolute direction (east, south, north, southeast, up, down...). |
+        | destination | Mandatory | The identifier of the room to which this exit should point to.  An exit will be created or updated leading from the room described by the document, to the room with the `destination` identifier.  Notice that the back exit is not created, you will have to include it in the destination's document. |
+        | name | Optional | The exit name, optional.  If it is not specified, it will be identical to the exit direction. |
+        | aliases | Optional | A list of aliases pointing to this exit, available in the room.  If no name or alias is specified, default aliases linked with this direction (like e for east) will be used.  Alternatively, you can specify aliases within a list, like `aliases = [command1, command2, ...]`. |
+
+        #### Notes
+
+        Exits are defined in rooms, under the `exits` field.  Typically, the room should look like this:
+
+        ```
+        ---
+        type: room
+        # ...
+        exits:
+            - direction: room_direction
+              destination: room_identifier
+            - direction: room_direction
+              destination: room_identifier
+            - direction: room_direction
+              destination: room_identifier
+        ```
+
+        Notice the indentation below the `exits` field.  Each exit should begin by a dash, a space and a set of fields with a key, a colon and a value (a YML
+        dictionary).  You can define one or more exits in the same room.  If you don't want your room to have any exit, do not include this field in the room
+        document.  Again, it may be better to simply copy/paste these examples.
+
+        When referring to a room as destination of an exit, whether the room exists or not isn't important.  If the room doesn't yet
+        exist, it will be created (empty, at this point).  Another document might update it later.
 
         ### Room prototype (type proom)
 

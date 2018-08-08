@@ -57,7 +57,7 @@ def batch_YAML(content, author):
 
     for document in documents:
         to_do = []
-        line = document.get("--begin", -1)
+        line = document.get("--begin", 0)
         messages.append((1, line, ""))
         type = document.get("type", [None, None])[0]
 
@@ -96,7 +96,7 @@ def batch_YAML(content, author):
 def parse_proom(document, author, messages):
     """Parse a YAML document describing a room prototype."""
     to_do = []
-    line = document.get("--begin", -1)
+    line = document.get("--begin", 0)
     ident = get_field(document, "ident", basestring, True, "", messages).strip()
     if not ident:
         messages.append((2, line,
@@ -120,7 +120,7 @@ def parse_proom(document, author, messages):
 def parse_room(document, author, messages):
     """Parse a YAML document describing a room."""
     to_do = []
-    line = document.get("--begin", -1)
+    line = document.get("--begin", 0)
     ident = get_field(document, "ident", basestring, True, "", messages).strip()
     if not ident:
         messages.append((2, line,
@@ -185,7 +185,7 @@ def parse_room(document, author, messages):
 
 def parse_exit(document, author, messages):
     """Parse a single exit."""
-    line = document.get("--begin", -1)
+    line = document.get("--begin", 0)
     args = []
     kwargs = {}
     direction = get_field(document, "direction", basestring, True, "", messages).lower().strip()
@@ -245,7 +245,7 @@ def get_field(document, field_name, types, required=True, default=None, messages
         messages (lsit): the list of messages, written in case of an error.
 
     """
-    line = document.get("--begin", -1)
+    line = document.get("--begin", 0)
 
     if field_name in document:
         value = document[field_name]
