@@ -28,6 +28,7 @@ information is to be created or updated.
 
 """
 
+from logic.geo import NAME_DIRECTIONS
 from typeclasses.prototypes import PRoom
 from typeclasses.rooms import Room
 from world.batch import *
@@ -168,10 +169,69 @@ def parse_room(document, author, messages):
     if desc:
         to_do.append((setattr, ["db.desc", desc], {}))
 
+    # Handle the exits
+    exits = get_field(document, "exits", list, False, [], messages)
+    for exit in exits:
+        if not isinstance(exit, dict):
+            messages.append((1, line, "This room specifies exits, but not as a list of dictionaries.  Check your syntax."))
+            break
+
+        to_do.extend(parse_exit(exit, author, messages))
+
     # All is right, confirmation
     messages.append((0, line, "The room '{}' was succesfully created or updated.".format(ident)))
 
     return to_do
+
+def parse_exit(document, author, messages):
+    """Parse a single exit."""
+    line = document.get("--begin", -1)
+    args = []
+    kwargs = {}
+    direction = get_field(document, "direction", basestring, True, "", messages).lower().strip()
+    if not direction:
+        messages.append((2, line,
+                "An exit needs to have a valid field name 'direction'."))
+        return []
+
+    if isinstance(direction, unicode):
+        direction = direction.encode("utf-8")
+
+    if direction not in NAME_DIRECTIONS.keys():
+        messages.append((2, line,
+                "An exit was defined with an incorrect direction: '{}'.".format(direction)))
+        return []
+    args.append(direction)
+
+    # Handle the destination
+    destination = get_field(document, "destination", basestring, True, "", messages).strip()
+    if not destination:
+        return []
+    else:
+        if isinstance(destination, unicode):
+            destination = destination.encode("utf-8")
+        room = get_room(destination)
+        args.append(room)
+
+    # Handle the name
+    name = get_field(document, "name", basestring, False, "", messages).strip()
+    if name:
+        kwargs["name"] = name
+
+    # Handle the aliases
+    aliases = get_field(document, "aliases", list, False, [], messages)
+    if aliases:
+        for i, alias in enumerate(aliases):
+            if not isinstance(alias, basestring):
+                aliases[i] = str(alias)
+
+        kwargs["aliases"] = aliases
+
+    # All is right, confirmation
+    messages.append((0, line, "The '{}' exit to '{}' was succesfully created or updated.".format(direction, destination)))
+
+    return [(get_exit, args, kwargs)]
+
 
 def get_field(document, field_name, types, required=True, default=None, messages=None):
     """Get the specified field, adding errors if appropriate.
@@ -191,8 +251,12 @@ def get_field(document, field_name, types, required=True, default=None, messages
         value = document[field_name]
         if isinstance(value, list):
             unpacked = []
-            for v, line in value:
-                unpacked.append(v)
+            for v in value:
+                if isinstance(v, (tuple, list)) and len(v) == 2:
+                    unpacked.append(v[0])
+                else:
+                    unpacked.append(v)
+
             value = unpacked
         else:
             value, line = value
