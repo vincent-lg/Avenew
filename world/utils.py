@@ -133,7 +133,6 @@ def load_YAML(stream):
     for document in content:
         line = document.start_mark.line + 1
         value = read_node(document)
-        value["--begin"] = line
         collection.append(value)
 
     return collection
@@ -160,6 +159,7 @@ def read_node(node):
             value = read_node(node_value)
             col[name] = value
 
+        col["--begin"] = line
         return col
 
     if isinstance(node, nodes.SequenceNode):
