@@ -87,6 +87,15 @@ write_wiki("doc/yaml", "Bâtissage de masse avec YML", """
             Cependant, si vous laissez une ligne vide, avant de poursuivre
             la description (toujours identée), un nouveau paragraphe sera
             créé dans cette description.
+        sorties:
+            - direction: est
+              destination: identifiant_salle
+              nom: toboggan
+              alias: [t]
+            - direction: ouest
+              destination: identifiant_salle
+              nom: porte
+              alias: [p, po]
         ```
 
         #### Champs
@@ -99,6 +108,7 @@ write_wiki("doc/yaml", "Bâtissage de masse avec YML", """
         | coords | Facultatif Les coordonnées de la salle dans une liste, X, Y et Z étant des nombres entiers. Si ce champ n'est pas présent, la salle n'aura pas de coordonnées valides. |
         | titre | Facultatif Le titre de la salle. |
         | description | Facultatif La description de la salle. Notez que si la salle possède un prototype, et aucune description, elle utilisera la description du prototype. |
+        | sorties | Facultatif | Les sorties de la salle, dans une liste. Suivez la syntaxe des exemples proposés. Voir la section ci-dessous pour plus d'information sur les sorties. |
 
         #### Remarques
 
@@ -110,6 +120,54 @@ write_wiki("doc/yaml", "Bâtissage de masse avec YML", """
         En supposant que les identifiants restent les mêmes, tous les champs (y compris les coordonnées) peuvent être modifiés. Si vous changez les coordonnées (champ `coords`) de
         tout document, puis le téléchargez à nouveau, les coordonnées de la salle seront modifiées. Cela ne fonctionnera pas cependant s'il y a une autre salle avec les mêmes coordonnées,
         mais pas le même identifiant (`ident`).
+
+        ### Sortie
+
+        #### Exemple
+
+        ```
+        type: salle
+        # ...
+        sorties:
+            - direction: direction de la sortie
+              destination: identifiant_salle
+              nom: nom de la sortie
+              alias: [alias1, alias2, alias3]
+        ```
+
+        #### Champs
+
+        | Champ | Présence | Valeur |
+        | ----- | -------- | ----- |
+        | direction | Obligatoire | La direction absolue de la sortie (est, sud, nord, sud-est, haut, bas...). |
+        | destination | Obligatoire | L'identifiant de la salle de destination de cette sortie. La sortie sera créée entre la salle où elle est définie et celle ayant l'identifiant précisé dans le champ `destination`. Gardez à l'esprit que la sortie réciproque (dans l'autre sens) n'est pas créée automatiquement, il faut l'ajouter manuellement dans la salle de destination. |
+        | nom | Facultatif | Le nom de la sortie. Si aucun nom n'est précisé, le nom de la sortie sera identique à la direction (sud, par exemple). |
+        | alias | Facultatif | Une liste optionnelle d'alias, c'est-à-dire de commandes permettant d'emprunter cette sortie en plus du nom. Si ce champ n'est pas précisé et qu'aucun nom de sortie n'est défini, les alias par défaut de la direction sont choisis (par exemple, "s" si la sortie pointe vers le sud). Vous pouvez cependant indiquer des alias de remplacement dans une liste, comme `alias = [alias1, alias2, ...]`. |
+
+        #### Remarques
+
+        Les sorties sont définies dans les documents des salles, dans un champ appelé `sorties`. Typiquement, le document de salle avec sortie ressemble à cela :
+
+        ```
+        ---
+        type: salle
+        # ...
+        sorties:
+            - direction: direction de la sortie
+              destination: identifiant_salle
+            - direction: direction de la sortie
+              destination: identifiant_salle
+            - direction: direction de la sortie
+              destination: identifiant_salle
+        ```
+
+        Notez l'indentation sous le champ `sorties`. Chaque sortie doit commencer par un tiret suivi d'un espace. Les champs de la sortie suivent ensuite
+        ce même niveau d'indentation, avec un champ et sa valeur sur une ligne comme les autres documents. Vous pouvez définir une ou plusieurs sorties
+        dans un document de salle. Si vous souhaitez créer une salle sans sorties, ne précisez pas le champ `sorties` dans le document.
+        Il est sans doute préférable de copier/coller l'un des exemples donnés afin d'être certain(e) de respecter la syntaxe.
+
+        L'ordre de définition des salles et sorties n'est pas important. Par exemple, une salle peut définir une sortie dont le champ de destination fait référence
+        à une salle encore inexistante : la salle sera créée avant la sortie et sera ensuite mises à jour dans un autre document, plus bas dans le fichier.
 
         ### Prototype de salle (type psalle)
 
