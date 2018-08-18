@@ -32,6 +32,7 @@ from logic.geo import NAME_DIRECTIONS
 from typeclasses.prototypes import PRoom
 from typeclasses.rooms import Room
 from world.batch import *
+from world.log import batch as log
 from world.utils import load_YAML
 
 ## Constants
@@ -48,6 +49,7 @@ def batch_YAML(content, author):
         author (Object): the author of the change.
 
     """
+    log.info("Batch YML start processing...")
     documents = load_YAML(content)
     messages = []
 
@@ -55,16 +57,21 @@ def batch_YAML(content, author):
         messages.append(3, 0, NO_DOCUMENTS)
         return 0
 
+    delayed = []
     for document in documents:
         to_do = []
         line = document.get("--begin", 0)
         messages.append((1, line, ""))
         type = document.get("type", [None, None])[0]
 
-        if type == "proom":
+        if type == "info":
+            continue
+        elif type == "proom":
             to_do = parse_proom(document, author, messages)
         elif type == "room":
             to_do = parse_room(document, author, messages)
+        elif type == "crossroad":
+            to_do = parse_crossroad(document, author, messages)
         else:
             messages.append((1, line, "Unknown type: {}".format(type)))
 
@@ -75,7 +82,14 @@ def batch_YAML(content, author):
             function, args, kwargs = first
             obj = function(*args, **kwargs)
 
-            for function, args, kwargs in to_do:
+            i = 0
+            for function, args, kwargs in list(to_do):
+                if kwargs.get("delay"):
+                    del kwargs["delay"]
+                    delayed.append((function, args, kwargs))
+                    i += 1
+                    continue
+
                 if function is setattr:
                     key, value = args
                     subobj = obj
@@ -90,7 +104,15 @@ def batch_YAML(content, author):
                     args.insert(0, obj)
 
                 function(*args, **kwargs)
+                del to_do[i]
 
+    # Apply delayed to_do
+    for function, args, kwargs in delayed:
+        for arg in args:
+            log.info("{}".format(arg.__class__))
+        function(*args, **kwargs)
+
+    log.info("Batch YML processed.")
     return messages
 
 def parse_proom(document, author, messages):
@@ -232,6 +254,63 @@ def parse_exit(document, author, messages):
 
     return [(get_exit, args, kwargs)]
 
+def parse_crossroad(document, author, messages):
+    """Parse a YAML document describing a crossroad."""
+    to_do = []
+    line = document.get("--begin", 0)
+    ident = get_field(document, "ident", basestring, True, "", messages).strip()
+    if not ident:
+        messages.append((2, line,
+                "A crossroad needs to have a valid field name 'ident'."))
+        return
+
+    if isinstance(ident, unicode):
+        ident = ident.encode("utf-8")
+
+    # Handle the coordinates
+    coords = get_field(document, "coords", list, False, [None, None, None], messages)
+    if coords:
+        # Check that X, Y and Z are integers
+        if len(coords) != 3:
+            messages.append((1, line, "The crossroad coordinates ('coords' field) expects three arguments: X, Y and Z in a list.  Example: coords: [1, 2, -5]"))
+        elif not all([isinstance(coord, int) for coord in coords]):
+            messages.append((1, line, "Field 'coords': the only acceptable value of each coordinate is an integer"))
+        else:
+            x, y, z = coords
+
+            # Check that these coords are free or that the same ident is shared by both
+            other = Crossroad.get_crossroad_at(x, y, z)
+            if other and other.ident != ident:
+                messages.append((1, line, "Another crossroad (#{}, ident='{}') already exists at these coordinates (X={}, Y={}, Z={}).  This is considered to be an error since two crossroads cannot share the same coordinates.  If they had the same ident, the former will be updated.  Fix the issue before proceeding.".format(other.id, other.ident, x, y, z)))
+            else:
+                to_do.append((get_crossroad, [x, y, z, ident], {}))
+
+                # Be sure to create the crossroad right away
+                origin = get_crossroad(x, y, z, ident)
+
+    # Handle the streets
+    streets = get_field(document, "streets", list, False, [], messages)
+    for street in streets:
+        if not isinstance(street, dict):
+            messages.append((1, line, "This crossroad specifies streets, but not as a list of dictionaries.  Check your syntax."))
+            break
+
+        if "destination" not in street:
+            messages.append((1, line, "This street crossroad doesn't have a 'destination' field."))
+            continue
+
+        destination, line = street["destination"]
+        if isinstance(destination, unicode):
+            destination = destination.encode("utf-8")
+        destination = get_crossroad(ident=destination)
+        name, line = street.get("name", ("unknown street", line))
+        back, line = street.get("back", (True, line))
+        to_do.append((add_road, [origin, destination, name, back], {"delay": True}))
+
+    # All is right, confirmation
+    messages.append((0, line, "The crossroad '{}' was succesfully created or updated.".format(ident)))
+
+    return to_do
 
 def get_field(document, field_name, types, required=True, default=None, messages=None):
     """Get the specified field, adding errors if appropriate.
