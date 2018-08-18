@@ -79,17 +79,46 @@ def get_proom(key):
 
     return proom
 
-def get_crossroad(x, y, z):
-    """Return or create the given crossroad."""
-    crossroad = Crossroad.get_crossroad_at(x, y, z)
-    if crossroad:
-        return crossroad
+def get_crossroad(x=None, y=None, z=None, ident=None):
+    """Return or create the given crossroad.
+
+    You have to specify either the coordinates (x, y, z) or the crossroad identifier.  The crossroad identifier has a higher priority.
+
+    Args:
+        x (int, optional): the X coordinate.
+        y (int, optional): the Y coordinate.
+        x (int, optional): the Z coordinate.
+        ident (str, optional): the identifier.
+
+    """
+    if ident is not None:
+        crossroad = Crossroad.get_crossroad_with_ident(ident)
+
+        if crossroad:
+            if x is not None and y is not None and z is not None:
+                crossroad.x = x
+                crossroad.y = y
+                crossroad.z = z
+            return crossroad
+
+    if x is not None and y is not None and z is not None:
+        crossroad = Crossroad.get_crossroad_at(x, y, z)
+        if crossroad:
+            if ident is not None:
+                crossroad.key = ident
+                crossroad.ident = ident
+
+            return crossroad
 
     # Create the crossroad
-    crossroad = create.create_object("typeclasses.vehicles.Crossroad", "")
-    crossroad.x = x
-    crossroad.y = y
-    crossroad.z = z
+    crossroad = create.create_object("typeclasses.vehicles.Crossroad", key=ident or "")
+    if ident is not None:
+        crossroad.ident = ident
+    if x is not None and y is not None and z is not None:
+        crossroad.x = x
+        crossroad.y = y
+        crossroad.z = z
+
     return crossroad
 
 def add_road(origin, destination, name, back=True):

@@ -32,6 +32,7 @@ from logic.geo import NAME_DIRECTIONS
 from typeclasses.prototypes import PRoom
 from typeclasses.rooms import Room
 from world.batch import *
+from world.log import batch as log
 from world.utils import load_YAML
 
 ## Constants
@@ -49,6 +50,7 @@ def batch_YAML(content, author):
         author (Object): the author of the change.
 
     """
+    log.info("Batch YML start processing...")
     documents = load_YAML(content)
     messages = []
 
@@ -56,16 +58,21 @@ def batch_YAML(content, author):
         messages.append(3, 0, NO_DOCUMENTS)
         return 0
 
+    delayed = []
     for document in documents:
         to_do = []
         line = document.get("--begin", 0)
         messages.append((1, line, ""))
         type = document.get("type", [None, None])[0]
 
-        if type == "psalle":
+        if type == "info":
+            continue
+        elif type == "psalle":
             to_do = parse_proom(document, author, messages)
         elif type == "salle":
             to_do = parse_room(document, author, messages)
+        elif type == "carrefour":
+            to_do = parse_crossroad(document, author, messages)
         else:
             messages.append((1, line, "Type inconnu : {}".format(type)))
 
@@ -76,7 +83,14 @@ def batch_YAML(content, author):
             function, args, kwargs = first
             obj = function(*args, **kwargs)
 
-            for function, args, kwargs in to_do:
+            i = 0
+            for function, args, kwargs in list(to_do):
+                if kwargs.get("delay"):
+                    del kwargs["delay"]
+                    delayed.append((function, args, kwargs))
+                    i += 1
+                    continue
+
                 if function is setattr:
                     key, value = args
                     subobj = obj
@@ -91,7 +105,15 @@ def batch_YAML(content, author):
                     args.insert(0, obj)
 
                 function(*args, **kwargs)
+                del to_do[i]
 
+    # Apply delayed to_do
+    for function, args, kwargs in delayed:
+        for arg in args:
+            log.info("{}".format(arg.__class__))
+        function(*args, **kwargs)
+
+    log.info("Batch YML processed.")
     return messages
 
 def parse_proom(document, author, messages):
@@ -233,6 +255,63 @@ def parse_exit(document, author, messages):
 
     return [(get_exit, args, kwargs)]
 
+def parse_crossroad(document, author, messages):
+    """Parse a YAML document describing a crossroad."""
+    to_do = []
+    line = document.get("--begin", 0)
+    ident = get_field(document, "ident", basestring, True, "", messages).strip()
+    if not ident:
+        messages.append((2, line,
+                "Un carrefour doit avoir un champ 'ident'."))
+        return
+
+    if isinstance(ident, unicode):
+        ident = ident.encode("utf-8")
+
+    # Handle the coordinates
+    coords = get_field(document, "coords", list, False, [None, None, None], messages)
+    if coords:
+        # Check that X, Y and Z are integers
+        if len(coords) != 3:
+            messages.append((1, line, "Le champ de coordonnées ('coords') de ce carrefour attend 3 arguments dans une liste (X, Y et Z). Vérifiez la syntaxe."))
+        elif not all([isinstance(coord, int) for coord in coords]):
+            messages.append((1, line, "Champ 'coords': la valeur de chaque coordonnée doit être un entier"))
+        else:
+            x, y, z = coords
+
+            # Check that these coords are free or that the same ident is shared by both
+            other = Crossroad.get_crossroad_at(x, y, z)
+            if other and other.ident != ident:
+                messages.append((1, line, "Un autre carrefour (#{}, ident='{}') exite déjà à ces coordonnées (X={}, Y={}, Z={}). Ceci est considéré une erreur car deux carrefours ne peuvent partager les mêmes corodonnées et différents identifiants. Si ils possèdent le même identifiant cependant, l'ancien sera mis à jour. Corrigez l'erreur avant de réessayer.".format(other.id, other.ident, x, y, z)))
+            else:
+                to_do.append((get_crossroad, [x, y, z, ident], {}))
+
+                # Be sure to create the crossroad right away
+                origin = get_crossroad(x, y, z, ident)
+
+    # Handle the streets
+    streets = get_field(document, "rues", list, False, [], messages)
+    for street in streets:
+        if not isinstance(street, dict):
+            messages.append((1, line, "Ce carrefour possède des rues mais qui ne sont pas décrites dans une liste de dictionnaires. Vérifiez la syntaxe."))
+            break
+
+        if "destination" not in street:
+            messages.append((1, line, "La rue dans ce carrefour n'a pas de champ 'destination'."))
+            continue
+
+        destination, line = street["destination"]
+        if isinstance(destination, unicode):
+            destination = destination.encode("utf-8")
+        destination = get_crossroad(ident=destination)
+        name, line = street.get("nom", ("unknown street", line))
+        back, line = street.get("back", (True, line))
+        to_do.append((add_road, [origin, destination, name, back], {"delay": True}))
+
+    # All is right, confirmation
+    messages.append((0, line, "Le carrefour '{}' a bien été créé ou mis à jour.".format(ident)))
+
+    return to_do
 
 def get_field(document, field_name, types, required=True, default=None, messages=None):
     """Get the specified field, adding errors if appropriate.

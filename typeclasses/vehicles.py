@@ -86,6 +86,24 @@ class Crossroad(AvenewObject, DefaultObject):
         return crossroads
 
     @classmethod
+    def get_crossroad_with_ident(cls, ident):
+        """
+        Return the crossroad with the given identifier or None if not found.
+
+        Args:
+            ident (str): the crossroad identifier.
+
+        Return:
+            The crossroad with this identifier (Crossroad) or None if not found.
+
+        """
+        crossroads = cls.objects.get_by_attribute(key="ident", value=ident)
+        if crossroads:
+            return crossroads[0]
+
+        return None
+
+    @classmethod
     def get_crossroads_with(cls, x, y, z):
         """
         Return the crossroads with a street leading to that coordinate.
@@ -332,6 +350,24 @@ class Crossroad(AvenewObject, DefaultObject):
         self.tags.add(str(z), category="coordz")
     z = property(_get_z, _set_z)
 
+    @property
+    def ident(self):
+        """Return the crossroad identifier."""
+        return self.db.ident
+
+    @ident.setter
+    def ident(self, ident):
+        """Change the crossroad ident."""
+        old = self.db.ident
+        self.db.ident = None
+
+        # Check that no other crossroad has this identifier
+        if self.get_crossroad_with_ident(ident):
+            self.db.ident = old
+            raise ValueError("the specified ident {} is being used by another crossroad".format(repr(ident)))
+
+        self.db.ident = ident
+
     def at_object_creation(self):
         self.db.exits = {}
 
@@ -395,7 +431,8 @@ class Crossroad(AvenewObject, DefaultObject):
         relative_dist = distance_between(x, y, 0, d_x, d_y, 0)
 
         coordinates = list(reversed(coordinates)) if coordinates else []
-        slope = d_z - z
+        height = d_z - z
+        slope = float(height) / relative_dist
         number = 0
         left_dir = (direction - 2) % 8
         right_dir = (direction + 2) % 8
@@ -416,28 +453,11 @@ class Crossroad(AvenewObject, DefaultObject):
         log.debug("  Found greatest address number: {}".format(number))
         if not coordinates:
             progress = 0
-            current_slope = 0
 
             # Calculate in-between coordinates
-            if slope <= -1 or slope >= 1:
-                slope_frequency = int(distance / fabs(slope))
-            else:
-                slope_frequency = 0
-
-            if slope < 0:
-                slope_step = -1
-            else:
-                slope_step = 1
-
-            # Find the various coordinates on the road
             while progress + 1 < relative_dist:
                 progress += 1
-                if slope_frequency and progress % slope_frequency == 0:
-                    current_slope += slope_step
-
-                coords = coords_in(x, y, z, direction, distance=progress)
-                if current_slope:
-                    coords = coords[:2] + (coords[2] + current_slope, )
+                coords = coords_in(x, y, int(z + round(progress * slope)), direction, distance=progress)
                 coordinates.append(coords)
 
         # Create the tags of possible coordinates
