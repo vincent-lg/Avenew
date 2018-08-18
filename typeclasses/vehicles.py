@@ -395,7 +395,8 @@ class Crossroad(AvenewObject, DefaultObject):
         relative_dist = distance_between(x, y, 0, d_x, d_y, 0)
 
         coordinates = list(reversed(coordinates)) if coordinates else []
-        slope = d_z - z
+        height = d_z - z
+        slope = float(height) / relative_dist
         number = 0
         left_dir = (direction - 2) % 8
         right_dir = (direction + 2) % 8
@@ -416,28 +417,11 @@ class Crossroad(AvenewObject, DefaultObject):
         log.debug("  Found greatest address number: {}".format(number))
         if not coordinates:
             progress = 0
-            current_slope = 0
 
             # Calculate in-between coordinates
-            if slope <= -1 or slope >= 1:
-                slope_frequency = int(distance / fabs(slope))
-            else:
-                slope_frequency = 0
-
-            if slope < 0:
-                slope_step = -1
-            else:
-                slope_step = 1
-
-            # Find the various coordinates on the road
             while progress + 1 < relative_dist:
                 progress += 1
-                if slope_frequency and progress % slope_frequency == 0:
-                    current_slope += slope_step
-
-                coords = coords_in(x, y, z, direction, distance=progress)
-                if current_slope:
-                    coords = coords[:2] + (coords[2] + current_slope, )
+                coords = coords_in(x, y, int(z + round(progress * slope)), direction, distance=progress)
                 coordinates.append(coords)
 
         # Create the tags of possible coordinates
