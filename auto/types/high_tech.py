@@ -455,4 +455,4 @@ class Notification(object):
             types = self.obj.types.can("use")
             if types:
                 types[0].use(user, self.screen, self.app, self.folder, self.db)
-                self.handler.clear()
+                self.handler.clear(self.group)
