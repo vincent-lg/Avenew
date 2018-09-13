@@ -58,3 +58,13 @@ class Text(SharedMemoryModel):
         seconds = (gtime - self.date_sent).total_seconds()
         ago = time_format(seconds, 4)
         return "{} ago".format(ago)
+
+    @property
+    def recipients(self):
+        """Return the list of recipients, using the thread."""
+        recipients = []
+        for recipient in self.db_thread.db_recipients.all():
+            if recipient != self.sender:
+                recipients.append(recipient.db_phone_number)
+
+        return recipients

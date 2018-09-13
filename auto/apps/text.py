@@ -49,12 +49,14 @@ from evennia import search_tag
 from evennia.utils.evtable import EvTable
 from evennia.utils.utils import crop, lazy_property
 
+
+from auto.apps._mixins import ContactMixin
 from auto.apps.base import BaseApp, BaseScreen, AppCommand
-from web.text.models import Text, Thread
+from web.text.models import Text, Thread, Number
 
 ## App class
 
-class TextApp(BaseApp):
+class TextApp(BaseApp, ContactMixin):
 
     """Text applicaiton.
 
@@ -74,65 +76,16 @@ class TextApp(BaseApp):
 
     def get_display_name(self):
         """Return the display name for this app."""
-        number = self.get_phone_number(self.obj)
-        unread = Text.objects.get_nb_unread(number)
+        try:
+            number = self.phone_number
+        except ValueError:
+            return "Text"
+
+        unread = Text.objects.get_num_unread(number)
         if unread:
             return "Text({})".format(unread)
 
         return "Text"
-
-    @classmethod
-    def get_phone_number(cls, obj, pretty=False):
-        """Return the phone number of this object, if found.
-
-        Args:
-            obj (Object): the object (phone) to query.
-            pretty (bool, optional): add a dash after the third number.
-
-        Returns:
-            number (str): the phone number.
-
-        Raises:
-            ValueError: the specified object has no phone number.
-
-        """
-        number = obj.tags.get(category="phone number")
-        if not number or not isinstance(number, basestring):
-            raise ValueError("unknown or invalid phone number")
-
-        if pretty:
-            number = number[:3] + "-" + number[3:]
-
-        return number
-
-    @classmethod
-    def format(cls, obj, number):
-        """Return the formatted contact or phone number for obj.
-
-        Args:
-            obj (Object): the object for whom to display the phone number or contact.
-            number (str): the number in question.
-
-        """
-        number = number.replace("-", "")
-        storage = obj.attributes.get("_type_storage", {})
-        type = storage.get("computer", {})
-        app_storage = type.get("app_storage", {})
-        contact = app_storage.get("app", {})
-        contact = contact.get("contact", {})
-        contacts = contact.get("contacts", [])
-        for contact in contacts:
-            if contact.get("phone_number") == number:
-                first = contact.get("first_name", "")
-                last = contact.get("last_name", "")
-                full = first
-                if first and last:
-                    full += " "
-                full += last
-                return full
-
-        # The contact couldn't be found, return the formatted number
-        return number[:3] + "-" + number[3:]
 
 
 ## Main screen and commands
@@ -168,8 +121,8 @@ class MainScreen(BaseScreen):
     def get_text(self):
         """Display the app."""
         try:
-            number = self.app.get_phone_number(self.obj)
-            pretty_number = self.app.get_phone_number(self.obj, pretty=True)
+            number = self.app.phone_number
+            pretty_number = self.app.pretty_phone_number
         except ValueError:
             self.msg("Your phone number couldn't be found.")
             self.back()
@@ -192,22 +145,20 @@ class MainScreen(BaseScreen):
             table.add_column("Content", width=36)
             table.add_column("Ago", width=15)
             for thread_id, text in threads.items():
-                thread = text.thread
+                thread = text.db_thread
                 stored_threads[i] = thread
-                senders = text.exclude(number)
-                if self.app.contact:
-                    senders = [self.app.contact.format(sender) for sender in senders]
-
-                sender = ", ".join(senders)
+                sender = text.recipients
+                sender = [self.app.format(num) for num in sender]
+                sender = ", ".join(sender)
                 if thread.name:
                     sender = thread.name
-                senders = crop(senders, 20, "")
+                sender = crop(sender, 20, "")
 
                 content = text.content.replace("\n", "  ")
-                if text.sender == number:
-                    content = "]You] " + content
+                if text.sender.db_phone_number == number:
+                    content = "[You] " + content
                 content = crop(content, 35)
-                status = " " if thread.has_read(number) else "|rU|n"
+                status = " " if thread.db_read.filter(db_phone_number=number).count() else "|rU|n"
                 table.add_row(status, self.format_cmd(str(i)), sender, content, text.sent_ago.capitalize())
                 i += 1
             lines = unicode(table).splitlines()
@@ -231,7 +182,7 @@ class MainScreen(BaseScreen):
         has been entered.
 
         """
-        number = self.app.get_phone_number(self.obj)
+        number = self.app.phone_number
         if string.isdigit():
             thread = int(string)
             if thread not in self.db["threads"]:
@@ -239,7 +190,7 @@ class MainScreen(BaseScreen):
                 self.display()
             else:
                 thread = self.db["threads"][thread]
-                thread.mark_as_read(number)
+                thread.db_read.add(Number.objects.get(db_phone_number=number))
                 NewTextScreen.forget_notification(self.obj, thread)
                 self.next("ThreadScreen", db=dict(thread=thread))
 
@@ -288,8 +239,8 @@ class NewTextScreen(BaseScreen):
 
     def get_text(self):
         """Display the new message screen."""
-        number = self.app.get_phone_number(self.obj)
-        pretty_number = self.app.get_phone_number(self.obj, pretty=True)
+        number = self.app.phone_number
+        pretty_number = self.app.pretty_phone_number
         screen = """
             New message
 
@@ -303,8 +254,7 @@ class NewTextScreen(BaseScreen):
         """
         recipients = list(self.db.get("recipients", []))
         for i, recipient in enumerate(recipients):
-            if self.app.contact:
-                recipients[i] = self.app.contact.format(recipient)
+            recipients[i] = self.app.format(recipient)
 
         content = self.db.get("content", "(type your text here)")
         content = "\n    ".join(wrap(content, 75))
@@ -342,7 +292,7 @@ class NewTextScreen(BaseScreen):
         """
         # Try to get the sender's phone number
         group = "text.thread.{}".format(text.thread.id)
-        sender = TextApp.format(obj, text.sender)
+        sender = TextApp.format_obj(obj, text.sender.db_phone_number)
         message = "{obj} emits a short beep."
         title = "New message from {}".format(sender)
         content = text.content
@@ -404,7 +354,7 @@ class ThreadScreen(BaseScreen):
             self.user.msg("Can't display the thread, an error occurred.")
             return
 
-        number = self.app.get_phone_number(self.obj)
+        number = self.app.phone_number
         screen = dedent("""
             Messages with {}
             |lccontact|ltCONTACT|le to edit the contact for this conversation.
@@ -417,20 +367,15 @@ class ThreadScreen(BaseScreen):
                 {send}
         """.strip("\n"))
         texts = list(reversed(thread.text_set.order_by("db_date_sent").reverse()[:10]))
-        if texts:
-            recipients = texts[0].exclude(number)
-            self.db["recipients"] = recipients
-            if self.app.contact:
-                recipients = [self.app.contact.format(recipient) for recipient in recipients]
 
         # Browse the list of texts in this thread
         messages = []
         for text in texts:
             sender = text.sender
-            if sender == number:
+            if sender.db_phone_number == number:
                 sender = "You"
-            elif self.app.contact:
-                sender = self.app.contact.format(sender)
+            else:
+                sender = self.app.format(sender.db_phone_number)
             sender = "|c" + sender + "|n"
 
             content = text.content + " (" + text.sent_ago + ")"
@@ -440,6 +385,9 @@ class ThreadScreen(BaseScreen):
 
         content = self.db.get("content", "(type your text here)")
         content = "\n    ".join(wrap(content, 75))
+        recipients = [o.db_phone_number for o in thread.db_recipients.exclude(db_phone_number=number)]
+        self.db["recipients"] = recipients
+        recipients = [self.app.format(number) for number in recipients]
         recipients = ", ".join(recipients)
         messages = "\n".join(messages)
         return screen.format(recipients, messages, content, clear=self.format_cmd("clear"), send=self.format_cmd("send"))
@@ -568,7 +516,7 @@ class CmdSend(AppCommand):
     def func(self):
         """Execute the command."""
         screen = self.screen
-        sender = screen.app.get_phone_number(screen.obj)
+        sender = screen.app.phone_number
         recipients = list(screen.db.get("recipients", []))
         if not recipients:
             self.msg("You haven't specified at least one recipient.")
@@ -584,8 +532,6 @@ class CmdSend(AppCommand):
         # Send the new text
         text = Text.objects.send(sender, recipients, content)
         thread = text.thread
-        thread.read = ""
-        thread.mark_as_read(sender)
         self.msg("Thanks, your message has been sent successfully.")
         if screen.db.get("go_back", True):
             screen.back()
@@ -593,7 +539,7 @@ class CmdSend(AppCommand):
             del screen.db["content"]
 
         # Notify the recipients
-        for number in text.list_recipients:
+        for number in text.recipients:
             devices = search_tag(number, category="phone number")
             for device in devices:
                 NewTextScreen.notify(device, text)
@@ -652,13 +598,15 @@ class CmdTo(AppCommand):
             return
 
         # First of all, maybe it's a contact name
-        if screen.app.contact:
-            matches = screen.app.contact.search(number)
-            if len(matches) == 1:
-                number = matches[0].phone_number
-            elif len(matches) >= 2:
-                self.msg("This contact name isn't specific enough.  It could be:\n  {}\nPlease specify.".format("\n  ".join([contact.name for contact in matches])))
-                return
+        matches = screen.app.search(number)
+        if len(matches) == 0:
+            self.msg("No match could be found bearing this name.")
+            return
+        elif len(matches) == 1:
+            number = matches[0]
+        elif len(matches) >= 2:
+            self.msg("This contact name isn't specific enough.  It could be:\n  {}\nPlease specify.".format("\n  ".join([screen.app.format(contact) for contact in matches])))
+            return
 
         number = number.replace("-", "")
         if not number.isdigit() or len(number) != 7:

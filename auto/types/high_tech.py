@@ -259,7 +259,7 @@ class ApplicationHandler(object):
     """The application handler, containing apps.
 
     This handler, set on the computer type, allows to add and remove,
-    install and uninstall applications.  The `AppHandler` (1type.apps`)
+    install and uninstall applications.  The `AppHandler` (~type.apps`)
     is created right away, but individual applications are only created
     if the handler's `load` or `install` method is called.  In both
     cases, the user (the object using the computer) must be provided.
@@ -322,6 +322,17 @@ class ApplicationHandler(object):
         if folder not in apps:
             apps[folder] = []
         apps[folder].append(app_name)
+
+    def add_all(self):
+        """Add all apps to the prototype or object.
+
+        This is mostly a debugging method, to quickly test a phone or
+        computer with all available apps.
+
+        """
+        for folder, apps in APPS.items():
+            for app_name in apps.keys():
+                self.add(app_name, folder)
 
     def load(self, user):
         """Load the apps, creating the App objects."""
