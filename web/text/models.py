@@ -28,6 +28,43 @@ class Thread(SharedMemoryModel):
     db_recipients = models.ManyToManyField(Number)
     db_read = models.ManyToManyField(Number, related_name='+')
 
+    def has_read(self, number):
+        """Check whether the specified number has read the thread.
+
+        Args:
+            number (str): the phone number to check.
+
+        Returns:
+            has_read (bool): whether this number has read this thread.
+
+        """
+        number = number.replace("-", "")
+        return self.db_read.filter(db_phone_number=number).count() > 0
+
+    def mark_unread(self, number):
+        """Mark the thread as unread for this number.
+
+        The number is assumed to exist.
+
+        Args:
+            number (str): the phone number.
+
+        """
+        number = Number.objects.get(db_phone_number=number.replace("-", ""))
+        self.db_read.remove(number)
+
+    def mark_read(self, number):
+        """Mark the thread has read by this number.
+
+        The number is assumed to exist in the database.
+
+        Args:
+            number (str): the phone number to add.
+
+        """
+        number = Number.objects.get(db_phone_number=number.replace("-", ""))
+        self.db_read.add(number)
+
 
 class Text(SharedMemoryModel):
 

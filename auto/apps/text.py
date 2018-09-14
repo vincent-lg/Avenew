@@ -158,7 +158,7 @@ class MainScreen(BaseScreen):
                 if text.sender.db_phone_number == number:
                     content = "[You] " + content
                 content = crop(content, 35)
-                status = " " if thread.db_read.filter(db_phone_number=number).count() else "|rU|n"
+                status = " " if thread.has_read(number) else "|rU|n"
                 table.add_row(status, self.format_cmd(str(i)), sender, content, text.sent_ago.capitalize())
                 i += 1
             lines = unicode(table).splitlines()
@@ -190,8 +190,6 @@ class MainScreen(BaseScreen):
                 self.display()
             else:
                 thread = self.db["threads"][thread]
-                thread.db_read.add(Number.objects.get(db_phone_number=number))
-                NewTextScreen.forget_notification(self.obj, thread)
                 self.next("ThreadScreen", db=dict(thread=thread))
 
             return True
@@ -355,6 +353,11 @@ class ThreadScreen(BaseScreen):
             return
 
         number = self.app.phone_number
+
+        # Mark the thread as read (should be done elsewhere)
+        thread.mark_read(number)
+        NewTextScreen.forget_notification(self.obj, thread)
+
         screen = dedent("""
             Messages with {}
             |lccontact|ltCONTACT|le to edit the contact for this conversation.

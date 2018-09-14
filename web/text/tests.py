@@ -95,3 +95,29 @@ class TestText(TestCase):
         self.assertNotIn(t2, Text.objects.get_texts_with([self.n1, self.n3]))
         self.assertIn(t3, Text.objects.get_texts_with([self.n1, self.n3]))
         self.assertEqual(list(Text.objects.get_texts_with([self.n1, self.n2, self.n3])), [])
+
+    def test_read_unread(self):
+        """Test marking a thread as read and unread."""
+        t1 = Text.objects.send(self.n1, [self.n2], "How do?")
+        self.assertTrue(t1.thread.has_read(self.n1))
+        self.assertFalse(t1.thread.has_read(self.n2))
+
+        # Mark the thread has read by n2
+        t1.thread.mark_read(self.n2)
+        self.assertTrue(t1.thread.has_read(self.n1))
+        self.assertTrue(t1.thread.has_read(self.n2))
+
+        # Trying to mark the thread as read by n2 again shouldn't disturb it
+        t1.thread.mark_read(self.n2)
+        self.assertTrue(t1.thread.has_read(self.n1))
+        self.assertTrue(t1.thread.has_read(self.n2))
+
+        # Now, marking the thread as unread by n2
+        t1.thread.mark_unread(self.n2)
+        self.assertTrue(t1.thread.has_read(self.n1))
+        self.assertFalse(t1.thread.has_read(self.n2))
+
+        # Marking the thread as unread by n2 again shouldn't disturb it
+        t1.thread.mark_unread(self.n2)
+        self.assertTrue(t1.thread.has_read(self.n1))
+        self.assertFalse(t1.thread.has_read(self.n2))
