@@ -123,7 +123,6 @@ class CmdAnswer(Command):
     this notification and answer to it.  Obviously, the most common use case is when
     somebody calls you.  You will then hear the phone ring and can answer to it by
     entering |yanswer|n.
-    """
 
     If you have more than one devices, you can specify part of the name of the device
     as an argument, to choose only the most recent notification from this device.
@@ -141,7 +140,7 @@ class CmdAnswer(Command):
         notifications = []
         if self.args.strip():
             # Filter based on the object's name
-            objs = self.search(self.args.strip(), candidates=candidates, quiet=True)
+            objs = self.caller.search(self.args.strip(), candidates=candidates, quiet=True)
             if objs:
                 obj = objs[0]
                 if not hasattr(obj, "types"):
@@ -152,7 +151,7 @@ class CmdAnswer(Command):
                     if hasattr(type, "notifications"):
                         notifications.extend(type.notifications.all())
             else:
-                self.msg("|rCan't find that:|n {}".format(self.args.strip())
+                self.msg("|rCan't find that:|n {}".format(self.args.strip()))
                 return
 
         else:

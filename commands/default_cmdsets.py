@@ -26,7 +26,7 @@ from commands.developer import CmdLog
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
 from commands.moving import CmdEnter, CmdLeave
-from commands.objects import CmdUse, CmdAddress, CmdGet
+from commands.objects import CmdUse, CmdAnswer, CmdGet
 from commands.road import CmdStartRoad
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -53,7 +53,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdLeave())
         self.add(CmdStartRoad())
         self.add(CmdUse())
-        self.add(CmdAddress())
+        self.add(CmdAnswer())
         self.add(CmdLog())
 
         # Channel commands
