@@ -33,7 +33,8 @@ class TextManager(models.Manager):
             raise ValueError("wrong phone number format: {}".format(number))
 
         q = self.filter(db_thread__db_recipients__db_phone_number=number)
-        return q.order_by("-db_date_sent")
+        return q.order_by("-db_date_sent").prefetch_related(
+                "db_sender", "db_thread", "db_thread__db_recipients", "db_thread__db_read")
 
     def get_threads_for(self, number):
         """Return the thread messages for the given number.
@@ -64,7 +65,8 @@ class TextManager(models.Manager):
         for number in numbers:
             query = query.filter(db_thread__db_recipients__db_phone_number=number)
         query = query.filter(num_recipients=len(numbers))
-        return query.order_by("-db_date_sent")
+        return query.order_by("-db_date_sent").prefetch_related(
+                "db_sender", "db_thread", "db_thread__db_recipients", "db_thread__db_read")
 
     def get_num_unread(self, number):
         """Get the number of unread threads for number.

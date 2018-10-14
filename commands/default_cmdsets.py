@@ -20,6 +20,7 @@ from evennia import default_cmds
 from evennia.commands.default import comms
 from evennia.contrib.ingame_python.commands import CmdCallback
 
+from commands.admin import CmdApp
 from commands.building import CmdBuildingMenu, CmdEdit, CmdNew
 from commands.comms import CmdConnect, CmdDisconnect, CmdChannel
 from commands.developer import CmdLog
@@ -46,6 +47,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdEnter())
         self.add(CmdDrive())
         self.add(CmdGet())
+        self.add(CmdApp())
         self.add(CmdBuildingMenu())
         self.add(CmdEdit())
         self.add(CmdNew())

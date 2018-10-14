@@ -223,20 +223,17 @@ class BaseScreen(object):
         self._load_commands()
         # Add to the CmdSet
         if self.user and self.user.cmdset.has("computer"):
-            self.user.cmdset.remove("commands.high_tech.ComputerCmdSet")
-            cmdset = ComputerCmdSet(self.user, "computer")
-            for cmd in type(self).commands:
-                cmdset.add(cmd())
-            self.user.cmdset.add(cmdset, permanent=True)
+            print "Removing the CmdSet"
+            self.user.cmdset.remove(ComputerCmdSet)
+        cmdset = ComputerCmdSet(self.user, "computer")
+        print("Adding a new CmdSet")
+        self.user.cmdset.add(cmdset, permanent=True)
 
     def _delete_commands(self):
         """Remvoe this screen's commands."""
         if self.user and self.user.cmdset.has("computer"):
-            for cmdset in self.user.cmdset.get():
-                if cmdset.key == "computer":
-                    for cmd in type(self).commands:
-                        cmdset.remove(cmd)
-                    break
+            print "Removing the CmdSet"
+            self.user.cmdset.remove(ComputerCmdSet)
 
     def _save(self):
         """Save the current screen."""
@@ -386,7 +383,7 @@ class BaseScreen(object):
             if app and folder:
                 app = self.type.apps.get(app, folder)
 
-            previous = previous(self.obj, self.user, self.type, app)
+            previous = previous(self.obj, self.user, self.type, app, add_commands=False)
             previous.db.clear()
             if db:
                 previous.db.update(db)
@@ -396,6 +393,7 @@ class BaseScreen(object):
             if tree and tree[-1][0] == path:
                 del tree[-1]
             previous._save()
+            previous._add_commands()
             previous.open()
             previous.display()
             return previous
@@ -434,9 +432,10 @@ class BaseScreen(object):
             screen = class_from_module(screen)
         self.close()
         self._delete_commands()
-        new_screen = screen(self.obj, self.user, self.type, app)
+        new_screen = screen(self.obj, self.user, self.type, app, add_commands=False)
         new_screen.db.clear()
         new_screen._save()
+        new_screen._add_commands()
 
         # Before displaying the screen, add the optional data
         if db:
