@@ -171,14 +171,11 @@ class BaseScreen(object):
         This is some longer help file.
     """
 
-    def __init__(self, obj, user, type, app=None, add_commands=True):
+    def __init__(self, obj, user, type, app=None):
         self.obj = obj
         self.user = user
         self.type = type
         self.app = app
-
-        if add_commands:
-            self._add_commands()
 
     @lazy_property
     def db(self):
@@ -218,23 +215,6 @@ class BaseScreen(object):
                     cmd = type(self).__module__ + "." + cmd
                 type(self).commands[i] = class_from_module(cmd)
 
-    def _add_commands(self):
-        """Add the commands in the user CmdSet, if exist."""
-        self._load_commands()
-        # Add to the CmdSet
-        if self.user and self.user.cmdset.has("computer"):
-            print "Removing the CmdSet"
-            self.user.cmdset.remove(ComputerCmdSet)
-        cmdset = ComputerCmdSet(self.user, "computer")
-        print("Adding a new CmdSet")
-        self.user.cmdset.add(cmdset, permanent=True)
-
-    def _delete_commands(self):
-        """Remvoe this screen's commands."""
-        if self.user and self.user.cmdset.has("computer"):
-            print "Removing the CmdSet"
-            self.user.cmdset.remove(ComputerCmdSet)
-
     def _save(self):
         """Save the current screen."""
         self.type.db["current_screen"] = (
@@ -251,6 +231,14 @@ class BaseScreen(object):
                     for cmd in cmdset.commands:
                         cmd.screen = self
                     break
+
+    def _refresh_commands(self):
+        """Refresh the user CmdSet, if exist."""
+        self._load_commands()
+        if self.user and self.user.cmdset.has("computer"):
+            self.user.cmdset.remove(ComputerCmdSet)
+        cmdset = ComputerCmdSet(self.user, "computer")
+        self.user.cmdset.add(cmdset, permanent=True)
 
     # General methods
     def close(self):
@@ -317,7 +305,7 @@ class BaseScreen(object):
         """
         text = self.get_text()
         if text:
-            text = dedent(text.strip("\n"))
+            text = dedent(text).strip()
             if type(self).show_header:
                 lines = text.splitlines()
                 lines[0] = lines[0] + " ({back} to go back, {exit} to exit, {help} to get help)".format(
@@ -379,11 +367,10 @@ class BaseScreen(object):
                 previous = class_from_module(previous)
 
             self.close()
-            self._delete_commands()
             if app and folder:
                 app = self.type.apps.get(app, folder)
 
-            previous = previous(self.obj, self.user, self.type, app, add_commands=False)
+            previous = previous(self.obj, self.user, self.type, app)
             previous.db.clear()
             if db:
                 previous.db.update(db)
@@ -393,7 +380,7 @@ class BaseScreen(object):
             if tree and tree[-1][0] == path:
                 del tree[-1]
             previous._save()
-            previous._add_commands()
+            previous._refresh_commands()
             previous.open()
             previous.display()
             return previous
@@ -431,11 +418,10 @@ class BaseScreen(object):
 
             screen = class_from_module(screen)
         self.close()
-        self._delete_commands()
-        new_screen = screen(self.obj, self.user, self.type, app, add_commands=False)
+        new_screen = screen(self.obj, self.user, self.type, app)
         new_screen.db.clear()
         new_screen._save()
-        new_screen._add_commands()
+        new_screen._refresh_commands()
 
         # Before displaying the screen, add the optional data
         if db:

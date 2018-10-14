@@ -242,7 +242,6 @@ class Computer(BaseType):
             else:
                 Screen = MainScreen
             self.db["used"] = user
-            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
             screen = Screen(self.obj, user, self, app)
             if "screen_tree" not in self.db:
                 self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, None)]
@@ -252,6 +251,7 @@ class Computer(BaseType):
             screen.open()
             screen.display()
             user.db._aven_using = self.obj
+            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
 
 
 class ApplicationHandler(object):
