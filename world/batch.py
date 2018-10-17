@@ -3,16 +3,20 @@
 """Module containing utilities for the batch code."""
 
 from textwrap import dedent
+from django.conf import settings
+from evennia.help.models import HelpEntry
 from evennia.utils import create, search
 
 from logic.geo import direction_between
 from typeclasses.characters import Character
 from typeclasses.objects import Object
-from typeclasses.prototypes import PChar
+from typeclasses.prototypes import PChar, PRoom
 from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad, Vehicle
 
 # Constants
+WITHOUT_VALIDATION = getattr(settings, "callbackS_WITHOUT_VALIDATION",
+                             "developer")
 ROOM_TYPECLASS = "typeclasses.rooms.Room"
 EXIT_TYPECLASS = "typeclasses.exits.Exit"
 CROSSROAD_TYPECLASS = "typeclasses.vehicles.Crossroad"
@@ -30,17 +34,21 @@ ALIASES = {
 }
 
 # Functions
-def get_room(x, y, z):
-    """Get or create the given room."""
-    room = Room.get_room_at(x, y, z)
+def get_room(ident):
+    """Get or create the given room.
+
+    Args:
+        ident (str): the room identifier.
+
+    """
+    room = Room.get_room_with_ident(ident)
+
     if room:
         return room
 
     # Create the room
     room = create.create_object(ROOM_TYPECLASS, "Nowhere")
-    room.x = x
-    room.y = y
-    room.z = z
+    room.ident = ident
     return room
 
 def get_exit(room, direction, destination, name=None, aliases=None):
@@ -65,17 +73,55 @@ def get_pchar(key):
 
     return pchar
 
-def get_crossroad(x, y, z):
-    """Return or create the given crossroad."""
-    crossroad = Crossroad.get_crossroad_at(x, y, z)
-    if crossroad:
-        return crossroad
+def get_proom(key):
+    """Get or create the PRoom."""
+    try:
+        proom = PRoom.objects.get(db_key=key)
+    except PRoom.DoesNotExist:
+        proom = create.create_object("typeclasses.prototypes.PRoom", key=key)
+
+    return proom
+
+def get_crossroad(x=None, y=None, z=None, ident=None):
+    """Return or create the given crossroad.
+
+    You have to specify either the coordinates (x, y, z) or the crossroad identifier.  The crossroad identifier has a higher priority.
+
+    Args:
+        x (int, optional): the X coordinate.
+        y (int, optional): the Y coordinate.
+        x (int, optional): the Z coordinate.
+        ident (str, optional): the identifier.
+
+    """
+    if ident is not None:
+        crossroad = Crossroad.get_crossroad_with_ident(ident)
+
+        if crossroad:
+            if x is not None and y is not None and z is not None:
+                crossroad.x = x
+                crossroad.y = y
+                crossroad.z = z
+            return crossroad
+
+    if x is not None and y is not None and z is not None:
+        crossroad = Crossroad.get_crossroad_at(x, y, z)
+        if crossroad:
+            if ident is not None:
+                crossroad.key = ident
+                crossroad.ident = ident
+
+            return crossroad
 
     # Create the crossroad
-    crossroad = create.create_object("typeclasses.vehicles.Crossroad", "")
-    crossroad.x = x
-    crossroad.y = y
-    crossroad.z = z
+    crossroad = create.create_object("typeclasses.vehicles.Crossroad", key=ident or "")
+    if ident is not None:
+        crossroad.ident = ident
+    if x is not None and y is not None and z is not None:
+        crossroad.x = x
+        crossroad.y = y
+        crossroad.z = z
+
     return crossroad
 
 def add_road(origin, destination, name, back=True):
@@ -123,23 +169,61 @@ def describe(text):
 
     return "\n".join(lines)
 
-def add_callback(obj, name, number, code, parameters=""):
+def add_callback(obj, name, number, code, parameters="", author=None):
     """
     Add or edit the callback.
 
     Args:
         obj (Object): the object that should contain the callback.
-        name (str): the name of the callback to add/edit.
+        name (str): the name of the event to add/edit.
         number (int): the number of the callback to add/edit.
         code (str): the code of the callback to add/edit.
+        parameters (str): the parameters for this event.
+        author (Object, optional): the callback author (will be superuser if not set).
 
     """
-    author = Character.objects.get(id=1)
+    author = author or Character.objects.get(id=1)
+    lock = "perm({}) or perm(events_without_validation)".format(
+        WITHOUT_VALIDATION)
+    valid = author.locks.check_lockstring(author, lock)
     callbacks = obj.callbacks.get(name)
-    code = dedent(code.strip("\n"))
+    code = dedent(code).strip("\n")
     if 0 <= number < len(callbacks):
         # Obviously the callback is there, so we edit it
-        obj.callbacks.edit(name, number, code, author=author, valid=True)
+        obj.callbacks.edit(name, number, code, author=author, valid=valid)
     else:
         # Just add it
-        obj.callbacks.add(name, code, author=author, valid=True, parameters=parameters)
+        obj.callbacks.add(name, code, author=author, valid=valid, parameters=parameters)
+
+def get_help_entry(key, text, category="General", locks=None, aliases=None):
+    """Get or create a help entry.
+
+    Args:
+        key (str): the help entry key.
+        text (str): the content of the help entry that will be updated or created.
+        category (str, optional): the help entry category.
+        locks (str, optional): locks to be used.
+        aliases (list, optional): a list of aliases to associate to this help entry.
+
+    Note:
+        Lock access type can be:
+            view: who can view this help entry
+
+    """
+    try:
+        topic = HelpEntry.objects.get(db_key=key)
+    except HelpEntry.DoesNotExist:
+        topic = create.create_help_entry(key, dedent(text), category)
+
+    # Update the help entry
+    topic.entrytext = dedent(text)
+    topic.category = category
+    if locks:
+        topic.locks.clear()
+        topic.locks.add(locks)
+    if aliases:
+        topic.aliases.clear()
+        topic.aliases.add(aliases)
+
+    topic.save()
+    return topic

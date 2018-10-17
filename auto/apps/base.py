@@ -6,13 +6,17 @@ Module containing abstract classes for applications.
 
 from textwrap import dedent, wrap
 
-from evennia import Command
+from evennia import Command, ScriptDB
 from evennia.utils.ansi import strip_ansi
+from evennia.utils.create import create_script
 from evennia.utils.evform import EvForm
 from evennia.utils.utils import class_from_module, inherits_from, lazy_property
 
 from commands.high_tech import ComputerCmdSet
 from world.log import app as log
+
+## Constants
+NET = None
 
 class BaseApp(object):
 
@@ -32,6 +36,7 @@ class BaseApp(object):
         self.obj = obj
         self.user = user
         self.type = type
+        self.__class__.NET = get_NET()
 
     def __repr__(self):
         return "<App {} ({} folder)>".format(type(self).app_name, type(self).folder)
@@ -51,7 +56,7 @@ class BaseApp(object):
         return storage[self.app_name]
 
     @classmethod
-    def notify(cls, obj, title, message="", content="", screen=None, db=None):
+    def notify(cls, obj, title, message="", content="", screen=None, db=None, group=None):
         """Send a message to the owner of the app if needed.
 
         This method is called when a notificaiton has to be sent.
@@ -68,6 +73,7 @@ class BaseApp(object):
             message (str, optional): the message to be displayed by the location.
             screen (str or Screen, optional): the screen's path (default to the app's start screen).
             db (dict, optional): the optional arguments to give to the screen.
+            group (str, optional): the notification group.
 
         Note:
             Notifications are defined in the app because it might be
@@ -110,7 +116,21 @@ class BaseApp(object):
             user.msg(to_send)
         else:
             # If no current user, add a notification
-            type.notifications.add(title, screen, app, folder, content=content, db=db)
+            type.notifications.add(title, screen, app, folder, content=content, db=db, group=group)
+
+    @classmethod
+    def forget_notification(cls, obj, group=None):
+        """Clear all notifications or notifications from a group.
+
+        Args:
+            obj (Object): the object owning the notifications.
+            group (str, optional): the group notification.
+
+        """
+        types = obj.types.has("notifications")
+        type = types and types[0] or None
+        if type is not None:
+            type.notifications.clear(group=group)
 
     def get_display_name(self):
         """Return the display name."""
@@ -146,15 +166,16 @@ class BaseScreen(object):
     can_quit = True # Can quit the screen and close the interface
     back_screen = None
     show_header = True
+    short_help = "Some screen"
+    long_help = """
+        This is some longer help file.
+    """
 
-    def __init__(self, obj, user, type, app=None, add_commands=True):
+    def __init__(self, obj, user, type, app=None):
         self.obj = obj
         self.user = user
         self.type = type
         self.app = app
-
-        if add_commands:
-            self._add_commands()
 
     @lazy_property
     def db(self):
@@ -194,26 +215,6 @@ class BaseScreen(object):
                     cmd = type(self).__module__ + "." + cmd
                 type(self).commands[i] = class_from_module(cmd)
 
-    def _add_commands(self):
-        """Add the commands in the user CmdSet, if exist."""
-        self._load_commands()
-        # Add to the CmdSet
-        if self.user and self.user.cmdset.has("computer"):
-            self.user.cmdset.remove("commands.high_tech.ComputerCmdSet")
-            cmdset = ComputerCmdSet(self.user, "computer")
-            for cmd in type(self).commands:
-                cmdset.add(cmd())
-            self.user.cmdset.add(cmdset, permanent=True)
-
-    def _delete_commands(self):
-        """Remvoe this screen's commands."""
-        if self.user and self.user.cmdset.has("computer"):
-            for cmdset in self.user.cmdset.get():
-                if cmdset.key == "computer":
-                    for cmd in type(self).commands:
-                        cmdset.remove(cmd)
-                    break
-
     def _save(self):
         """Save the current screen."""
         self.type.db["current_screen"] = (
@@ -230,6 +231,14 @@ class BaseScreen(object):
                     for cmd in cmdset.commands:
                         cmd.screen = self
                     break
+
+    def _refresh_commands(self):
+        """Refresh the user CmdSet, if exist."""
+        self._load_commands()
+        if self.user and self.user.cmdset.has("computer"):
+            self.user.cmdset.remove(ComputerCmdSet)
+        cmdset = ComputerCmdSet(self.user, "computer")
+        self.user.cmdset.add(cmdset, permanent=True)
 
     # General methods
     def close(self):
@@ -296,7 +305,7 @@ class BaseScreen(object):
         """
         text = self.get_text()
         if text:
-            text = dedent(text.strip("\n"))
+            text = dedent(text).strip()
             if type(self).show_header:
                 lines = text.splitlines()
                 lines[0] = lines[0] + " ({back} to go back, {exit} to exit, {help} to get help)".format(
@@ -358,7 +367,6 @@ class BaseScreen(object):
                 previous = class_from_module(previous)
 
             self.close()
-            self._delete_commands()
             if app and folder:
                 app = self.type.apps.get(app, folder)
 
@@ -372,6 +380,7 @@ class BaseScreen(object):
             if tree and tree[-1][0] == path:
                 del tree[-1]
             previous._save()
+            previous._refresh_commands()
             previous.open()
             previous.display()
             return previous
@@ -409,10 +418,10 @@ class BaseScreen(object):
 
             screen = class_from_module(screen)
         self.close()
-        self._delete_commands()
         new_screen = screen(self.obj, self.user, self.type, app)
         new_screen.db.clear()
         new_screen._save()
+        new_screen._refresh_commands()
 
         # Before displaying the screen, add the optional data
         if db:
@@ -505,6 +514,18 @@ class MainScreen(BaseScreen):
 
     can_back = False # At this point we shouldn't try to get back
     show_header = False
+    short_help = "Welcome to the interface main screen."
+    long_help = """
+        From here, you can enter the first letter of an installed app to
+        open it.  If the |ytext|n app is installed on your device, for instance,
+        you could open it by entering |ytext|n.  You can also exit the interface
+        by using the |yexit|n command.  If you want to display the screen on
+        which you are at any time, press RETURN without any text.  In other
+        screens, you can use the |yback|n command to go back to the previous
+        screen.  If you need additional help at any time in a screen, use the |yhelp|n command without
+        argument to see the screen help, or with argument to get help on
+        a command inside the screen.
+    """
 
     def get_text(self):
         """Display the installed apps."""
@@ -559,3 +580,23 @@ class AppCommand(Command):
 
     help_category = "Application-specific"
 
+def get_NET():
+    """Return the storage and NET singleton object.
+
+    The NET is both a global storage and an object with NET-specific
+    methods.  See the `Net` class in `typeclasses/scripts`..  This function
+    only retrieves the net (writes in `NET`) or create it if it doesn't
+    already exist.
+
+    """
+    global NET
+    if NET:
+        return NET
+
+    try:
+        NET = ScriptDB.objects.get(db_key="global_NET")
+    except ScriptDB.DoesNotExist:
+        print "Creating the net..."
+        NET = create_script("typeclasses.scripts.Net")
+
+    return NET

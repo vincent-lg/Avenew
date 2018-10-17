@@ -1,5 +1,5 @@
 *.py[cod]
-
+server/conf/secret_at_initial_setup.py
 # C extensions
 *.so
 

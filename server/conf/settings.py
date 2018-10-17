@@ -37,14 +37,6 @@ SERVERNAME = "Avenew One"
 # Django web features
 ######################################################################
 
-
-## Protocols
-# Activate SSL protocol (SecureSocketLibrary)
-SSL_ENABLED = True
-
-# IRC
-IRC_ENABLED = True
-
 ## Commands
 # UnloggedinCmdSet
 CMDSET_UNLOGGEDIN = "commands.unloggedin.UnloggedinCmdSet"
@@ -74,6 +66,8 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 # Web
 INSTALLED_APPS += (
         "evennia_wiki",
+        "web.evapp",
+        "web.builder",
         "web.help_system",
         "web.text",
 )

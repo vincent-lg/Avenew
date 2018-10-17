@@ -2,7 +2,7 @@
 
 [Avenew One](https://www.avenew.one) uses an extensive phone and computer system, with an interface usable in-game.  This interface, called AvenOS, is a very simple text-based mobile interface that is meant to be flexible and as easy to use as a smartphone interface.  Smartphones in Avenew One can access these apps.  You can easily create new apps: be aware that creating an app is doable through code editing.  Although the process has been simplified, coding a new Aven app still involves some coding in Python.  The steps needed to code an app will be explained further in this document, along with other linked documents.  If you have a basic understanding of the Python syntax, if you know what is a variable, a function, a condition, a loop, an exception, a class, and the syntax to manipulate them; if you understand the basic concept of inheritance, then you should be fine just following this document.
 
-## Getting strted
+## Getting started
 
 The first step is to install a copy of Avenew on your system.  In order to do so, you will need [Evennia](www.evennia.com) installed.
 
@@ -83,7 +83,7 @@ A basic app is structured around three important concepts:
 
 - The app class: this is the class we created just above.  It contains some information on the application.  It might not contain anything else and is often the shortest class in the file.  However, without it, nothing would work.
 - One or more screen classes: a screen describes what is displayed on the interface at a given point.  For instance, if you enter "use phone", then "text", the text app will open.  The screen will show you the list of messages you have received and offer you to create a new message.  This is a screen.  If you type "new", a new screen will appear to create a new message.  If you type "send" after having typed a message, you will go back to the previous screen (showing you your messages).  This concept of screen is really important.  An application could have only one screen, but it usually has more than just one.
-- Some commands: when you open a screen, you get access to some command.  When you entered "use phone" and "text" in the previous example, the main screen of the text app appeared.  It defines the "new" command.  You can enter "new" to create a new message.  If you do, you will go to a different screen and will have other commands: "send", "cancel", "to" and so on.  A command in your app is just an [Evennia command](https://github.com/evennia/evennia/wiki/Commands) with some default values.
+- Some commands: when you open a screen, you get access to some commands.  When you entered "use phone" and "text" in the previous example, the main screen of the text app appeared.  It defines the "new" command.  You can enter "new" to create a new message.  If you do, you will go to a different screen and will have other commands: "send", "cancel", "to" and so on.  A command in your app is just an [Evennia command](https://github.com/evennia/evennia/wiki/Commands) with some default values.
 
 So in summary: an app has an app class, and one or more screen classes.  A screen can have some commands.
 
@@ -148,6 +148,7 @@ No, this was just to add the app.  Just reload (using `@reload` for instance), o
 Memo app! (BACK to go back, EXIT to exit, HELP to get help)
 
 This is my first application, doesn't it look good?
+
 Of course it doesn't do much at this point.
 
 Memo app, by me, BSD license
@@ -156,7 +157,7 @@ Memo app, by me, BSD license
 You see the text you have entered in `get_text` with some alterations:
 
 1. At the first line of your text (usually the screen name), a header has been added.  This header contains three commands (or links): back, exit, and help.  These commands are accessible out-of-the-box, you don't have to create them.  `back` allows you to go back to the previous screen.  `exit` closes the interface.  `help` gives you more information on the screen.  This header can be disabled, but in most cases, you will need it (keep the first line of `get_text` purposefully short).
-2. Although the text was entered with some indentation, it has been removed.  Actually, it is not (try to enter a line with greater indentation), but the method that displays the text and calls `get_text` removes some of the initial indentation to make it easier to edit and visually nicer.  (Take a look at (textwrap.dedent)(https://docs.python.org/2/library/textwrap.html) if you want to know how it works.)
+2. Although the text was entered with some indentation, it has been removed.  Actually, it is not (try to enter a line with greater indentation), but the method that displays the text and calls `get_text` removes some of the initial indentation to make it easier to edit and visually nicer.  (Take a look at [textwrap.dedent](https://docs.python.org/2/library/textwrap.html) if you want to know how it works.)
 
 There's something else that we did, and it's important.  Our app must know what screen to open (it cannot guess, as I mentioned, there is often more than one screen).  This is done through another class variable in our `Memo` class.  Here is a reminder:
 
@@ -170,7 +171,7 @@ class Memo(BaseApp):
     start_screen = "MainScreen"
 ```
 
-The `start_screen` class variable of our app class contains the name of the screen to open.  It has to be the name of the class.  It can be a full path if the screen is in a different file, like `"auto.apps.base.mainScreen"`.  It is most common to simply specify the class name like here: `" MainScreen"`.  A class of this name will be sought in the same module.
+The `start_screen` class variable of our app class contains the name of the screen to open.  It has to be the name of the class.  It can be a full path if the screen is in a different file, like `"auto.apps.base.mainScreen"`.  It is most common to simply specify the class name like here: `"MainScreen"`.  A class of this name will be sought in the same module.
 
 For the time being, our screen doesn't do anything, except displaying some information.  Obviously, a screen must do something, probably have some buttons (commands).
 
@@ -210,7 +211,7 @@ Create a NEW memo.
 Memos: 3
 ```
 
-If you enter "new", you can add a memo.  If you enter a number, you can open an existing memo to edit it.  we could create commands for every memo, but we'll do it another way, by redirecting user input to check that a number was entered or not.
+If you enter "new", you can add a memo.  If you enter a number, you can open an existing memo to edit it.  We could create commands for every memo, but we'll do it another way, by redirecting user input to check that a number was entered or not.
 
 ### Let's consider storage
 
@@ -363,7 +364,7 @@ There are three main ways to change between screens, and all of them are screen 
 - `move_to()`: this allows to change from screen to screen.  It needs to know to which screen we need to go.  It has some options we'll discuss later.  Interestingly, this is not the method we use most often.
 - `next`: this has exactly the same effect has `move_to`, and the same options, except that it keeps track of the new screen in the screen tree.
 
-Remember, the screen tree is there to remember what screen you opened.  When you use your phone, it creates an element in the screen tree.  When you open the `text` application, it creates another element.  If you type `new` to create a new text, it opens a new screen ands add a new element to the screen tree.  If then you type "back", the screen tree will be read to know what was the previous screen.  We don't need to trouble ourselves that much about the screen tree, we just need to know that `next` will write in it and remember the screens we have opened, that's why we prefer to use it except in some cases.
+Remember, the screen tree is there to remember what screen you opened.  When you use your phone, it creates an element in the screen tree.  When you open the `text` application, it creates another element.  If you type `new` to create a new text, it opens a new screen and adds a new element to the screen tree.  If then you type "back", the screen tree will be read to know what was the previous screen.  We don't need to trouble ourselves that much about the screen tree, we just need to know that `next` will write in it and remember the screens we have opened, that's why we prefer to use it except in some cases.
 
 > Why would I want to redirect to a screen without it being accessible through "back"?
 
@@ -463,7 +464,7 @@ It works!  The new screen opens and we see the text of our memo... we cannot edi
 
 - Once again, notice that `no_match` takes one argument besides `self`: the string entered by the user.  This method is called if no command matches the user input.
 - We get the `memos` the same way as before.  It will be a list of dictionaries.  It may not exist (so we get an empty list if not).
-- We then convert the user input and do some additional things.  The user input will be a number between ` and N, but we have to check it's a number, it's not too low, and it's not too high.  Doing it in a `try/except` like this is a Pythonic way of testing the input.
+- We then convert the user input and do some additional things.  The user input will be a number between 1 and N, but we have to check it's a number, it's not too low, and it's not too high.  Doing it in a `try/except` like this is a Pythonic way of testing the input.
 - If an error occurs, we send it to `self.user`.  This contains the object (character) using the device at this point.  You have already seen `self.app` which points to the application.
 - If the conversion was successful, we have a `memo` variable that contains one of the list element.  Remember that `memos` contains a list of dictionaries, so `memo` will contain a dictionary.  We create the `text` variable as well, which will contain the text of the memo to be edited.
 - Finally we call `self.next` to redirect to a different screen.  The parameters shouldn't surprise you at this point, I hope.
@@ -549,6 +550,7 @@ class CmdNew(AppCommand):
 
     Usage:
       new
+
     """
 
     key = "new"
@@ -577,7 +579,7 @@ class MainScreen(BaseScreen):
     # ...
 ```
 
-If you have difficulty in finding the right places to update, you will find the full application in a following section.
+If you have difficulty in finding the right places to update, you will find the full application in the following section.
 
 All we did was to define the `commands` class variable in our screen, with the list of commands.  Here, we just have `CmdNew`,  so we have `commands = ["CmdNew"] .
 
@@ -631,7 +633,7 @@ class MemoScreen(BaseScreen):
 
 > What is different in the new `no_match` method?
 
-Instead of changing the memo text, we check that the memo exist (if it doesn't, it's an empty dictionary).  If it doesn't exist, we add the memo to the app, in `self.app.db["memos"]`.  If you reload and try to create a new memo and edit an existing one, both should now work!
+Instead of changing the memo text, we check that the memo exists (if it doesn't, it's an empty dictionary).  If it doesn't exist, we add the memo to the app, in `self.app.db["memos"]`.  If you reload and try to create a new memo and edit an existing one, both should now work!
 
 ### To conclude this example
 
@@ -791,7 +793,9 @@ Notice that we didn't do everything we had planned: there's no way to delete a m
 This section contains more specific explanations on various topics.  You might not need them in your app, but if you do, you will find the process explained here.  As usual, for a complete reference, read the code itself which is heavily documented.
 
 ### Generic screens
-### A screen for app settings
+#### Ask the user confirmation
+#### Display a message with an OK command
+#### A screen for app settings
 ### Notifications and app status
 
 An app can send notifications to alert the device of incoming information.  The text app, for instance, sends a notification to the recipients of a text when it is sent.  Additionally, an app can have a status (mark the number of items that should be read).  It is usually done through the app's display name (like "Text(3)" to say that 3 texts ought to be read).
@@ -825,6 +829,83 @@ Don't worry about the two first lines of this method: it will simply get the pho
 
 #### Sending notifications
 
+Notifications can be accessed through the `NotificationHandler`.  However, in most cases, we'll use two simple methods of every app:
+
+- `notify`: send a notification to a user.
+- `forget_notification`: forget one or more notifications.
+
+Since `notify` takes a lot of arguments, we usually wrap its call in a screen.  It's not unheard of to have an app sending several types of notification.  A screen, however, usually sends only one type.  It is up to you, and you can definitely use these methods directly.
+
+`notify` and `forget_notification` are class methods, so you can use them from outside of the class, which may be very handy at times.
+
+##### notify
+
+This method has the following arguments:
+
+- `obj`: the object to notify, usually a phone or a computer depending on what is available.
+- `title`: the title of the notification to be displayed.
+- `message`: the message to be sent to the user of `obj`, if any.  If the user is not presently connected, this will be ignored.
+- `content`: the content of the notification, a longer text.  This could be the received text for instance.
+- `screen`: the screen having created this notification.  Notifications can be "answered", so a user could want to answer a notification.  For instance, if the recipient of a message is not logged in, she will be notified when login that notifications wait for her.  She can see them and answer them.  If she answers a message, for instance, the screen will be opened with the message content.  If you prefer, it's a bit like tapping on a notification on your smartphone to open it.  To do this, it needs the screen name and some other information.
+- `db`: the database attributes to generate when opening the screen.  Again, this is screen-specific.
+- `group`: notifications can be grouped.  This is useful to remove several notifications.  This argument is not necessary but it might be very handy.  See the following section for details on notification grouping.
+
+As you can see, these are a lot of arguments that could be deduced by the screen itself.  That's why, when we need to notify the user, we often wrap the call to `notify` in a screen method.  Rather than a long explanation though, let's see the `notify` method of `NewTextScreen` in the `text` app.
+
+```python
+class NewTextScreen(BaseScreen):
+
+    """This screen appears to write a new message, with possibly some
+    fields that are pre-loaded.  This screen will appear to create
+    a new message independent of any thread.  Note, however, that if
+    the list of recipients matches a previous conversation, the new
+    message will simply be appended to this previous thread.
+
+    Data attributes you can use (in screen.db):
+        recipients: a list of phone numbers representing the list of recipients.
+        content: the new text content as a string.
+
+    """
+
+    # ... class variables and other methods
+
+    @staticmethod
+    def notify(obj, text):
+        """Notify obj of a new text message.
+
+        This is a shortcut to specifically send a "new message" notification
+        to the object.  It uses the app's `notify` which calls the
+        notification handler in time, doing just a bit of wrapping.
+
+        Args:
+            obj (Object): the object being notified.
+            text (Text): the text message.
+
+        """
+        # Try to get the sender's phone number
+        group = "text.thread.{}".format(text.thread.id)
+        sender = TextApp.format(obj, text.sender)
+        message = "{obj} emits a short beep."
+        title = "New message from {}".format(sender)
+        content = text.content
+        screen = "auto.apps.text.ThreadScreen"
+        db = {"thread": text.thread}
+        TextApp.notify(obj, title, message, content, screen, db, group)
+```
+
+If someone is using the interface, he will receive the message "{obj} emits a short beep.".  Otherwise, the message will be sent to the object location (the room in which it sits, for instance) and a notification will be created.
+
+##### forget_notification
+
+In some cases, we want to erase the notifications we have sent.  This can happen, for instance, when opening the phone, the text app, and then reading a thread (conversation) for which we have been notified.  All notifications are deleted when answering one.  But if you open the phone using the `use` command, then notifications are not removed automatically.  And they shouldn't be.  So we need to remove them manually.
+
+In the previous example, you might have noticed we specify a notification group.  In this example, it would be `text.thread.<thread_id>` with `thread_id` being a number.  Without detailing too much the working of the text app, threads are conversations and can contain several text messages.  So basically, all texts in a conversation have the same thread ID.
+
+Assuming no none has ever used messages before, if you send a text to someone else, the text will have the thread ID 1.  If this someone answers, it will have the same thread ID, because it still is the same conversation.  So if you send a message, the "text.thread.1" notification will be created.  If you send another message to the same recipient, it will add a new notification with the same group: "text.thread.1".  When the recipient reads your messages, it should mark the notifications of group "text.thread.1" as read.
+
+That's why `forget_notification` has a `group` argument.  This allows to remove several notifications with the same group.  If you don't specify a group, all notifications for this object will be removed.
+
+You can set unique group notifications too.  Nothing forces you to keep a group with more than one notification.  It will, again, depend on your app.  For more information, read the `BaseApp.notify` and `BaseApp.forget_notification` methods.  You could also check to see how these methods are used in other apps.
 
 ### Games and invitations
 ### Paying within an app

@@ -242,7 +242,6 @@ class Computer(BaseType):
             else:
                 Screen = MainScreen
             self.db["used"] = user
-            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
             screen = Screen(self.obj, user, self, app)
             if "screen_tree" not in self.db:
                 self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, None)]
@@ -252,6 +251,7 @@ class Computer(BaseType):
             screen.open()
             screen.display()
             user.db._aven_using = self.obj
+            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
 
 
 class ApplicationHandler(object):
@@ -259,7 +259,7 @@ class ApplicationHandler(object):
     """The application handler, containing apps.
 
     This handler, set on the computer type, allows to add and remove,
-    install and uninstall applications.  The `AppHandler` (1type.apps`)
+    install and uninstall applications.  The `AppHandler` (~type.apps`)
     is created right away, but individual applications are only created
     if the handler's `load` or `install` method is called.  In both
     cases, the user (the object using the computer) must be provided.
@@ -323,6 +323,17 @@ class ApplicationHandler(object):
             apps[folder] = []
         apps[folder].append(app_name)
 
+    def add_all(self):
+        """Add all apps to the prototype or object.
+
+        This is mostly a debugging method, to quickly test a phone or
+        computer with all available apps.
+
+        """
+        for folder, apps in APPS.items():
+            for app_name in apps.keys():
+                self.add(app_name, folder)
+
     def load(self, user):
         """Load the apps, creating the App objects."""
         # Delete all application objects
@@ -364,7 +375,7 @@ class NotificationHandler(object):
 
         return notifications
 
-    def add(self, title, screen, app, folder="app", content="", db=None):
+    def add(self, title, screen, app, folder="app", content="", db=None, group=None):
         """Add a new notificaiton.
 
         Args:
@@ -374,7 +385,13 @@ class NotificationHandler(object):
             folder (str, optional): the folder containing the app.
             content (str, optional): the content of the notification.
             db (dict, optional): db attributes to give to the screen.
-            alert (bool, optional): should we alert the location?
+            group (str, optional): a group identifier [1].
+
+        [1] Notifications can be grouped using a group identifier.  Notifications
+            that have this identifier can be removed.  This is useful in
+            some apps that want to remove notifications based on certain
+            actions: for instance, if you mark a text as read in the text
+            app, you want to remove the unread notification for this thread.
 
         """
         timestamp = gametime.gametime(absolute=True)
@@ -385,6 +402,7 @@ class NotificationHandler(object):
                 "folder": folder,
                 "content": content,
                 "db": db,
+                "group": group,
                 "timestamp": timestamp,
         }
         notification = Notification(**kwargs)
@@ -393,17 +411,27 @@ class NotificationHandler(object):
         self.db.append(kwargs)
         return notification
 
-    def clear(self):
-        """Clear all notifications."""
-        while self.db:
-            del self.db[0]
+    def clear(self, group=None):
+        """Clear all notifications, or all notifications from a group.
+
+        Args:
+            group (str, optional): the optional name of the group to clear.
+
+        """
+        if group is None:
+            while self.db:
+                del self.db[0]
+        elif self.db:
+            for kwargs in list(self.db):
+                if kwargs.get("group") == group:
+                    self.db.remove(kwargs)
 
 
 class Notification(object):
 
     """A class to represent a notification."""
 
-    def __init__(self, title, screen, app, folder="app", content="", timestamp=None, db=None):
+    def __init__(self, title, screen, app, folder="app", content="", timestamp=None, db=None, group=None):
         self.title = title
         self.screen = screen
         self.app = app
@@ -411,6 +439,7 @@ class Notification(object):
         self.content = content
         self.timestamp = timestamp
         self.db = db
+        self.group = group
         self.obj = None
         self.handler = None
 
@@ -428,10 +457,13 @@ class Notification(object):
         ago = time_format(seconds, 4)
         return "{} ago".format(ago)
 
+    def __repr__(self):
+        return "<Notification {} ({} ago)>".format(repr(self.title), self.ago)
+
     def address(self, user):
         """Addresses the notification."""
         if self.obj:
             types = self.obj.types.can("use")
             if types:
                 types[0].use(user, self.screen, self.app, self.folder, self.db)
-                self.handler.clear()
+                self.handler.clear(self.group)

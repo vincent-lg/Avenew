@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
-Module containing the GPS class.
-
-"""
+"""Module containing the GPS class."""
 
 from math import fabs, sqrt
 from Queue import PriorityQueue
@@ -23,8 +20,7 @@ log = logger("gps")
 
 class GPS(object):
 
-    """
-    Class to represent a GPS query.
+    """Class to represent a GPS query.
 
     A GPS query is a link between two points (often represented as
     addresses).  It will attempt to find the shortest path between
@@ -43,8 +39,7 @@ class GPS(object):
             self.destination = self.find_address(destination, is_dest=True)
 
     def find_address(self, address, is_dest=False):
-        """
-        Find and return the address.
+        """Find and return the address.
 
         Args:
             address (str): the address to be found.
@@ -114,16 +109,15 @@ class GPS(object):
             crossroad = info["crossroad"]
             distance = distance_between(current.x, current.y, 0,
                     crossroad.x, crossroad.y, 0)
-            end_number = (distance - 1) * info.get("interval", 2) * 2
+            end_number = (distance - 1) * info.get("interval", 1) * 2
             if current_number + end_number >= number:
                 end = current
                 found = True
 
                 # If the destination is closer to the end crossroad, choose it instead
                 remaining = number - current_number - 1
-                distance = 1 + remaining / info.get("interval", 2) / 2
-                projected = coords_in(end.x, end.y, end.z,
-                        direction, distance=distance)
+                distance = 1 + remaining / info.get("interval", 1) / 2
+                projected = end.db.exits[direction]["coordinates"][distance - 1]
 
                 # If the number is odd, look for the other side of the street
                 if number % 2 == 1:

@@ -4,11 +4,15 @@
 High-tech command set and commands.
 """
 
+from textwrap import dedent
+
 from evennia import CmdSet
 from evennia.commands.cmdhandler import CMD_NOINPUT, CMD_NOMATCH
+from evennia.utils.ansi import strip_ansi
 from evennia.utils.utils import class_from_module, delay
 
 from commands.command import Command
+from commands.help import CmdHelp
 from world.log import main
 
 # Commands
@@ -29,6 +33,37 @@ class CmdText(Command):
     def func(self):
         """Execute the command."""
         self.caller.msg("That was some text here!")
+        menu = TestBuildingMenu(self.caller, self.caller.location)
+        menu.open()
+
+
+class HTCmdHelp(CmdHelp):
+
+    """
+    Display help in a computer or phone interface.
+    """
+
+    def func(self):
+        """Execute the command."""
+        screen = getattr(self, "screen", None)
+        if self.args.strip():
+            super(CmdHelp, self).func()
+        else:
+            if not screen:
+                self.msg("|rSorry, the screen in which you are is not clear.  Please report to admin.|n")
+                return
+
+            text = screen.short_help
+            text += "\n\nCommands you can use here:"
+            if screen.commands:
+                for cmd in screen.commands:
+                    text += "\n  |y" + cmd.key.ljust(15) + "|n" + cmd.__doc__.strip().splitlines()[0]
+            text += "\n  |yback|n           Go back to the previous screen."
+            text += "\n  |yhelp|n           Get help on the screen or a command in it."
+            text += "\n  |yexit|n           Exit the interface."
+            text += "\n\n" + dedent(screen.long_help)
+            self.msg(text)
+
 
 
 class CmdNoInput(Command):
@@ -86,7 +121,7 @@ class CmdNoMatch(Command):
             screen.close()
             screen.type.quit()
         else:
-            ret = screen.no_match(raw_string)
+            ret = screen.no_match(strip_ansi(raw_string))
             if not ret:
                 screen.wrong_input(raw_string)
 
@@ -115,7 +150,7 @@ class ComputerCmdSet(CmdSet):
                 app = type.apps.get(app_name, folder)
 
             Screen = class_from_module(screen)
-            screen = Screen(obj, self.cmdsetobj, type, app, add_commands=False)
+            screen = Screen(obj, self.cmdsetobj, type, app)
             self.screen = screen
             screen._load_commands()
             for cmd in screen.commands:
@@ -123,7 +158,7 @@ class ComputerCmdSet(CmdSet):
                 cmd.screen = screen
                 self.add(cmd)
 
-        cmds = [CmdNoInput(), CmdNoMatch()]
+        cmds = [CmdNoInput(), CmdNoMatch(), HTCmdHelp()]
         for cmd in cmds:
             if screen:
                 cmd.screen = screen

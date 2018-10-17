@@ -39,7 +39,7 @@ class BaseType(object):
         """
         pass
 
-    def at_server_start(self):
+    def at_server_start(self, prototype=False):
         """The server has restarted.
 
         Override this hook to re-do some custom actions for this type

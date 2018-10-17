@@ -1,3 +1,4 @@
+{% load evauth %}
 {% load staticfiles %}
 <nav class="navbar navbar-dark font-weight-bold navbar-expand-md">
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#menu-content" aria-controls="menu-content" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +35,11 @@
             <li class="nav-item">
                 <a class="nav-link">Logged in as {{user.username}}</a>
             </li>
+            {% if user|has_perm:"builder" %}
+            <li>
+                <a class="nav-link" href="{% url 'builder:index' %}">Builder portal</a>
+            </li>
+            {% endif %}
             <li>
                 <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
             </li>
