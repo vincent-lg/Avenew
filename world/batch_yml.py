@@ -190,6 +190,8 @@ def parse_room(document, author, messages):
     desc = describe(get_field(document, "description", basestring, False, "", messages))
     if desc:
         to_do.append((setattr, ["db.desc", desc], {}))
+    if isinstance(desc, unicode):
+        desc = desc.encode("utf-8")
 
     # Handle the exits
     exits = get_field(document, "exits", list, False, [], messages)
@@ -199,6 +201,15 @@ def parse_room(document, author, messages):
             break
 
         to_do.extend(parse_exit(exit, author, messages))
+
+    # Handle the callbacks
+    callbacks = get_field(document, "callbacks", list, False, [], messages)
+    for callback in callbacks:
+        if not isinstance(callback, dict):
+            messages.append((1, line, "This room specifies callbacks, but not as a list of dictionaries.  Check your syntax."))
+            break
+
+        to_do.extend(parse_callback(callback, author, messages))
 
     # All is right, confirmation
     messages.append((0, line, "The room '{}' was succesfully created or updated.".format(ident)))
@@ -253,6 +264,46 @@ def parse_exit(document, author, messages):
     messages.append((0, line, "The '{}' exit to '{}' was succesfully created or updated.".format(direction, destination)))
 
     return [(get_exit, args, kwargs)]
+
+def parse_callback(document, author, messages):
+    """Parse a single callback."""
+    line = document.get("--begin", 0)
+    args = []
+    kwargs = {"author": author}
+    event = get_field(document, "event", basestring, True, "", messages).lower().strip()
+    if not event:
+        messages.append((2, line,
+                "A callback needs to have a valid field name 'event'."))
+        return []
+
+    if isinstance(event, unicode):
+        event = event.encode("utf-8")
+
+    args.append(event)
+
+    # Handle the destination
+    number = get_field(document, "number", int, False, 0, messages)
+    args.append(number)
+
+    # Handle the code
+    code = get_field(document, "code", basestring, True, "", messages).strip()
+    if not code:
+        messages.append((2, line,
+                "A callback needs to have a valid field name 'code'."))
+        return []
+    if isinstance(code, unicode):
+        code = code.encode("utf-8")
+    kwargs["code"] = code
+
+    # Handle the parameters
+    parameters = get_field(document, "parameters", basestring, False, "", messages)
+    if parameters:
+        kwargs["parameters"] = parameters
+
+    # All is right, confirmation
+    messages.append((0, line, "The '{}'.{} callback was succesfully created or updated.".format(event, number)))
+
+    return [(add_callback, args, kwargs)]
 
 def parse_crossroad(document, author, messages):
     """Parse a YAML document describing a crossroad."""

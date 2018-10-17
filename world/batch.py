@@ -3,6 +3,7 @@
 """Module containing utilities for the batch code."""
 
 from textwrap import dedent
+from django.conf import settings
 from evennia.help.models import HelpEntry
 from evennia.utils import create, search
 
@@ -14,6 +15,8 @@ from typeclasses.rooms import Room
 from typeclasses.vehicles import Crossroad, Vehicle
 
 # Constants
+WITHOUT_VALIDATION = getattr(settings, "callbackS_WITHOUT_VALIDATION",
+                             "developer")
 ROOM_TYPECLASS = "typeclasses.rooms.Room"
 EXIT_TYPECLASS = "typeclasses.exits.Exit"
 CROSSROAD_TYPECLASS = "typeclasses.vehicles.Crossroad"
@@ -166,26 +169,31 @@ def describe(text):
 
     return "\n".join(lines)
 
-def add_callback(obj, name, number, code, parameters=""):
+def add_callback(obj, name, number, code, parameters="", author=None):
     """
     Add or edit the callback.
 
     Args:
         obj (Object): the object that should contain the callback.
-        name (str): the name of the callback to add/edit.
+        name (str): the name of the event to add/edit.
         number (int): the number of the callback to add/edit.
         code (str): the code of the callback to add/edit.
+        parameters (str): the parameters for this event.
+        author (Object, optional): the callback author (will be superuser if not set).
 
     """
-    author = Character.objects.get(id=1)
+    author = author or Character.objects.get(id=1)
+    lock = "perm({}) or perm(events_without_validation)".format(
+        WITHOUT_VALIDATION)
+    valid = author.locks.check_lockstring(author, lock)
     callbacks = obj.callbacks.get(name)
-    code = dedent(code.strip("\n"))
+    code = dedent(code).strip("\n")
     if 0 <= number < len(callbacks):
         # Obviously the callback is there, so we edit it
-        obj.callbacks.edit(name, number, code, author=author, valid=True)
+        obj.callbacks.edit(name, number, code, author=author, valid=valid)
     else:
         # Just add it
-        obj.callbacks.add(name, code, author=author, valid=True, parameters=parameters)
+        obj.callbacks.add(name, code, author=author, valid=valid, parameters=parameters)
 
 def get_help_entry(key, text, category="General", locks=None, aliases=None):
     """Get or create a help entry.
