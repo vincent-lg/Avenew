@@ -150,7 +150,7 @@ class ComputerCmdSet(CmdSet):
                 app = type.apps.get(app_name, folder)
 
             Screen = class_from_module(screen)
-            screen = Screen(obj, self.cmdsetobj, type, app, add_commands=False)
+            screen = Screen(obj, self.cmdsetobj, type, app)
             self.screen = screen
             screen._load_commands()
             for cmd in screen.commands:

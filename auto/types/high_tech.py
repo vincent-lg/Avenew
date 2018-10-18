@@ -242,7 +242,6 @@ class Computer(BaseType):
             else:
                 Screen = MainScreen
             self.db["used"] = user
-            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
             screen = Screen(self.obj, user, self, app)
             if "screen_tree" not in self.db:
                 self.db["screen_tree"] = [(type(screen).__module__ + "." + type(screen).__name__, app_name, folder, None)]
@@ -252,6 +251,7 @@ class Computer(BaseType):
             screen.open()
             screen.display()
             user.db._aven_using = self.obj
+            user.cmdset.add("commands.high_tech.ComputerCmdSet", permanent=True)
 
 
 class ApplicationHandler(object):
@@ -259,7 +259,7 @@ class ApplicationHandler(object):
     """The application handler, containing apps.
 
     This handler, set on the computer type, allows to add and remove,
-    install and uninstall applications.  The `AppHandler` (1type.apps`)
+    install and uninstall applications.  The `AppHandler` (~type.apps`)
     is created right away, but individual applications are only created
     if the handler's `load` or `install` method is called.  In both
     cases, the user (the object using the computer) must be provided.
@@ -322,6 +322,17 @@ class ApplicationHandler(object):
         if folder not in apps:
             apps[folder] = []
         apps[folder].append(app_name)
+
+    def add_all(self):
+        """Add all apps to the prototype or object.
+
+        This is mostly a debugging method, to quickly test a phone or
+        computer with all available apps.
+
+        """
+        for folder, apps in APPS.items():
+            for app_name in apps.keys():
+                self.add(app_name, folder)
 
     def load(self, user):
         """Load the apps, creating the App objects."""
@@ -455,4 +466,4 @@ class Notification(object):
             types = self.obj.types.can("use")
             if types:
                 types[0].use(user, self.screen, self.app, self.folder, self.db)
-                self.handler.clear()
+                self.handler.clear(self.group)
