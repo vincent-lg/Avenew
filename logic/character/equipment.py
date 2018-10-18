@@ -61,7 +61,9 @@ class EquipmentHandler(object):
 
         Return:
             objects (dictionary of Object:container): the list of objects the
-                    character can pick up.
+                    character can pick up.  Note that the container can be
+                    the character itself, if the object can be picked up in one of
+                    the character's hands.
 
         Object types are checked at this moment.  Rather, browsing through
         the extended object content, if one object can get, checks whether
