@@ -65,6 +65,7 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
 # Web
 INSTALLED_APPS += (
+        "anymail",
         "background_task",
         "evennia_wiki",
         "web.evapp",
