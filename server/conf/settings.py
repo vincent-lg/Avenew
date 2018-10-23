@@ -65,6 +65,8 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
 # Web
 INSTALLED_APPS += (
+        "anymail",
+        "background_task",
         "evennia_wiki",
         "web.evapp",
         "web.builder",
@@ -82,6 +84,35 @@ TEST_SESSION = False
 USE_I18N = True
 LANGUAGE_CODE = 'fr'
 ENCODINGS = ["latin-1", "utf-8", "ISO-8859-1"]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '%(asctime)s [%(levelname)s] %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+        },
+        'tasks_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'server/logs/tasks.log',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'background_task': {
+            'handlers': ['tasks_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 # Private settings
 try:
