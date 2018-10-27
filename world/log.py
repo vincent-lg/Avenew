@@ -143,3 +143,4 @@ app = logger("app")  # Main logger
 command = logger("command")  # Main logger
 login = logger("login")  # Main logger
 batch = logger("batch")  # Main logger
+tasks = logger("tasks")  # Main logger
