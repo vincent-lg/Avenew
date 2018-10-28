@@ -65,10 +65,13 @@ SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
 # Web
 INSTALLED_APPS += (
+        "anymail",
+        "background_task",
         "evennia_wiki",
-        "web.evapp",
         "web.builder",
+        "web.evapp",
         "web.help_system",
+        "web.mailgun",
         "web.text",
 )
 
@@ -77,6 +80,35 @@ WEBSOCKET_CLIENT_ENABLED = False
 
 ## Communication
 TEST_SESSION = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '%(asctime)s [%(levelname)s] %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+        },
+        'tasks_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'server/logs/tasks.log',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'background_task': {
+            'handlers': ['tasks_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 try:
     from server.conf.secret_settings import *
