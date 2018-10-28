@@ -27,7 +27,6 @@ class TestComputer(CommandTest):
         self.prototype.types.add("computer")
         load_apps()
         self.prototype.types.get("computer").apps.add("text")
-        #import pdb,sys;m = pdb.Pdb(stdout=sys.__stdout__);m.set_trace()
         self.smartphone = self.prototype.create(key="phone", location=self.char1)
 
     def use(self):

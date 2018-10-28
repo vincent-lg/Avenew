@@ -13,10 +13,22 @@ Most methods can receive either a single object or a list of objects.
 
 """
 
+from collections import OrderedDict, defaultdict
 from Queue import Queue
-from collections import defaultdict
 
 from evennia.utils.utils import inherits_from
+
+from logic.character.limbs import Limb
+from logic.character import limbs as LIMBS
+
+class OrderedDefaultDict(OrderedDict, defaultdict):
+
+    """A defaultdict retaining key ordering like OrdereedDict."""
+
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
+
 
 class EquipmentHandler(object):
 
@@ -29,6 +41,95 @@ class EquipmentHandler(object):
 
     def __init__(self, character):
         self.character = character
+
+    @property
+    def limbs(self):
+        """Return the list of limbs."""
+        limbs = self.character.attributes.get("custom_limbs")
+        if limbs is None:
+            # Assume that `character.db.limbs` contain the name of the list.
+            name = self.character.attributes.get("limbs", "HUMAN")
+            if not name.isupper():
+                raise ValueError("the character {!r} has an incorrect name of limbs: {!r}".format(self.character, name))
+            if not hasattr(LIMBS, name):
+                raise ValueError("the character {!r} has a name of limbs which can't be found in the limbs module: {!r}".format(self.character, name))
+
+            limbs = getattr(LIMBS, name)
+
+        # Check that the list of limbs is a list of Limb objects
+        if not isinstance(limbs, list) or not all([isinstance(limb, Limb) for limb in limbs]):
+            raise ValueError("the character {!r} has an incorrect list of limbs".format(self.character))
+
+        return limbs
+
+    @property
+    def first_level(self):
+        """Return the first-level of equipment for this character.
+
+        The search will be performed in the character's content.  Depending
+        on the character's list of limbs, limbs will be attributed with
+        object or None.  If an object doesn't match a limb, it will be
+        disregarded.
+
+        Returns:
+            limbs (list of (Limb, obj or None) tuples): a list containing
+                    tuples, each tuple having the Limb object as first
+                    argument, and the equiped object if any (or None)
+                    corresponding to this limb as second argument.
+
+        """
+        limbs = self.limbs
+        first_level = []
+        # Get all contents, we'll filter afterward
+        contents = self.character.contents
+        for limb in limbs:
+            objs = [obj for obj in contents if obj.tags.get(limb.key, category="eq")]
+            first_level.append((limb, objs[0] if objs else None))
+
+        return first_level
+
+    def can_hold(self, exclude=None):
+        """
+        Return the limbs that can hold something.
+
+        Args:
+            exclude (Object or list of objects): the optional objects to exclude.
+
+        Returns:
+            limbs (list of Limb): the free limbs that can hold something.
+
+        """
+        can_hold = []
+        first_level = self.first_level
+        exclude = exclude or []
+        if not isinstance(exclude, (list, tuple)):
+            exclude = [exclude]
+
+        for limb, obj in first_level:
+            if limb.can_hold:
+                if obj is not None and obj not in exclude:
+                    continue
+                can_hold.append(limb)
+
+        return can_hold
+
+    def hm_can_hold(self, exclude=None):
+        """
+        Return how many limbs can hold something.
+
+        A character with empty hands will probably have this method
+        return 2 (2 free hands).  If this character picks something
+        in one hand, this will return 1 and so on.
+
+        Args:
+            exclude (Object or list of Object, optional): object or list
+                    of objects to ignore, if any.
+
+        Returns:
+            number (int): the number of limbs that are free and can hold something.
+
+        """
+        return len(self.can_hold(exclude))
 
     def all(self):
         """Return all objects, include these contained.
@@ -53,6 +154,43 @@ class EquipmentHandler(object):
 
         return objs
 
+    def format(self, looker, show_covered=False):
+        """
+        Return a formatted string of the things worn by the character.
+
+        This method is to be used by the `equipment` command and related.
+        It will retrieve the list of limbs and format the message accordingly.
+
+        Args:
+            looker (Object): the object (character) looking.
+            show_covered (bool, optional): show the limbs that are covered
+                    (`False` by default).
+
+        Returns:
+            formatted (str): the formatted list of limbs as a string.
+
+        """
+        # First, retrieve the list of first level
+        first_level = self.first_level
+        # We first check what should be hidden
+        hidden = []
+        if not show_covered:
+            for limb, obj in first_level:
+                hidden.extend(limb.cover)
+
+        # Browse the list of limbs to display them, hiding what should be hidden
+        string = ""
+        for limb, obj in first_level:
+            if limb.key in hidden:
+                continue
+
+            if obj is None:
+                continue
+
+            string += "\n  " + limb.name.ljust(20) + ": " + obj.get_display_name(looker)
+
+        return string.lstrip("\n")
+
     def can_get(self, object_or_objects):
         """Return the objects the character can get.
 
@@ -62,8 +200,8 @@ class EquipmentHandler(object):
         Return:
             objects (dictionary of Object:container): the list of objects the
                     character can pick up.  Note that the container can be
-                    the character itself, if the object can be picked up in one of
-                    the character's hands.
+                    a limb (Limb object), if the object can be picked up in
+                    one of the character's limbs if it can hold something.
 
         Object types are checked at this moment.  Rather, browsing through
         the extended object content, if one object can get, checks whether
@@ -71,7 +209,8 @@ class EquipmentHandler(object):
         on several containers if it has to.
 
         """
-        can_get = defaultdict(list)
+        can_hold = self.can_hold()
+        can_get = OrderedDefaultDict(list)
         if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
             objects = [object_or_objects]
         else:
@@ -103,35 +242,34 @@ class EquipmentHandler(object):
             if all(obj in to_get for obj in objects):
                 break
 
+        # The remaining objects are picked up by the can_hold limbs, if possible
+        remaining = [obj for obj in objects if obj not in to_get]
+        while can_hold and remaining:
+            limb = can_hold.pop(0)
+            can_get[limb].append(remaining.pop(0))
+
         return can_get
 
-    def first_level(self):
-        """Return the first-level of equipment for this character.
+    def get(self, objects_and_containers):
+        """
+        Get the specified objects.
 
-        The search will be performed in the character's content.  Depending
-        on the character's skeleton, limbs will be attributed with
-        containers.  If an object doesn't match a limb, it will be
-        disregarded.
+        The `can_get` method should have been called beforehand, and this
+        method should process getting the objects and putting them in the
+        various containers without error.
 
-        Returns:
-            limbs (dictionary of str:list of objects): a dictionary containing, as key, the name of the limb
-                    and as value, a list of objects sorted by proximity (the first object in the list is the closest to the skin).
+        Args:
+            objects_and_containers (dict): the objects to get, the result
+                    of the `can_get` method.  No error is assumed to happen
+                    at this point.
 
         """
-        limbs = OrderedDict()
-        skeleton_name = self.character.db.skeleton
-        if not skeleton_name:
-            return limbs
-
-        skeleton = SKELETONS.get(skeleton_name)
-        if skeleton is None:
-            raise ValueError("Can't find the skeleton: '{}'".format(skeleton_name))
-
-        # Get all contents, we'll filter afterward
-        contents = self.character.contents
-        for key, name, group in skeleton:
-            objs = sorted([obj for obj in contents if obj.tags.get(key, category="eq")],
-                    key=lambda obj: obj.tags.get(category="eq_pos"))
-            limbs[name] = objs
-
-        return limbs
+        for container, objects in objects_and_containers.items():
+            for obj in objects:
+                if isinstance(container, Limb):
+                    # It's a first-level, a limb, either hold it or wear it
+                    limb = container
+                    obj.location = self.character
+                    obj.tags.add(limb.key, category="eq")
+                else:
+                    obj.location = container

@@ -25,7 +25,7 @@ class Container(BaseType):
         else:
             prototype = self.obj.db.prototype
             type = prototype.types.get("container")
-            self.db["mas_max"] = type.db.get("mass_max", 3)
+            self.db["mass_max"] = type.db.get("mass_max", 3)
 
     def can_get(self, objects):
         """Return whether this container can get the specified objects.
@@ -34,10 +34,10 @@ class Container(BaseType):
             objects (list of Object): list of objects to put in this container.
 
         """
+        return True
         mass = self.mass
         mass_max = self.db.get("mass_max")
         if mass_max is None:
             raise ValueError("{} has no mass_max".format(self.obj))
 
-        print "mass", mass, "/", mass_max
         return True
