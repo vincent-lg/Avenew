@@ -10,6 +10,7 @@ creation of other help topics such as RP help or game-world aides.
 
 from django.conf import settings
 from evennia.commands.default.help import CmdHelp as OldCmdHelp
+from evennia.utils import evmore
 from evennia.utils.utils import dedent, fill
 
 ## Constants
@@ -20,6 +21,14 @@ class CmdHelp(OldCmdHelp):
 
     key = "help"
     suggestion_maxnum = 0
+
+    def msg_help(self, text):
+        """
+        messages text to the caller, adding an extra oob argument to indicate
+        that this is a help command result and could be rendered in a separate
+        help window
+        """
+        evmore.msg(self.caller, text, session=self.session, justify_kwargs=False)
 
     @staticmethod
     def format_help_entry(title, help_text, aliases=None, suggested=None):
