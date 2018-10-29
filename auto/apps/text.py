@@ -377,7 +377,6 @@ class ThreadScreen(BaseScreen):
         messages = []
         for text in texts:
             sender = text.sender
-<<<<<<< HEAD
             if sender.db_phone_number == number:
                 sender = "Moi"
             else:
@@ -619,7 +618,6 @@ class CmdTo(AppCommand):
         elif len(matches) >= 2:
             self.msg("Ce nom de contact n'est pas assez spécifique. Choix possibles :\n  {}\nEssayez à nouveau..".format("\n  ".join([screen.app.format(contact) for contact in matches])))
             return
->>>>>>> master
 
         number = number.replace("-", "")
         if not number.isdigit() or len(number) != 7:
