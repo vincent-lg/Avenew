@@ -5,7 +5,7 @@
 from world.batch import get_help_entry
 
 #CODE
-get_help_entry("véhicle", """
+get_help_entry("vehicle", """
     Dans Avenew One, vous pouvez conduire un véhicule en utilisant un ensemble de commandes
     décrites dans cette page d'aide. Bien que les véhicules puissent accéder à des zones
     inaccessibles, ils sont principalement utilisés pour gagner du temps. Les voitures,
@@ -71,4 +71,4 @@ get_help_entry("véhicle", """
     fois à l'extérieur, vous pourriez vouloir utiliser la commande |ylock|n afin de
     verrouiler votre véhicule et empêcher les autres de vous les voler.
 
-    """, aliases=["conducteur", "voiture", "camion", "moto"])
+    """, aliases=["véhicule", "conducteur", "voiture", "camion", "moto"])
