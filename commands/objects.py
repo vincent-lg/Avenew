@@ -4,9 +4,10 @@
 Commands to manipualte objects.
 """
 
+from collections import defaultdict
 from textwrap import wrap
 
-from evennia.utils.utils import crop, inherits_from
+from evennia.utils.utils import crop, inherits_from, list_to_string
 
 from commands.command import Command
 
@@ -36,13 +37,14 @@ class CmdGet(Command):
     have any more room in your containers, you will try to pick up the objects with
     your free hands, assuming they are not too heavy for you.  You can also specify
     in which container to store the objects you have picked up:
-      |yget 5 apples into lunch sack|n
+      |yget 5 apples into lunchbox|n
 
     Finally, you can also take objects from a container (usually, a chest or
     furniture).  Just specify the name of the container after the |yfrom|n keyword:
       |yget coin from chest|n
 
-    You can combine all these syntaxes if needed.
+    You can combine all these syntaxes if needed:
+      |yget 5 apples from basket into lunchbox|n
 
     See also: drop, hold, put, wear, remove.
 
@@ -60,12 +62,59 @@ class CmdGet(Command):
             self.msg("|yQue voulez-vous ramasser ?|n")
             return
 
-        # Extract from and into
         # Extract the quantity, if specified
         quantity = 1
         words = self.args.strip().split(" ")
+        if words[0].isdigit():
+            quantity = int(words.pop(0))
+        elif words[0] == "*":
+            quantity = -1
+            del words[0]
 
+        # Extract from and into
+        obj_text = from_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "from":
+                from_text = " ".join(words[i + 1:])
+                del words[i:]
+            elif word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
 
+        if not obj_text:
+            self.msg("|yYou should at least specify an object name to pick up.|n")
+            return
+
+        # Try to find the from object (higher priority since we need it in the next search)
+        from_obj = self.caller.location
+        if from_text:
+            candidates = self.caller.location.contents + self.caller.equipment.all()
+            from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
+            if from_objs:
+                from_obj = from_objs[0]
+            else:
+                self.msg("|rYou can't find that: {}.|n".format(from_text))
+                return
+
+        # Try to find the object
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj.contents)
+        if objs:
+            # Alter the list depending on quantity
+            if quantity == 0:
+                quantity = 1
+            objs = objs[:quantity]
+        else:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        # Try to put the objects in the caller
+        can_get = self.caller.equipment.can_get(objs)
+        if can_get:
+            self.caller.equipment.get(can_get)
+            self.msg("You pick up: {}.".format(list_to_string(can_get.objects().names(self.caller))))
+        else:
+            self.msg("|rIt seems you cannot get that.|n")
 
 
 class CmdUse(Command):

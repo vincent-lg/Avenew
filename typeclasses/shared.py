@@ -15,6 +15,15 @@ class AvenewObject(object):
 
     """Mix-in containing shared behavior that all typeclasses in the Avenew game should use."""
 
+    @property
+    def mass(self):
+        """Return the mass and these of contents."""
+        mass = self.db.mass
+        if mass is None:
+            mass = 1
+
+        return reduce(lambda x, y: x + y.mass, [mass] + self.contents)
+
     def get_display_name(self, looker, **kwargs):
         """
         Displays the name of the object in a viewer-aware manner.
@@ -33,34 +42,26 @@ class AvenewObject(object):
             return "{}(/{})".format(self.name, self.id)
         return self.name
 
-    def get_numbered_name(self, count, looker, **kwargs):
+    def get_numbered_name(self, count, looker):
         """
-        Return the numbered (singular, plural) forms of this object's key. This is by default called
-        by return_appearance and is used for grouping multiple same-named of this object. Note that
-        this will be called on *every* member of a group even though the plural name will be only
-        shown once. Also the singular display version, such as 'an apple', 'a tree' is determined
-        from this method.
+        Return the numbered (singular or plural) name of this object. This is by default called
+        by return_appearance and is used for grouping multiple same-named of this object.
 
         Args:
-            count (int): Number of objects of this type
-            looker (Object): Onlooker. Not used by default.
-        Kwargs:
-            key (str): Optional key to pluralize, use this instead of the object's key.
+            count (int): Number of objects of this singular name to group.
+            looker (Object): Onlooker.
+
         Returns:
-            singular (str): The singular form to display.
-            plural (str): The determined plural form of the key, including the count.
+            name (str): the appropriate name (singular or plural).
+
         """
-        key = kwargs.get("key", self.key)
-        singular = key
-        plural = "{} {}".format(count, self.attributes.get("plural", "choses"))
+        singular = self.get_display_name(looker)
+        plural = self.attributes.get("plural", "choses")
         if not self.aliases.get(plural, category="plural_key"):
             # we need to wipe any old plurals/an/a in case key changed in the interrim
             self.aliases.clear(category="plural_key")
             self.aliases.add(plural, category="plural_key")
-            # save the singular form as an alias here too so we can display "an egg" and also
-            # look at 'an egg'.
-            self.aliases.add(singular, category="plural_key")
-        return singular, plural
+        return singular if count < 2 else "{} {}".format(count, plural)
 
     def search(self, searchdata, **kwargs):
         """
@@ -240,7 +241,7 @@ class SharedAttributeHandler(AttributeHandler):
 
         """
         ret = super(SharedAttributeHandler, self).get(
-                key=key, category=category,
+                key=key, default=default, category=category,
                 return_obj=return_obj, strattr=strattr,
                 raise_exception=raise_exception, accessing_obj=accessing_obj,
                 default_access=default_access, return_list=return_list)

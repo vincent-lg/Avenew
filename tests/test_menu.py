@@ -25,7 +25,7 @@ class TestMenu(CommandTest):
         self.menutree = self.session.ndb._menutree
 
         # Force a "test" account to be created
-        self.account2 = create.create_account("test", "", "mypass")
+        self.account2 = create.create_account("test", "", "mypassword")
         self.account2.db.valid = True
 
     @property
@@ -53,7 +53,7 @@ class TestMenu(CommandTest):
     def test_password(self):
         """Test to login to an existing account with correct password."""
         self.session.execute_cmd("test")
-        self.session.execute_cmd("mypass")
+        self.session.execute_cmd("mypassword")
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "create_first_name")
 
@@ -65,7 +65,7 @@ class TestMenu(CommandTest):
         self.assertTrue(self.account2.db._locked)
 
         # And check that you cannot insist even providing the right password
-        self.session.execute_cmd("mypass")
+        self.session.execute_cmd("mypassword")
         prompt = self.menutree.nodetext
         self.assertEqual(self.default_node, "password")
 

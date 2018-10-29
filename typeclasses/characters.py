@@ -15,6 +15,7 @@ from evennia.contrib.ingame_python.typeclasses import EventCharacter
 from evennia.contrib.ingame_python.utils import register_events, time_event, phrase_event
 
 from auto.behaviors.behaviorhandler import BehaviorHandler
+from logic.character.equipment import EquipmentHandler
 from logic.character.events import *
 from logic.character.stats import StatsHandler
 from logic.geo import get_direction
@@ -72,6 +73,11 @@ class Character(AvenewObject, EventCharacter):
     def behaviors(self):
         """Return the behavior handler for this character."""
         return BehaviorHandler(self)
+
+    @lazy_property
+    def equipment(self):
+        """Return the equipment handler for this character."""
+        return EquipmentHandler(self)
 
     @lazy_property
     def stats(self):

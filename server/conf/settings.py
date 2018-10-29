@@ -68,9 +68,10 @@ INSTALLED_APPS += (
         "anymail",
         "background_task",
         "evennia_wiki",
-        "web.evapp",
         "web.builder",
+        "web.evapp",
         "web.help_system",
+        "web.mailgun",
         "web.text",
 )
 
