@@ -46,4 +46,24 @@ class ObjectSet(list):
 
     """A list to represent a list of objects, with additional methods."""
 
-    pass
+    def names(self, looker):
+        """Return the grouped names (singular or plural) as a list of str.
+
+        Args:
+            looker (Object): the looker.
+
+        Returns:
+            names (list of str): the list of names.
+
+        """
+        dictionary = defaultdict(list)
+        for obj in self:
+            singular = obj.key
+            dictionary[singular].append(obj)
+
+        # Now create a list of names
+        names = []
+        for objects in dictionary.values():
+            names.append(objects[0].get_numbered_name(len(objects), looker))
+
+        return names

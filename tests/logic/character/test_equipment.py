@@ -66,8 +66,10 @@ class TestEquipment(EvenniaTest):
         self.assertIn(self.bag, self.char3.equipment.all())
 
         # If we try to pick up an apple now, it should go in the bag
-        can = self.char3.equipment.can_get([self.apple1])
+        can = self.char3.equipment.can_get([self.apple1, self.apple2])
         self.char3.equipment.get(can)
         self.assertIn(self.bag, self.char3.equipment.all())
         self.assertIn(self.apple1, self.char3.equipment.all())
         self.assertIn(self.apple1, self.bag.contents)
+        self.assertIn(self.apple2, self.char3.equipment.all())
+        self.assertIn(self.apple2, self.bag.contents)

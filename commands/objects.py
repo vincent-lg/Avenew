@@ -7,7 +7,7 @@ Commands to manipualte objects.
 from collections import defaultdict
 from textwrap import wrap
 
-from evennia.utils.utils import crop, inherits_from
+from evennia.utils.utils import crop, inherits_from, list_to_string
 
 from commands.command import Command
 
@@ -112,9 +112,7 @@ class CmdGet(Command):
         can_get = self.caller.equipment.can_get(objs)
         if can_get:
             self.caller.equipment.get(can_get)
-            gotten = [obj for objects in can_get.values() for obj in objects]
-            for obj in gotten:
-                self.msg("You pick up: {}.".format(obj.get_display_name(self.caller)))
+            self.msg("You pick up: {}.".format(list_to_string(can_get.objects().names(self.caller))))
         else:
             self.msg("|rIt seems you cannot get that.|n")
 
