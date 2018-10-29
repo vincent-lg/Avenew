@@ -246,7 +246,7 @@ class NewTextScreen(BaseScreen):
             Nouveau message
 
             De  : {}
-              À : {}
+              À : {} (utilisez la commande |yto|n pour ajouter ou retirer un destinataire)
 
             Texte du message (utilisez {clear} pour effacer le texte actuel) :
                 {}
@@ -257,7 +257,7 @@ class NewTextScreen(BaseScreen):
         for i, recipient in enumerate(recipients):
             recipients[i] = self.app.format(recipient)
 
-        content = self.db.get("content", "(type your text here)")
+        content = self.db.get("content", "(Ce message est vide. Entrez son texte.)")
         content = "\n    ".join(wrap(content, 75))
         recipients = ", ".join(recipients)
         return screen.format(number, recipients, content, clear=self.format_cmd("clear"), send=self.format_cmd("send"), cancel=self.format_cmd("cancel"))
