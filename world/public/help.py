@@ -5,7 +5,7 @@
 from world.batch import get_help_entry
 
 #CODE
-get_help_entry("vehicle", """
+get_help_entry("vehicule", """
     Dans Avenew One, vous pouvez conduire un véhicule en utilisant un ensemble de commandes
     décrites dans cette page d'aide. Bien que les véhicules puissent accéder à des zones
     inaccessibles, ils sont principalement utilisés pour gagner du temps. Les voitures,
