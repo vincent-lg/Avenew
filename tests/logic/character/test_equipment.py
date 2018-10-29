@@ -35,28 +35,30 @@ class TestEquipment(EvenniaTest):
     def test_get(self):
         """Try to get several objects."""
         can = self.char3.equipment.can_get(self.apple1)
-        total = [obj for objects in can.values() for obj in objects]
         self.assertEqual(1, len(can))
-        self.assertIn(self.apple1, total)
-        self.assertNotIn(self.apple2, total)
-        self.assertNotIn(self.apple3, total)
+        self.assertIn(self.apple1, can.objects())
+        self.assertNotIn(self.apple2, can.objects())
+        self.assertNotIn(self.apple3, can.objects())
+        self.assertEqual(can.remaining, [])
 
         # Try to get two apples (should be possible)
         can = self.char3.equipment.can_get([self.apple1, self.apple2])
-        total = [obj for objects in can.values() for obj in objects]
         self.assertEqual(2, len(can))
-        self.assertIn(self.apple1, total)
-        self.assertIn(self.apple2, total)
-        self.assertNotIn(self.apple3, total)
+        self.assertIn(self.apple1, can.objects())
+        self.assertIn(self.apple2, can.objects())
+        self.assertNotIn(self.apple3, can.objects())
+        self.assertEqual(can.remaining, [])
 
         # Getting three apples should give the same result as getting two
         # (the third apple is ignored)
         can = self.char3.equipment.can_get([self.apple1, self.apple2, self.apple3])
-        total = [obj for objects in can.values() for obj in objects]
         self.assertEqual(2, len(can))
-        self.assertIn(self.apple1, total)
-        self.assertIn(self.apple2, total)
-        self.assertNotIn(self.apple3, total)
+        self.assertIn(self.apple1, can.objects())
+        self.assertIn(self.apple2, can.objects())
+        self.assertNotIn(self.apple3, can.objects())
+        # Except can.remaining should contain apple3
+        self.assertEqual(1, len(can.remaining))
+        self.assertIn(self.apple3, can.remaining)
 
         # Now pick up the bag
         can = self.char3.equipment.can_get([self.bag])

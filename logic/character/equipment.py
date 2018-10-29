@@ -13,21 +13,13 @@ Most methods can receive either a single object or a list of objects.
 
 """
 
-from collections import OrderedDict, defaultdict
 from Queue import Queue
 
 from evennia.utils.utils import inherits_from
 
 from logic.character.limbs import Limb
 from logic.character import limbs as LIMBS
-
-class OrderedDefaultDict(OrderedDict, defaultdict):
-
-    """A defaultdict retaining key ordering like OrdereedDict."""
-
-    def __init__(self, default_factory=None, *args, **kwargs):
-        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
-        self.default_factory = default_factory
+from logic.object.sets import ContainerSet
 
 
 class EquipmentHandler(object):
@@ -210,7 +202,7 @@ class EquipmentHandler(object):
 
         """
         can_hold = self.can_hold()
-        can_get = OrderedDefaultDict(list)
+        can_get = ContainerSet()
         if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
             objects = [object_or_objects]
         else:
@@ -248,6 +240,7 @@ class EquipmentHandler(object):
             limb = can_hold.pop(0)
             can_get[limb].append(remaining.pop(0))
 
+        can_get.remaining = remaining
         return can_get
 
     def get(self, objects_and_containers):
