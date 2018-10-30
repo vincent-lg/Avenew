@@ -592,6 +592,7 @@ def validate_account(caller, input):
     else:
         account.db.valid = True
         account.attributes.remove("validation_code")
+        account.record_email_address()
         caller.msg("----- Vous créez maintenant le premier personnage dans votre compte. -----")
         _login(caller, account)
         text = ""

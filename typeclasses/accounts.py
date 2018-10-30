@@ -27,6 +27,8 @@ several more options for customizing the Guest account system.
 from evennia import DefaultAccount, DefaultGuest
 from typeclasses.shared import AvenewObject
 
+from web.mailgun.models import EmailAddress
+
 class Account(AvenewObject, DefaultAccount):
     """
     This class describes the actual OOC account (i.e. the user connecting
@@ -102,6 +104,17 @@ class Account(AvenewObject, DefaultAccount):
     def at_look(self, target=None, session=None):
         """Do nothing, the 'look' command is not active."""
         return ""
+
+    def record_email_address(self):
+        """
+        Record the account's adress email in the app used by Mailgun.
+
+        This method is automatically called when an account is validated.
+
+        """
+        email, _ = EmailAddress.objects.get_or_create(db_email=self.email)
+        email.db_account = self
+        email.db_display_name = self.key
 
 
 class Guest(AvenewObject, DefaultGuest):
