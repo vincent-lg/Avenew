@@ -138,7 +138,7 @@ class TestText(CommandTest):
         self.assertIn("remove", ret)
 
         ret = self.execute_cmd(self.user, "to 331")
-        self.assertIn("not a valid", ret)
+        self.assertIn("No match", ret)
 
         # Add a valid phone number
         ret = self.execute_cmd(self.user, "to 6007979")
