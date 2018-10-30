@@ -7,5 +7,4 @@ from web.mailgun.models import EmailMessage
 def handle_inbound(sender, event, esp_name, **kwargs):
     """Store the message in the tiny help desk."""
     message = event.message
-    from evennia import set_trace;set_trace()
     email = EmailMessage.objects.create_from_anymail(message)
