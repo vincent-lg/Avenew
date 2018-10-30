@@ -1,13 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import datetime
+import requests
+import time
 
+from anymail.message import AnymailMessage
+from django.conf import settings
 from django.db import models
+from django.utils.html import strip_tags
 from django.utils.timezone import make_aware
 from evennia.accounts.models import AccountDB
 from evennia.utils.idmapper.models import SharedMemoryModel
 
 from web.mailgun.managers import EmailManager
+from world.log import tasks as log
+
+## Constants
+API_KEY = getattr(settings, "ANYMAIL", {}).get("MAILGUN_API_KEY", "")
+NEWS_EMAIL = getattr(settings, "MAILING_LISTS", {}).get("NEWS", "")
 
 class EmailAddress(SharedMemoryModel):
 
@@ -22,6 +32,26 @@ class EmailAddress(SharedMemoryModel):
             return self.db_display_name + " <" + self.db_email + ">"
         else:
             return self.db_email
+
+    def subscribe_to_news(self):
+        """Add this email address to the news mailing list list."""
+        if not API_KEY or not NEWS_EMAIL:
+            return
+
+        url = "https://api.mailgun.net/v3/lists/{}/members".format(NEWS_EMAIL)
+
+        before = time.time()
+        res = requests.post(url,
+            auth=('api', API_KEY),
+            data={
+                'subscribed': True,
+                'address': self.db_email,
+                'name': self.db_display_name,
+            }
+        )
+        after = time.time()
+        log.debug("{}s: calling the API at {}".format(round(after - before, 3), url))
+        return res
 
 
 class EmailThread(SharedMemoryModel):
