@@ -587,6 +587,7 @@ def validate_account(caller, input):
     else:
         account.db.valid = True
         account.attributes.remove("validation_code")
+        account.record_email_address()
         caller.msg("-----  You will now create the first character of this account. -----")
         _login(caller, account)
         text = ""
