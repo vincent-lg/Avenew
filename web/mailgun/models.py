@@ -7,7 +7,7 @@ from django.utils.timezone import make_aware
 from evennia.accounts.models import AccountDB
 from evennia.utils.idmapper.models import SharedMemoryModel
 
-#from web.mailgun.managers import EmailMessageManager, EmailThreadManager
+from web.mailgun.managers import EmailManager
 
 class EmailAddress(SharedMemoryModel):
 
@@ -17,12 +17,17 @@ class EmailAddress(SharedMemoryModel):
     db_email = models.CharField(max_length=254, db_index=True, unique=True)
     db_account = models.ForeignKey(AccountDB, null=True, blank=True, on_delete=models.SET_NULL)
 
+    def __str__(self):
+        if self.db_display_name:
+            return self.db_display_name + " <" + self.db_email + ">"
+        else:
+            return self.db_email
+
 
 class EmailThread(SharedMemoryModel):
 
     """A thread to group messages."""
 
-    #objects = EmailThreadManager()
     db_subject = models.CharField(max_length=254, default="")
     db_participants = models.ManyToManyField(EmailAddress)
     db_read = models.BooleanField(default=False)
@@ -32,7 +37,7 @@ class EmailMessage(SharedMemoryModel):
 
     """A model representing an email message, part of a thread."""
 
-    #objects = EmailMessageManager()
+    objects = EmailManager()
     db_message_id = models.CharField(max_length=254, db_index=True)
     db_sender = models.ForeignKey(EmailAddress)
     db_date_created = models.DateTimeField("date created", editable=False,
