@@ -20,7 +20,6 @@ from textwrap import dedent
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.core.validators import validate_email
 from evennia import logger
 from evennia.server.models import ServerConfig
@@ -29,6 +28,7 @@ from evennia.utils.utils import delay, random_string_from_module
 
 from menu.character import _login, _options_choose_characters, _text_choose_characters
 from typeclasses.accounts import Account
+from web.mailgun.utils import send_email
 
 ## Constants
 CONNECTION_SCREEN_MODULE = settings.CONNECTION_SCREEN_MODULE
@@ -494,12 +494,12 @@ def email_address(caller, input):
 
             Four-digit code: {}
         """.strip("\n")).format(account.name, code)
-        recipent = email_address
+        recipient = email_address
         account.db.valid = False
         account.db.validation_code = code
         try:
             assert not settings.TEST_SESSION
-            send_mail(subject, body, "team@avenew.one", [recipent])
+            send_email("NOREPLY", recipient, subject, body, store=False)
         except AssertionError:
             account.db.valid = True
             account.attributes.remove("validation_code")

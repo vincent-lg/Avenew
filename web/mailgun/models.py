@@ -18,7 +18,7 @@ from world.log import tasks as log
 
 ## Constants
 API_KEY = getattr(settings, "ANYMAIL", {}).get("MAILGUN_API_KEY", "")
-NEWS_EMAIL = getattr(settings, "MAILING_LISTS", {}).get("NEWS", "")
+OUTGOING_ALIASES = getattr(settings, "OUTGOING_ALIASES", {})
 
 class EmailAddress(SharedMemoryModel):
 
@@ -36,10 +36,11 @@ class EmailAddress(SharedMemoryModel):
 
     def subscribe_to_news(self):
         """Add this email address to the news mailing list list."""
-        if not API_KEY or not NEWS_EMAIL:
+        news = OUTGOING_ALIASES.get("NEWS", "")
+        if not API_KEY or not news:
             return
 
-        url = "https://api.mailgun.net/v3/lists/{}/members".format(NEWS_EMAIL)
+        url = "https://api.mailgun.net/v3/lists/{}/members".format(news)
 
         before = time.time()
         res = requests.post(url,
@@ -115,7 +116,15 @@ class EmailMessage(SharedMemoryModel):
             the message was succesfully sent, None otherwise.
 
         """
-        if isinstance(to, str):
+        if "@" not in from_email:
+            # We assume this is an alias
+            if from_email not in OUTGOING_ALIASES:
+                log.warning("The {!r} alias wasn't set in the 'OUTGOING_ALIASES' setting, aborting.".format(from_email))
+                return
+
+            from_email = OUTGOING_ALIASES.get(from_email)
+
+        if isinstance(to, basestring):
             to = [to]
 
         if html:
