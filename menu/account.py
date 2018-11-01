@@ -440,7 +440,7 @@ def email_address(caller, input):
     options = (
         {
             "key": "_default",
-            "desc": "Entrez une e-mail adresse valide.",
+            "desc": "Entrez une adresse e-mail valide.",
             "goto": "email_address",
         },
     )
@@ -489,7 +489,7 @@ def email_address(caller, input):
         # Sends an email with the code
         subject = "[Avenew] Validation de compte"
         body = dedent("""
-            Le compte {} a été correctement créé sur Avenew.
+            Le compte {} a bien été créé sur Avenew One.
 
             Afin de le valider et commencer à jouer, vous devrez entrer le code de validation
             à 4 chiffres suivant dans votre client MUD. Si vous avez été déconnecté du serveur,
@@ -663,7 +663,7 @@ def _create_account(session, accountname, password, permissions, typeclass=None,
 def _text_email_address(account):
     """Return the text for the email address menu node."""
     text = dedent("""
-        Entrez une e-mail adresse valide pour le compte {}.
+        Entrez une adresse e-mail valide pour le compte {}.
 
         Un e-mail de confirmation sera envoyé à cette adresse, contenant un code de validation à
         4 chiffres dont vous aurez besoin pour valider ce compte. Cette adresse e-mail ne sera
