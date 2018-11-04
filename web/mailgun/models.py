@@ -26,7 +26,7 @@ class EmailAddress(SharedMemoryModel):
 
     db_display_name = models.CharField(max_length=40, null=True, blank=True, default="")
     db_email = models.CharField(max_length=254, db_index=True, unique=True)
-    db_account = models.ForeignKey(AccountDB, null=True, blank=True, on_delete=models.SET_NULL)
+    db_account = models.OneToOneField(AccountDB, null=True, blank=True, on_delete=models.SET_NULL, related_name="email_address")
 
     def __str__(self):
         if self.db_display_name:
@@ -163,14 +163,12 @@ class EmailMessage(SharedMemoryModel):
             from_email = parse_single_address(from_email)
             from_email, _ = EmailAddress.objects.get_or_create(db_email=from_email.addr_spec,
                     defaults={"db_display_name": from_email.display_name})
-            from_email.save()
 
             # Find the to and convert to EmailAddresses
             to = [parse_single_address(addr) for addr in to]
             for i, address in enumerate(to):
                 to[i], _ = EmailAddress.objects.get_or_create(db_email=address.addr_spec,
                     defaults={"db_display_name": address.display_name})
-                to[i].save()
 
             # If there's an in_reply_to, don't create a new thread
             if in_reply_to:

@@ -24,13 +24,12 @@ class EmailManager(models.Manager):
         from_email = message.from_email
         from_email, _ = EmailAddress.objects.get_or_create(db_email=from_email.addr_spec,
                 defaults={"db_display_name": from_email.display_name})
-        from_email.save()
+
         # Find the to and convert to EmailAddresses
         to = message.to
         for i, address in enumerate(to):
             to[i], _ = EmailAddress.objects.get_or_create(db_email=address.addr_spec,
                 defaults={"db_display_name": address.display_name})
-            to[i].save()
 
         # Extract the subject, date, message_id, text and HTML
         subject = message.subject if message.subject else ""
