@@ -5,6 +5,7 @@ Container types.
 """
 
 from auto.types.base import BaseType
+from logic.object.sets import ObjectSet
 
 class Container(BaseType):
 
@@ -41,3 +42,15 @@ class Container(BaseType):
             raise ValueError("{} has no mass_max".format(self.obj))
 
         return True
+
+    def return_appearance(self, looker):
+        """Return the appearance of the phone."""
+        if self.obj.contents:
+            objects = ObjectSet()
+            visible = [o for o in self.obj.contents if o.access(looker, "view")]
+            for obj in visible:
+                objects.append(obj)
+            if objects:
+                return "\n\nInside, you see:\n  " + "\n  ".join([name for name in objects.names(looker)])
+
+        return "\n\nThere is nothing inside."

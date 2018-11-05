@@ -230,7 +230,7 @@ class SharedAttributeHandler(AttributeHandler):
 
         """
         ret = super(SharedAttributeHandler, self).get(
-                key=key, default=default, category=category,
+                key=key, default=None, category=category,
                 return_obj=return_obj, strattr=strattr,
                 raise_exception=raise_exception, accessing_obj=accessing_obj,
                 default_access=default_access, return_list=return_list)
