@@ -57,10 +57,6 @@ class AvenewObject(object):
         """
         singular = self.get_display_name(looker)
         plural = self.attributes.get("plural", "things")
-        if not self.aliases.get(plural, category="plural_key"):
-            # we need to wipe any old plurals/an/a in case key changed in the interrim
-            self.aliases.clear(category="plural_key")
-            self.aliases.add(plural, category="plural_key")
         return singular if count < 2 else "{} {}".format(count, plural)
 
     def search(self, searchdata, **kwargs):
