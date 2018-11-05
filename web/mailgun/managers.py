@@ -19,7 +19,7 @@ class EmailManager(models.Manager):
         something to pass this method.
 
         """
-        from .models import *
+        from .models import EmailAddress, EmailThread, EmailMessage
         # Find the from and convert to an EmailAddress
         from_email = message.from_email
         from_email, _ = EmailAddress.objects.get_or_create(db_email=from_email.addr_spec,
@@ -52,10 +52,11 @@ class EmailManager(models.Manager):
 
         if thread is None:
             thread = EmailThread(db_subject=subject)
-            # Add all the participants
             thread.save()
-            for email in [from_email] + to:
-                thread.db_participants.add(email)
+
+        # Add all the participants
+        for email in [from_email] + to:
+            thread.db_participants.add(email)
 
         # Create the EmailMessage
         email = EmailMessage(db_thread=thread, db_date_created=date, db_sender=from_email, db_message_id=message_id, db_text=text, db_html=html)
