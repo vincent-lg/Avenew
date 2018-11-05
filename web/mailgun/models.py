@@ -64,6 +64,15 @@ class EmailThread(SharedMemoryModel):
     db_participants = models.ManyToManyField(EmailAddress)
     db_read = models.BooleanField(default=False)
 
+    def __str__(self):
+        count = self.db_participants.count()
+        return "{!r} ({} participants)".format(self.db_subject, count)
+
+    @property
+    def emails(self):
+        """Return the list of emails in this thread, sorted by date."""
+        return self.email_messages.order_by("db_date_created")
+
 
 class EmailMessage(SharedMemoryModel):
 
@@ -76,7 +85,10 @@ class EmailMessage(SharedMemoryModel):
             auto_now_add=True, db_index=True)
     db_text = models.TextField()
     db_html = models.TextField()
-    db_thread = models.ForeignKey(EmailThread, on_delete=models.CASCADE)
+    db_thread = models.ForeignKey(EmailThread, on_delete=models.CASCADE, related_name="email_messages")
+
+    def __str__(self):
+        return "{} to {}: {!r}".format(self.db_sender, ", ".join([str(addr) for addr in self.to]), self.db_thread.db_subject)
 
     @property
     def to(self):
@@ -181,8 +193,9 @@ class EmailMessage(SharedMemoryModel):
             else:
                 thread = EmailThread(db_subject=subject)
                 thread.save()
-                for email in [from_email] + to:
-                    thread.db_participants.add(email)
+
+            for email in [from_email] + to:
+                thread.db_participants.add(email)
 
             # Create the EmailMessage
             email = EmailMessage(db_thread=thread, db_sender=from_email, db_message_id=message_id, db_text=text, db_html=html)
