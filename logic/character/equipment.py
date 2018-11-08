@@ -170,7 +170,7 @@ class EquipmentHandler(object):
 
         return objs
 
-    def nested(self, looker=None):
+    def nested(self, looker=None, only_show=None):
         """
         Return the nested dictioanry of owned objects.
 
@@ -192,18 +192,31 @@ class EquipmentHandler(object):
         Args:
             looker (object, optional): the looker.  If it's not set, use the
                     character who owns this equipment.
+            only_show (list of objects, optional): return only these
+                    objects with their containers.
 
         Returns:
             nested (dict): a dictionary of nested objects.
 
         """
         looker = looker or self.character
+        only_show = only_show or []
         limbs = self.limbs
         nested = ContainerSet()
         nested.default_factory = ObjectSet
         objs = self.all(only_visible=True, looker=looker)
+
+        # If only_show, apply a filter
+        for obj in list(only_show):
+            while obj.location and obj.location != self.character:
+                obj = obj.location
+                only_show.append(obj)
+
         for obj in objs:
             depth = 0
+            if obj != self.character and only_show and obj not in only_show:
+                continue
+
             parent = obj
             while parent != self.character:
                 depth += 1
@@ -278,7 +291,7 @@ class EquipmentHandler(object):
 
         return string.lstrip("\n")
 
-    def format_inventory(self, looker=None):
+    def format_inventory(self, looker=None, only_show=None):
         """
         Return the formatted inventory as a string.
 
@@ -288,12 +301,15 @@ class EquipmentHandler(object):
 
         Args:
             looker (object, optional): the looker.  If not set, default to
+            only_show (list of objects, optional): list of objects to filter
+                    the inventory.
                     the character who owns this equipment.
+
         Return:
             inventory (str): the formatted inventory.
 
         """
-        nested = self.nested(looker=looker)
+        nested = self.nested(looker=looker, only_show=only_show)
         string = ""
         last_parent = None
         for (parent, depth), objects in nested.items():

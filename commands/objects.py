@@ -269,5 +269,13 @@ class CmdInventory(Command):
 
     def func(self):
         """Implements the command."""
-        inventory = self.caller.equipment.format_inventory()
+        only_show = None
+        if self.args.strip():
+            candidates = self.caller.equipment.all(only_visible=True, looker=self.caller)
+            only_show = self.caller.search(self.args, candidates=candidates, quiet=True)
+            if not only_show:
+                self.msg("You don't carry that.")
+                return
+
+        inventory = self.caller.equipment.format_inventory(only_show=only_show)
         self.msg(inventory)
