@@ -42,17 +42,19 @@ SERVERNAME = "Avenew One"
 CMDSET_UNLOGGEDIN = "commands.unloggedin.UnloggedinCmdSet"
 DELAY_CMD_LOGINSTART = 0
 
+# Default prefix
+CMD_IGNORE_PREFIXES = "@:"
+
 # Default command class
 COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
 
 # Multi-session mode : 2
-# One account, multiple account, only one session per character
+# One account, multiple character, only one session per character
 MULTISESSION_MODE = 2
 
 # Time factor
 TIME_FACTOR = 4
 
-# Timezone
 # Time configuration
 TIME_ZONE = "America/Los_Angeles"
 TIME_GAME_EPOCH = 1577865600
@@ -63,7 +65,11 @@ CHANNEL_COMMAND_CLASS = "commands.comms.ChannelCommand"
 # Screen reader and accessibility options
 SCREENREADER_REGEX_STRIP = r"\+-+|\+$|\+~|---+|~~+|==+"
 
-# Web
+# Search settings
+SEARCH_MULTIMATCH_REGEX = r"(?P<number>[0-9]+)\.(?P<name>.*)"
+SEARCH_MULTIMATCH_TEMPLATE = "  {number}.{name}{aliases}{info}\n"
+
+## Web
 INSTALLED_APPS += (
         "anymail",
         "background_task",
