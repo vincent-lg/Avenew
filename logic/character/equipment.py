@@ -297,26 +297,29 @@ class EquipmentHandler(object):
         string = ""
         last_parent = None
         for (parent, depth), objects in nested.items():
+            indent_m1 = (depth - 1) * 2 * " "
+            indent = depth * 2 * " "
+            indent_p1 = (depth + 1) * 2 * " "
             if last_parent is not None and last_parent != parent.location and parent.location != self.character:
-                string += "\n" + (depth - 1) * 2 * " " + "[Back inside " + parent.location.get_display_name(looker) + ", you also see]:\n"
+                string += "\n" + indent_m1 + "[Back inside " + parent.location.get_display_name(looker) + ", you also see]:"
 
             if getattr(parent, "location", None) == self.character:
                 if objects:
-                    string += "\n" + depth * 2 * " " + ("\n" + depth * 2 * " ").join(objects.names(looker))
+                    string += "\n" + indent_p1 + ("\n" + indent_p1).join(objects.names(looker))
                 continue
 
             if isinstance(parent, Limb):
-                string += "\n" + "[" + parent.name + "]: "
+                string += "\n" + "[" + parent.name + "]:\n  "
                 parent = objects[0]
                 del objects[:]
             else:
-                string += "\n" + (depth - 1) * 2 * " "
+                string += "\n" + indent
 
             string += parent.get_display_name(looker)
             if objects or depth == 0:
                 string += " [containing]"
             if objects:
-                string += "\n" + depth * 2 * " " + ("\n" + depth * 2 * " ").join(objects.names(looker))
+                string += "\n" + indent_p1 + ("\n" + indent_p1).join(objects.names(looker))
             last_parent = parent
 
         if string.strip():
