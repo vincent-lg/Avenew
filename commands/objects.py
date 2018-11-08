@@ -226,12 +226,45 @@ class CmdAnswer(Command):
         notification.address(self.caller)
 
 
+class CmdEquipment(Command):
+    """
+    Display your equipment.
+
+    Usage:
+      equipment
+
+    Aliases:
+      eq
+
+    This command displays your equipment, that is, everything you are wearing or
+    holding in your hands.  You will see all you are wearing, even if it's hidden by
+    some other worn objects.  For instance, even if you have shoes on, and socks
+    beneath them, you will see both shoes and socks, whereas if someone looks at you,
+    she will only see your shoes, which maybe is a good thing.
+
+    See also: inventory, get, drop, wear, remove, empty, hold.
+
+    """
+
+    key = "equipment"
+    aliases = ["eq"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        self.msg(self.caller.equipment.format_equipment(looker=self.caller, show_covered=True))
+
+
 class CmdInventory(Command):
     """
     Display your inventory.
 
     Usage:
       inventory [object name]
+
+    Aliases:
+      i
 
     This command displays your inventory, that is, the list of what you are wearing
     and what they contain, if they contain anything.  Usually, when you pick up
