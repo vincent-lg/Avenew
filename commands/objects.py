@@ -224,3 +224,50 @@ class CmdAnswer(Command):
             return
 
         notification.address(self.caller)
+
+
+class CmdInventory(Command):
+    """
+    Display your inventory.
+
+    Usage:
+      inventory [object name]
+
+    This command displays your inventory, that is, the list of what you are wearing
+    and what they contain, if they contain anything.  Usually, when you pick up
+    something, it will end up in one of your hands.  However, if you have some
+    pocket or a backpack or similar, what you pick up will probably end up in there,
+    assuming there is room.  A container can contain other containers, too, so that
+    you can have a backpack containing a plastic bag containing apples.  In this
+    case, when you type |yinventory|n, you will see your backpack, inside of it the
+    plastic bag, and inside of it your apples.  This command is useful to list
+    everything you are carrying, even if it's hidden in various containers.
+
+    You can also specify an object name to filter based on this name.  This allows
+    to use |yinventory|n as a request: find where are my apples.  Following the same
+    example, you could use |yinventory apples|n and it will only display your apples
+    and where they are, not displaying you the rest of your inventory.  Notice that
+    containers that contain your apples are still displayed for clarity.  This will
+    help you retrieve something you have lost, something you know you are carrying but
+    can't remember where.  In a way, it's a bit like patting your pockets and
+    looking into all your bags to find something, but it will be much quicker.
+
+    Remember that you do not need to specify the containers to use your objcts:
+    following the same example, of your backpack containing a plastic bag containg
+    your apples, if you want to eat one, you just need to enter |yeat apple|n.
+    The system will find them automatically, no need to get them manually from the
+    plastic bag.
+
+    See also: equipment, get, drop, wear, remove, empty, hold.
+
+    """
+
+    key = "inventory"
+    aliases = ["i"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        inventory = self.caller.equipment.format_inventory()
+        self.msg(inventory)
