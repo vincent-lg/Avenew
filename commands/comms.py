@@ -13,15 +13,13 @@ added into the CharacterCmdSet.
 
 from django.utils.translation import ugettext as _
 from evennia import SESSION_HANDLER
-from evennia.commands.default.comms import find_channel
 from evennia.commands.default.muxcommand import MuxCommand
 from evennia.comms.channelhandler import CHANNELHANDLER
-from evennia.comms.models import ChannelDB, Msg
-from evennia.comms.channelhandler import CHANNELHANDLER
+from evennia.comms.models import ChannelDB
 from evennia.locks.lockhandler import LockException
-from evennia.utils import create, utils, evtable
+from evennia.utils import evtable
 from evennia.utils.logger import tail_log_file
-from evennia.utils.utils import make_iter, class_from_module
+from evennia.utils.search import search_channel
 
 from commands.command import Command
 
@@ -44,7 +42,7 @@ class CmdConnect(Command):
             return
 
         channelname = self.args
-        channel = find_channel(caller, channelname)
+        channel = search_channel(channelname)
         if not channel:
             return
 
@@ -83,7 +81,7 @@ class CmdDisconnect(Command):
             return
 
         channelname = self.args
-        channel = find_channel(caller, channelname)
+        channel = search_channel(channelname)
         if not channel:
             return
 
@@ -136,10 +134,9 @@ class CmdChannel(MuxCommand):
         caller = self.caller
 
         # If there's an argument, it's a channel name
-        args = self.args
         channel = None
         if self.args.strip():
-            channel = find_channel(caller, self.args)
+            channel = search_channel(self.args)
             if not channel:
                 return
 
