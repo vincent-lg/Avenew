@@ -63,6 +63,10 @@ class PChar(AvenewObject, DefaultObject):
         character.tags.add(self.key, category="pchar")
         character.db.prototype = self
 
+        # Add the plural name, if any
+        if self.db.plural:
+            character.aliases.add(self.db.plural, category="plural_key")
+
         # Add the behaviors
         for behavior in self.behaviors:
             character.behaviors.add(type(behavior).name, recursive=False)
@@ -109,6 +113,10 @@ class PObj(AvenewObject, DefaultObject):
                 key=key, location=location)
         obj.tags.add(self.key, category="pobj")
         obj.db.prototype = self
+
+        # Add the plural name, if any
+        if self.db.plural:
+            obj.aliases.add(self.db.plural, category="plural_key")
 
         # Add the types
         for type_obj in self.types:
