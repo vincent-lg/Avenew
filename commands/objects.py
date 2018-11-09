@@ -5,6 +5,7 @@ Commands to manipualte objects.
 """
 
 from collections import defaultdict
+import re
 from textwrap import wrap
 
 from evennia.utils.utils import crop, inherits_from, list_to_string
@@ -13,6 +14,7 @@ from commands.command import Command
 
 ## Constants
 CATEGORY = "Object manipulation"
+RE_D = re.compile(r"^\d+$")
 
 class CmdGet(Command):
     """
@@ -59,13 +61,13 @@ class CmdGet(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|yWhat do you want to pick up?|n")
+            self.msg("|gWhat do you want to pick up?|n")
             return
 
         # Extract the quantity, if specified
         quantity = 1
         words = self.args.strip().split(" ")
-        if words[0].isdigit():
+        if RE_D.search(words[0]):
             quantity = int(words.pop(0))
         elif words[0] == "*":
             quantity = -1
@@ -83,22 +85,21 @@ class CmdGet(Command):
         obj_text = " ".join(words)
 
         if not obj_text:
-            self.msg("|yYou should at least specify an object name to pick up.|n")
+            self.msg("|gYou should at least specify an object name to pick up.|n")
             return
 
         # Try to find the from object (higher priority since we need it in the next search)
-        from_obj = self.caller.location
+        from_objs = [self.caller.location]
         if from_text:
             candidates = self.caller.location.contents + self.caller.equipment.all()
             from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
-            if from_objs:
-                from_obj = from_objs[0]
-            else:
+            if not from_objs:
                 self.msg("|rYou can't find that: {}.|n".format(from_text))
                 return
 
         # Try to find the object
-        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj.contents)
+        from_objs = [content for obj in from_objs for content in obj.contents]
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
         if objs:
             # Alter the list depending on quantity
             if quantity == 0:
@@ -112,7 +113,7 @@ class CmdGet(Command):
         can_get = self.caller.equipment.can_get(objs)
         if can_get:
             self.caller.equipment.get(can_get)
-            self.msg("You pick up: {}.".format(list_to_string(can_get.objects().names(self.caller))))
+            self.msg("You get {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="and")))
         else:
             self.msg("|rIt seems you cannot get that.|n")
 
