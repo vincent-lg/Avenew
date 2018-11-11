@@ -119,9 +119,10 @@ class AvenewObject(object):
                 otherwise it will return a list of 0, 1 or more matches.
 
         """
-        candidates = candidates or self.location.contents
-        if hasattr(self, "equipment"):
-            candidates += self.equipment.all(only_visible=True)
+        if candidates is None:
+            candidates = self.location.contents
+            if hasattr(self, "equipment"):
+                candidates += self.equipment.all(only_visible=True)
 
         return super(AvenewObject, self).search(searchdata, candidates=candidates, **kwargs)
 

@@ -70,7 +70,7 @@ class CmdGet(Command):
         if RE_D.search(words[0]):
             quantity = int(words.pop(0))
         elif words[0] == "*":
-            quantity = -1
+            quantity = None
             del words[0]
 
         # Extract from and into
