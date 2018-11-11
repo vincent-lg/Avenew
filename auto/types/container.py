@@ -51,6 +51,6 @@ class Container(BaseType):
             for obj in visible:
                 objects.append(obj)
             if objects:
-                return "\n\nInside, you see:\n  " + "\n  ".join([name for name in objects.names(looker)])
+                return "\n\nÀ l'intérieur, vous voyez :\n  " + "\n  ".join([name for name in objects.names(looker)])
 
         return "\n\nThere is nothing inside."

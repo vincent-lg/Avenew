@@ -317,7 +317,7 @@ class EquipmentHandler(object):
             indent = depth * 2 * " "
             indent_p1 = (depth + 1) * 2 * " "
             if last_parent is not None and last_parent != parent.location and parent.location != self.character:
-                string += "\n" + indent_m1 + "[Back inside " + parent.location.get_display_name(looker) + ", you also see]:"
+                string += "\n" + indent_m1 + "[De retour dans " + parent.location.get_display_name(looker) + ", vous voyez aussi] :"
 
             if getattr(parent, "location", None) == self.character:
                 if objects:
@@ -333,7 +333,7 @@ class EquipmentHandler(object):
 
             string += parent.get_display_name(looker)
             if objects or depth == 0:
-                string += " [containing]"
+                string += " [contenant]"
             if objects:
                 string += "\n" + indent_p1 + ("\n" + indent_p1).join(objects.names(looker))
             last_parent = parent
@@ -341,7 +341,7 @@ class EquipmentHandler(object):
         if string.strip():
             return string.lstrip("\n")
         else:
-            return "You aren't carrying anything."
+            return "Vous ne portez rien actuellement."
 
     def can_get(self, object_or_objects):
         """Return the objects the character can get.

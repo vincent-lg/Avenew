@@ -84,15 +84,15 @@ class Limb:
 
 ## Human and humanoid
 HUMAN = [
-        Limb("head", "head"),
-        Limb("left_hand", "left hand", group="hands", can_hold=True),
-        Limb("right_hand", "right hand", group="hands", can_hold=True),
-        Limb("legs", "legs"),
+        Limb("head", "tête"),
+        Limb("left_hand", "main gauche", group="hands", can_hold=True),
+        Limb("right_hand", "main droite", group="hands", can_hold=True),
+        Limb("legs", "jambes"),
         # notice that we don't define left_leg and right_leg as both limbs
         # are grouped (hard to wear something different on either legs)
-        Limb("left_stocking", "left foot", group="stockings"),
-        Limb("right_stocking", "right foot", group="stockings"),
-        Limb("left_shoe", "left foot", group="shoes", cover=["left_stocking"]),
-        Limb("right_shoe", "right foot", group="shoes", cover=["right_stocking"]),
+        Limb("left_stocking", "pied gauche", group="stockings"),
+        Limb("right_stocking", "pied droit", group="stockings"),
+        Limb("left_shoe", "pied gauche", group="shoes", cover=["left_stocking"]),
+        Limb("right_shoe", "pied droit", group="shoes", cover=["right_stocking"]),
 ]
 

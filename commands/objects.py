@@ -19,42 +19,46 @@ RE_D = re.compile(r"^\d+$")
 
 class CmdGet(Command):
     """
-    Pick up something.
+    Ramasse quelque chose.
 
     Usage:
-      get [quantity] <object name> [from <container>] [into <container>]
+      get [quantité] <nom de l'objet> [from <conteneur>] [into <conteneur>]
 
-    Pick up one or more objects at your feet.  The easiest usage is to simply
-    specify an object name as argument:
-      |yget apple|n
+    Ramasse un ou plusieurs objets. La syntaxe la plus simple de cette commande
+    est de préciser tout simplement le nom d'un objet se trouvant sur le sol
+    pour le ramasser :
+      |yget pomme|n
 
-    You can also pick up several objects at once:
-      |yget 3 apples|n
+    Vous pouvez aussi ramasser plusieurs objets d'un coup :
+      |yget 3 pommes|n
 
-    Or get all of them:
-      |yget * apples|n
+    Ou ramasser tous les objets de ce nom :
+      |yget * pommes|n
 
-    By default, the objects you pick up will be sorted in your inventory, which is
-    defined by what you are carrying as containers.  If you have a pair of jeans
-    on, you will have pockets... but they won't be too large either.  If you don't
-    have any more room in your containers, you will try to pick up the objects with
-    your free hands, assuming they are not too heavy for you.  You can also specify
-    in which container to store the objects you have picked up:
-      |yget 5 apples into lunchbox|n
+    Par défaut, les objets que vous ramassez seront placés dans votre inventaire,
+    défini par la liste de ce que vous portez sur vous, pouvant contenir l'objet en
+    question. Si vous portez une paire de jeans par exemple, vous possédez
+    probablement des poches, même si elles ne sont pas trop grandes. Si vous n'avez
+    plus de place dans vos vêtements ou conteneurs, vous essayerez de prendre
+    autant que possible avec vos mains, si ce que vous essayez de prendre n'est pas
+    trop lourd. Vous pouvez aussi préciser dans quel conteneur placer les objets
+    que vous venez de ramasser :
+      |yget 5 pommes into sac en papier|n
 
-    Finally, you can also take objects from a container (usually, a chest or
-    furniture).  Just specify the name of the container after the |yfrom|n keyword:
-      |yget coin from chest|n
+    Vous pouvez également récupérer les objets depuis un conteneur, dans la
+    salle (comme un coffre ou un meuble), ou bien sur vous. Pour ce faire,
+    précisez le nom du conteneur après le mot-clé |yfrom|n :
+      |yget billet from coffre|n
 
-    You can combine all these syntaxes if needed:
-      |yget 5 apples from basket into lunchbox|n
+    Vous pouvez combiner ces différentes syntaxes si besoin :
+      |yget 5 pommes from panier into filet|n
 
-    See also: drop, hold, put, wear, remove.
+    Voir aussi : drop, hold, put, wear, remove.
 
     """
 
     key = "get"
-    aliases = ["grab"]
+    aliases = ["prendre"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -86,7 +90,7 @@ class CmdGet(Command):
         obj_text = " ".join(words)
 
         if not obj_text:
-            self.msg("|gYou should at least specify an object name to pick up.|n")
+            self.msg("|gVous devez préciser au moins un nom d'objet à ramasser.|n")
             return
 
         # Try to find the from object (higher priority since we need it in the next search)
@@ -95,7 +99,7 @@ class CmdGet(Command):
             candidates = self.caller.location.contents + self.caller.equipment.all()
             from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
             if not from_objs:
-                self.msg("|rYou can't find that: {}.|n".format(from_text))
+                self.msg("|rVous ne voyez pas cela : {}.|n".format(from_text))
                 return
 
         # Try to find the object
@@ -107,16 +111,16 @@ class CmdGet(Command):
                 quantity = 1
             objs = objs[:quantity]
         else:
-            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            self.msg("|rVous ne voyez pas cela : {}.|n".format(obj_text))
             return
 
         # Try to put the objects in the caller
         can_get = self.caller.equipment.can_get(objs)
         if can_get:
             self.caller.equipment.get(can_get)
-            self.msg("You get {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="and")))
+            self.msg("Vous ramassez {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="et")))
         else:
-            self.msg("|rIt seems you cannot get that.|n")
+            self.msg("|rOn dirait que vous ne pouvez pas ramasser cela.|n")
 
 
 class CmdUse(Command):
@@ -230,26 +234,27 @@ class CmdAnswer(Command):
 
 class CmdEquipment(Command):
     """
-    Display your equipment.
+    Affiche votre équipement.
 
-    Usage:
+    Syntaxe :
       equipment
 
-    Aliases:
-      eq
+    Alias :
+      eq, équipement
 
-    This command displays your equipment, that is, everything you are wearing or
-    holding in your hands.  You will see all you are wearing, even if it's hidden by
-    some other worn objects.  For instance, even if you have shoes on, and socks
-    beneath them, you will see both shoes and socks, whereas if someone looks at you,
-    she will only see your shoes, which maybe is a good thing.
+    Cette commande affiche votre équipement, c'est-à-dire, ce que vous portez sur
+    vous comme vêtement ou conteneur, y compris ce que vous tenez dans vos mains.
+    Notez que vous verrez tout ce que vous portez grâce à cette commande : si vous
+    portez des chaussettes dissimulées par vos chaussures, vous verrez autant vos
+    chaussures que chaussettes, contrairement aux autres personnages qui vous
+    regardent et ne verront que vos chaussures, ce qui est somme toute préférable.
 
-    See also: inventory, get, drop, wear, remove, empty, hold.
+    Voir aussi : inventory, get, drop, wear, remove, empty, hold.
 
     """
 
     key = "equipment"
-    aliases = ["eq"]
+    aliases = ["eq", "équipement"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
