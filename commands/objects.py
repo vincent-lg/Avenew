@@ -5,6 +5,7 @@ Commands to manipualte objects.
 """
 
 from collections import defaultdict
+import re
 from textwrap import wrap
 
 from evennia.utils.utils import crop, inherits_from, list_to_string
@@ -13,6 +14,7 @@ from commands.command import Command
 
 ## Constants
 CATEGORY = "Object manipulation"
+RE_D = re.compile(r"^\d+$")
 
 class CmdGet(Command):
     """
@@ -59,16 +61,16 @@ class CmdGet(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|yWhat do you want to pick up?|n")
+            self.msg("|gWhat do you want to pick up?|n")
             return
 
         # Extract the quantity, if specified
         quantity = 1
         words = self.args.strip().split(" ")
-        if words[0].isdigit():
+        if RE_D.search(words[0]):
             quantity = int(words.pop(0))
         elif words[0] == "*":
-            quantity = -1
+            quantity = None
             del words[0]
 
         # Extract from and into
@@ -83,22 +85,21 @@ class CmdGet(Command):
         obj_text = " ".join(words)
 
         if not obj_text:
-            self.msg("|yYou should at least specify an object name to pick up.|n")
+            self.msg("|gYou should at least specify an object name to pick up.|n")
             return
 
         # Try to find the from object (higher priority since we need it in the next search)
-        from_obj = self.caller.location
+        from_objs = [self.caller.location]
         if from_text:
             candidates = self.caller.location.contents + self.caller.equipment.all()
             from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
-            if from_objs:
-                from_obj = from_objs[0]
-            else:
+            if not from_objs:
                 self.msg("|rYou can't find that: {}.|n".format(from_text))
                 return
 
         # Try to find the object
-        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj.contents)
+        from_objs = [content for obj in from_objs for content in obj.contents]
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
         if objs:
             # Alter the list depending on quantity
             if quantity == 0:
@@ -112,7 +113,7 @@ class CmdGet(Command):
         can_get = self.caller.equipment.can_get(objs)
         if can_get:
             self.caller.equipment.get(can_get)
-            self.msg("You pick up: {}.".format(list_to_string(can_get.objects().names(self.caller))))
+            self.msg("You get {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="and")))
         else:
             self.msg("|rIt seems you cannot get that.|n")
 
@@ -224,3 +225,91 @@ class CmdAnswer(Command):
             return
 
         notification.address(self.caller)
+
+
+class CmdEquipment(Command):
+    """
+    Display your equipment.
+
+    Usage:
+      equipment
+
+    Aliases:
+      eq
+
+    This command displays your equipment, that is, everything you are wearing or
+    holding in your hands.  You will see all you are wearing, even if it's hidden by
+    some other worn objects.  For instance, even if you have shoes on, and socks
+    beneath them, you will see both shoes and socks, whereas if someone looks at you,
+    she will only see your shoes, which maybe is a good thing.
+
+    See also: inventory, get, drop, wear, remove, empty, hold.
+
+    """
+
+    key = "equipment"
+    aliases = ["eq"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        self.msg(self.caller.equipment.format_equipment(looker=self.caller, show_covered=True))
+
+
+class CmdInventory(Command):
+    """
+    Display your inventory.
+
+    Usage:
+      inventory [object name]
+
+    Aliases:
+      i
+
+    This command displays your inventory, that is, the list of what you are wearing
+    and what they contain, if they contain anything.  Usually, when you pick up
+    something, it will end up in one of your hands.  However, if you have some
+    pocket or a backpack or similar, what you pick up will probably end up in there,
+    assuming there is room.  A container can contain other containers, too, so that
+    you can have a backpack containing a plastic bag containing apples.  In this
+    case, when you type |yinventory|n, you will see your backpack, inside of it the
+    plastic bag, and inside of it your apples.  This command is useful to list
+    everything you are carrying, even if it's hidden in various containers.
+
+    You can also specify an object name to filter based on this name.  This allows
+    to use |yinventory|n as a request: find where are my apples.  Following the same
+    example, you could use |yinventory apples|n and it will only display your apples
+    and where they are, not displaying you the rest of your inventory.  Notice that
+    containers that contain your apples are still displayed for clarity.  This will
+    help you retrieve something you have lost, something you know you are carrying but
+    can't remember where.  In a way, it's a bit like patting your pockets and
+    looking into all your bags to find something, but it will be much quicker.
+
+    Remember that you do not need to specify the containers to use your objcts:
+    following the same example, of your backpack containing a plastic bag containg
+    your apples, if you want to eat one, you just need to enter |yeat apple|n.
+    The system will find them automatically, no need to get them manually from the
+    plastic bag.
+
+    See also: equipment, get, drop, wear, remove, empty, hold.
+
+    """
+
+    key = "inventory"
+    aliases = ["i"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        only_show = None
+        if self.args.strip():
+            candidates = self.caller.equipment.all(only_visible=True, looker=self.caller)
+            only_show = self.caller.search(self.args, candidates=candidates, quiet=True)
+            if not only_show:
+                self.msg("You don't carry that.")
+                return
+
+        inventory = self.caller.equipment.format_inventory(only_show=only_show)
+        self.msg(inventory)

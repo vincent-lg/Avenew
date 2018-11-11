@@ -59,7 +59,7 @@ class AvenewObject(object):
         plural = self.attributes.get("plural", "things")
         return singular if count < 2 else "{} {}".format(count, plural)
 
-    def search(self, searchdata, **kwargs):
+    def search(self, searchdata, candidates=None, **kwargs):
         """
         Returns an Object matching a search string/condition
 
@@ -119,7 +119,12 @@ class AvenewObject(object):
                 otherwise it will return a list of 0, 1 or more matches.
 
         """
-        return super(AvenewObject, self).search(searchdata, **kwargs)
+        if candidates is None:
+            candidates = self.location.contents
+            if hasattr(self, "equipment"):
+                candidates += self.equipment.all(only_visible=True)
+
+        return super(AvenewObject, self).search(searchdata, candidates=candidates, **kwargs)
 
 
 class SharedAttributeHandler(AttributeHandler):
@@ -230,7 +235,7 @@ class SharedAttributeHandler(AttributeHandler):
 
         """
         ret = super(SharedAttributeHandler, self).get(
-                key=key, default=default, category=category,
+                key=key, default=None, category=category,
                 return_obj=return_obj, strattr=strattr,
                 raise_exception=raise_exception, accessing_obj=accessing_obj,
                 default_access=default_access, return_list=return_list)

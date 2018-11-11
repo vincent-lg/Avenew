@@ -13,13 +13,15 @@ Most methods can receive either a single object or a list of objects.
 
 """
 
+from collections import OrderedDict
 from Queue import Queue
 
 from evennia.utils.utils import inherits_from
 
 from logic.character.limbs import Limb
 from logic.character import limbs as LIMBS
-from logic.object.sets import ContainerSet
+from logic.object.sets import ContainerSet, ObjectSet
+from world.log import character as log
 
 
 class EquipmentHandler(object):
@@ -36,7 +38,8 @@ class EquipmentHandler(object):
 
     @property
     def limbs(self):
-        """Return the list of limbs."""
+        """Return the ordered dictionary of key: limb."""
+        ret = OrderedDict()
         limbs = self.character.attributes.get("custom_limbs")
         if limbs is None:
             # Assume that `character.db.limbs` contain the name of the list.
@@ -52,7 +55,10 @@ class EquipmentHandler(object):
         if not isinstance(limbs, list) or not all([isinstance(limb, Limb) for limb in limbs]):
             raise ValueError("the character {!r} has an incorrect list of limbs".format(self.character))
 
-        return limbs
+        for limb in limbs:
+            ret[limb.key] = limb
+
+        return ret
 
     @property
     def first_level(self):
@@ -70,7 +76,7 @@ class EquipmentHandler(object):
                     corresponding to this limb as second argument.
 
         """
-        limbs = self.limbs
+        limbs = self.limbs.values()
         first_level = []
         # Get all contents, we'll filter afterward
         contents = self.character.contents
@@ -123,19 +129,37 @@ class EquipmentHandler(object):
         """
         return len(self.can_hold(exclude))
 
-    def all(self):
+    def all(self, only_visible=False, looker=None):
         """Return all objects, include these contained.
 
         No type checking is performed at this level.  Only the object's
         contents are returned as they are.
 
+        Args:
+            only_visible (bol, optional): only return visible objects (that
+                    is, those with a 'view' lock matching the character).
+                    False by default.
+            looker (object, optional): the looker.  If not set, it defaults
+                    to the character who owns this equipment.  When you set
+                    `only_visible` to True, the lock is performed on
+                    the looker.
+
+        Returns:
+            objects (list of Object): list of objects found in the character,
+            recursively checking for contents.
+
         """
         objs = []
+        looker = looker or self.character
         explore = Queue()
         explore.put(self.character)
         while not explore.empty():
             obj = explore.get()
             if obj is not None:
+                if only_visible and not obj.access(looker, "view"):
+                    # this is not visible to the character, skip
+                    continue
+
                 for content in obj.contents:
                     if content in objs:
                         # Protect against infinite recursion
@@ -146,7 +170,91 @@ class EquipmentHandler(object):
 
         return objs
 
-    def format(self, looker, show_covered=False):
+    def nested(self, looker=None, only_show=None):
+        """
+        Return the nested dictioanry of owned objects.
+
+        The returned dictionary should look something like:
+
+        {
+            LeftHand: (0, [BlackBag]),
+            BlackBag: (1, [Apple, Apple, Apple]),
+            RedBag: (2, [Pear, Pear]),
+        }
+
+        In other words, the keys should be a limb or an object, and the
+        value should be a tuple: the depth of this container (0 for a limb)
+        and a list of objects contained in this container.  Notice that
+        sub-containers aren't listed (that's why the RedBag object isn't
+        listed in the BlackBag content), they have separate key/value
+        pairs in the dictionary.
+
+        Args:
+            looker (object, optional): the looker.  If it's not set, use the
+                    character who owns this equipment.
+            only_show (list of objects, optional): return only these
+                    objects with their containers.
+
+        Returns:
+            nested (dict): a dictionary of nested objects.
+
+        """
+        looker = looker or self.character
+        only_show = only_show or []
+        limbs = self.limbs
+        nested = ContainerSet()
+        nested.default_factory = ObjectSet
+        objs = self.all(only_visible=True, looker=looker)
+
+        # If only_show, apply a filter
+        for obj in list(only_show):
+            while obj.location and obj.location != self.character:
+                obj = obj.location
+                only_show.append(obj)
+
+        for obj in objs:
+            depth = 0
+            if obj != self.character and only_show and obj not in only_show:
+                continue
+
+            parent = obj
+            while parent != self.character:
+                depth += 1
+                parent = parent.location
+                if parent is None:
+                    obj = None
+                    break
+
+            if obj is None:
+                continue
+
+            # If a first level object, try to get the limb
+            if obj.location == self.character:
+                limb_key = obj.tags.get(category="eq")
+                if limb_key is None:
+                    log.warning("Character {}(#{}): the object {}(#{}) was found in the inventory without a proper container or limb attached to it".format(
+                            self.character.key, self.character.id, obj.key, obj.id))
+                    continue
+
+                if limb_key not in limbs:
+                    log.warning("Character {}(#{}): the object {}(#{}) was found in the inventory at first level with an incorrect limb key: {!r}".format(
+                            self.character.key, self.character.id, obj.key, obj.id, limb_key))
+                    continue
+
+                limb = limbs[limb_key]
+                parent = limb
+                if not obj.contents:
+                    continue
+            else:
+                parent = obj.location
+                if obj.contents:
+                    continue
+
+            nested[(parent, depth - 1)].append(obj)
+
+        return nested
+
+    def format_equipment(self, looker, show_covered=False):
         """
         Return a formatted string of the things worn by the character.
 
@@ -182,6 +290,58 @@ class EquipmentHandler(object):
             string += "\n  " + limb.name.ljust(20) + ": " + obj.get_display_name(looker)
 
         return string.lstrip("\n")
+
+    def format_inventory(self, looker=None, only_show=None):
+        """
+        Return the formatted inventory as a string.
+
+        The inventory is composed of every owned object, starting from the
+        character's first level equipment (what she is wearing) and
+        recursively examining each object's contents.
+
+        Args:
+            looker (object, optional): the looker.  If not set, default to
+            only_show (list of objects, optional): list of objects to filter
+                    the inventory.
+                    the character who owns this equipment.
+
+        Return:
+            inventory (str): the formatted inventory.
+
+        """
+        nested = self.nested(looker=looker, only_show=only_show)
+        string = ""
+        last_parent = None
+        for (parent, depth), objects in nested.items():
+            indent_m1 = (depth - 1) * 2 * " "
+            indent = depth * 2 * " "
+            indent_p1 = (depth + 1) * 2 * " "
+            if last_parent is not None and last_parent != parent.location and parent.location != self.character:
+                string += "\n" + indent_m1 + "[Back inside " + parent.location.get_display_name(looker) + ", you also see]:"
+
+            if getattr(parent, "location", None) == self.character:
+                if objects:
+                    string += "\n" + indent_p1 + ("\n" + indent_p1).join(objects.names(looker))
+                continue
+
+            if isinstance(parent, Limb):
+                string += "\n" + "[" + parent.name + "]:\n  "
+                parent = objects[0]
+                del objects[:]
+            else:
+                string += "\n" + indent
+
+            string += parent.get_display_name(looker)
+            if objects or depth == 0:
+                string += " [containing]"
+            if objects:
+                string += "\n" + indent_p1 + ("\n" + indent_p1).join(objects.names(looker))
+            last_parent = parent
+
+        if string.strip():
+            return string.lstrip("\n")
+        else:
+            return "You aren't carrying anything."
 
     def can_get(self, object_or_objects):
         """Return the objects the character can get.
