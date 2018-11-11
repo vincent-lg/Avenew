@@ -297,7 +297,7 @@ def parse_callback(document, author, messages):
     kwargs["code"] = code
 
     # Handle the parameters
-    parameters = get_field(document, "parameters", basestring, False, "", messages)
+    parameters = get_field(document, "params", basestring, False, "", messages)
     if parameters:
         kwargs["parameters"] = parameters
 
