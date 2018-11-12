@@ -9,11 +9,51 @@ Classes:
 
 """
 
+import time
+
+from evennia import ObjectDB
 from evennia.typeclasses.attributes import AttributeHandler
 
 class AvenewObject(object):
 
     """Mix-in containing shared behavior that all typeclasses in the Avenew game should use."""
+
+    @property
+    def location(self):
+        return super(AvenewObject, self)._ObjectDB__location_get()
+    @location.setter
+    def location(self, location):
+        super(AvenewObject, self)._ObjectDB__location_set(location)
+        self.db._moved_at = time.time()
+    @location.deleter
+    def location(self):
+        super(AvenewObject, self)._ObjectDB__location_del()
+        self.db._moved_at = time.time()
+
+    def contents_get(self, exclude=None):
+        """
+        Returns the contents of this object, i.e. all
+        objects that has this object set as its location.
+        This should be publically available.
+
+        Args:
+            exclude (Object): Object to exclude from returned
+                contents list
+
+        Returns:
+            contents (list): List of contents of this Object.
+
+        Notes:
+            Also available as the `contents` property.
+            We had ordering of objects.
+
+        """
+        con = self.contents_cache.get(exclude=exclude)
+        #TODO: optimize, sorting the content each time is costly
+        con.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+        # print "contents_get:", self, con, id(self), calledby()  # DEBUG
+        return con
+    contents = property(contents_get)
 
     @property
     def mass(self):
