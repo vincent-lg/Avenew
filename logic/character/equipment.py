@@ -343,11 +343,13 @@ class EquipmentHandler(object):
         else:
             return "You aren't carrying anything."
 
-    def can_get(self, object_or_objects):
+    def can_get(self, object_or_objects, filter=None):
         """Return the objects the character can get.
 
         Args:
             object_or_objects (Object or list of Object): the object(s) to pick up.
+            filter (list of objects, optional): a list of containers, only
+                    use these containers if present.
 
         Return:
             objects (dictionary of Object:container): the list of objects the
@@ -361,14 +363,14 @@ class EquipmentHandler(object):
         on several containers if it has to.
 
         """
-        can_hold = self.can_hold()
+        can_hold = self.can_hold() if filter is None else False
         can_get = ContainerSet()
         if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
             objects = [object_or_objects]
         else:
             objects = object_or_objects
 
-        # Look for potential containers
+        # Look for potential containers (even if there is a filter)
         containers = {}
         extended = self.all()
         for obj in extended:
@@ -380,6 +382,10 @@ class EquipmentHandler(object):
         # Try to get all objects
         to_get = []
         for container, type in containers.items():
+            # If there is a filter, check it, `container` should be in it
+            if filter is not None and container not in filter:
+                continue
+
             in_it = []
             for obj in objects:
                 if obj in to_get:

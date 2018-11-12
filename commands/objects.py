@@ -109,8 +109,16 @@ class CmdGet(Command):
             self.msg("|rYou can't find that: {}.|n".format(obj_text))
             return
 
+        # Try to find the into objects
+        into_objs = None
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True)
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+
         # Try to put the objects in the caller
-        can_get = self.caller.equipment.can_get(objs)
+        can_get = self.caller.equipment.can_get(objs, filter=into_objs)
         if can_get:
             self.caller.equipment.get(can_get)
             self.msg("You get {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="and")))
