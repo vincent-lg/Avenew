@@ -24,6 +24,24 @@ class AvenewObject(object):
 
         return reduce(lambda x, y: x + y.mass, [mass] + self.contents)
 
+    @property
+    def locations(self):
+        """
+        Return the list of location of this object.
+
+        Return the list of location, then locatio.location, and so on util
+        None is reached.
+
+        """
+        locations = []
+        obj = self
+        while obj is not None:
+            obj = obj.location
+            if obj is not None:
+                locations.append(obj)
+
+        return locations
+
     def get_display_name(self, looker, **kwargs):
         """
         Displays the name of the object in a viewer-aware manner.
