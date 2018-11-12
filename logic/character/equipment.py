@@ -432,3 +432,85 @@ class EquipmentHandler(object):
                     obj.tags.add(limb.key, category="eq")
                 else:
                     obj.location = container
+
+    def can_drop(self, object_or_objects, filter=None):
+        """Return the objects the character can drop.
+
+        Args:
+            object_or_objects (Object or list of Object): the object(s) to drop.
+            filter (list of objects, optional): a list of containers, only
+                    use these containers if present.
+
+        Return:
+            objects (dictionary of Object:container): the list of objects the
+                    character can pick up.  Note that the container can be
+                    a room (Room object), if the object can be put into the
+                    room.
+
+        Object types are checked at this moment.  Rather, browsing through
+        the extended object content, if one object can drop, checks whether
+        it can drop these objects.  This method will spread the objects
+        on several containers if it has to.
+
+        """
+        can_drop = ContainerSet()
+        if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
+            objects = [object_or_objects]
+        else:
+            objects = object_or_objects
+
+        # Look for potential containers (even if there is a filter)
+        containers = {}
+        extended = self.character.location.contents + self.all()
+        for obj in extended:
+            if hasattr(obj, "types"):
+                types = obj.types.can("get")
+                if types:
+                    containers[obj] = types[0]
+
+        # Try to drop all objects
+        to_drop = []
+        for container, type in containers.items():
+            # If there is a filter, check it, `container` should be in it
+            if filter is not None and container not in filter:
+                continue
+
+            in_it = []
+            for obj in objects:
+                if obj in to_drop:
+                    continue
+
+                # Try to put the object into the container
+                if type.can_get(in_it + [obj]):
+                    can_drop[container].append(obj)
+                    in_it.append(obj)
+                    to_drop.append(obj)
+
+            if all(obj in to_drop for obj in objects):
+                break
+
+        # The remaining objects are dropped into the room if a filter isn't present
+        remaining = [obj for obj in objects if obj not in to_drop]
+        while not filter and remaining:
+            can_drop[self.character.location].append(remaining.pop(0))
+
+        can_drop.remaining = remaining
+        return can_drop
+
+    def drop(self, objects_and_containers):
+        """
+        Drop the specified objects.
+
+        The `can_drop` method should have been called beforehand, and this
+        method should process dropting the objects and putting them in the
+        various containers without error.
+
+        Args:
+            objects_and_containers (dict): the objects to drop, the result
+                    of the `can_drop` method.  No error is assumed to happen
+                    at this point.
+
+        """
+        for container, objects in objects_and_containers.items():
+            for obj in objects:
+                obj.location = container

@@ -126,6 +126,120 @@ class CmdGet(Command):
             self.msg("|rIt seems you cannot get that.|n")
 
 
+class CmdDrop(Command):
+    """
+    Drop something.
+
+    Usage:
+      drop [quantity] <object name> [from <container>] [into <container>]
+
+    Drop some object.  The most simple usage is to specify the object name
+    to drop on the floor:
+      |ydrop apple|n
+
+    You can also drop several objects at once:
+      |ydrop 3 apples|n
+
+    Or drop all of them:
+      |ydrop * apples|n
+
+    By default, the objects you want to drop will be searched in your inventory,
+    that is, everything you are wearing and what they contain.  You don't have to
+    specify the origin of the objects: if the apples you try to drop, in the same
+    example, can be found in your inventory, then you don't need to specify the
+    container in which to look for.  But sometimes, it is useful to specify one
+    container from which the objects should be searched.  To do so, specify the
+    container name after the |yfrom|n keyword:
+      |ydrop 5 apples from lunchbox|n
+
+    Finally, you can also drop objects into one or more specific containers.  This
+    syntax is most helpful to put clothes in a drawer for instance, or place a jar
+    in a cupboard.  To drop in a specific container, use the |yinto|n keyword
+    followed by your container name:
+      |ydrop coin into chest|n
+
+    You can combine all these syntaxes if needed:
+      |ydrop 5 apples from basket into lunchbox|n
+
+    See also: get, hold, put, wear, remove.
+
+    """
+
+    key = "drop"
+    aliases = ["put"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to drop?|n")
+            return
+
+        # Extract the quantity, if specified
+        quantity = 1
+        words = self.args.strip().split(" ")
+        if RE_D.search(words[0]):
+            quantity = int(words.pop(0))
+        elif words[0] == "*":
+            quantity = None
+            del words[0]
+
+        # Extract from and into
+        obj_text = from_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "from":
+                from_text = " ".join(words[i + 1:])
+                del words[i:]
+            elif word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
+
+        if not obj_text:
+            self.msg("|gYou should at least specify an object name to drop.|n")
+            return
+
+        # Try to find the from object (higher priority since we need it in the next search)
+        if from_text:
+            candidates = caller.equipment.all(only_visible=True)
+            from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
+            from_objs = [content for obj in from_objs for content in obj.contents]
+            if not from_objs:
+                self.msg("|rYou can't find that: {}.|n".format(from_text))
+                return
+        else:
+            from_objs = caller.equipment.all(only_visible=True)
+
+        # Try to find the object
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
+        if objs:
+            # Alter the list depending on quantity
+            if quantity == 0:
+                quantity = 1
+            objs = objs[:quantity]
+        else:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        # Try to find the into objects
+        into_objs = []
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True)
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+
+        # Try to put the objects in the containers
+        can_drop = self.caller.equipment.can_drop(objs, filter=into_objs)
+        if can_drop:
+            self.caller.equipment.drop(can_drop)
+            self.msg("You drop {}.".format(list_to_string(can_drop.objects().names(self.caller), endsep="and")))
+        else:
+            self.msg("|rIt seems you cannot drop that.|n")
+
+
 class CmdUse(Command):
 
     """
