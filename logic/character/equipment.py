@@ -149,24 +149,27 @@ class EquipmentHandler(object):
             recursively checking for contents.
 
         """
+        def _explore_contents(to_update, objects):
+            for obj in objects:
+                to_update.append(obj)
+                _explore_contents(to_update, obj.contents)
+
         objs = []
         looker = looker or self.character
-        explore = Queue()
-        explore.put(self.character)
-        while not explore.empty():
-            obj = explore.get()
+        for obj in self.character.contents:
             if obj is not None:
                 if only_visible and not obj.access(looker, "view"):
                     # this is not visible to the character, skip
                     continue
 
+                objs.append(obj)
                 for content in obj.contents:
                     if content in objs:
                         # Protect against infinite recursion
                         continue
 
                     objs.append(content)
-                    explore.put(content)
+                    _explore_contents(objs, content.contents)
 
         return objs
 
@@ -316,7 +319,7 @@ class EquipmentHandler(object):
             indent_m1 = (depth - 1) * 2 * " "
             indent = depth * 2 * " "
             indent_p1 = (depth + 1) * 2 * " "
-            if last_parent is not None and last_parent != parent.location and parent.location != self.character:
+            if last_parent is not None and getattr(parent, "location", None) and last_parent != parent.location and parent.location != self.character:
                 string += "\n" + indent_m1 + "[Back inside " + parent.location.get_display_name(looker) + ", you also see]:"
 
             if getattr(parent, "location", None) == self.character:
@@ -514,3 +517,55 @@ class EquipmentHandler(object):
         for container, objects in objects_and_containers.items():
             for obj in objects:
                 obj.location = container
+
+    def can_wear(self, obj, limb=None):
+        """
+        Return whether the character can wear this object.
+
+        Args:
+            obj (Object): the object to wear.
+            limb (Limb, optional): the limb on which to wear this object.
+
+        Returns:
+            limb (Limb or None): the limb on which the object can be worn,
+                    or None to indicate a failure.
+
+        """
+        types = obj.types.can("wear")
+        if not types:
+            return
+
+        # If obj is already worn, return None
+        if obj.tags.get(category="eq"):
+            return
+
+        idents = [ident for type_obj in types for ident in type_obj.db.get("wear_on", [])]
+
+        # If a limb is specified, check that it is present in this list
+        if limb:
+            if limb.key not in idents and limb.group not in idents:
+                return
+
+            return limb
+
+        ident = idents[0]
+        for limb, obj in self.first_level:
+            if obj is None:
+                if limb.key == ident or limb.group == ident:
+                    return limb
+
+    def wear(self, obj, limb):
+        """
+        Wear an object.
+
+        The parameter should have been the ones returned by `can_wear`,
+        called beforehand.  At this point, both the object and limb aren't
+        checked for errors.
+
+        Args:
+            obj (Object): the object to wear.
+            limb (Limb): the limb on which to wear this object.
+
+        """
+        obj.location = self.character
+        obj.tags.add(limb.key, category="eq")

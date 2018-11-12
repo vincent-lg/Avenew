@@ -19,6 +19,7 @@ class Clothes(BaseType):
     """
 
     name = "clothes"
+    can_wear = True
 
     def at_type_creation(self, prototype=False):
         """Copy some attributes in prototype."""
