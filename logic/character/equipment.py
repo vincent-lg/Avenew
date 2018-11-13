@@ -312,6 +312,7 @@ class EquipmentHandler(object):
             inventory (str): the formatted inventory.
 
         """
+        looker = looker or self.character
         nested = self.nested(looker=looker, only_show=only_show)
         string = ""
         last_parent = None

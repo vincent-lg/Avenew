@@ -11,7 +11,6 @@ Classes:
 
 import time
 
-from evennia import ObjectDB
 from evennia.typeclasses.attributes import AttributeHandler
 
 class AvenewObject(object):
@@ -23,12 +22,22 @@ class AvenewObject(object):
         return super(AvenewObject, self)._ObjectDB__location_get()
     @location.setter
     def location(self, location):
+        old_location = self.location
         super(AvenewObject, self)._ObjectDB__location_set(location)
         self.db._moved_at = time.time()
+
+        # Update the former location's content
+        if old_location and hasattr(old_location, "ndb"):
+            old_location.ndb._cached_contents = old_location.contents_cache.get(exclude=None)
+            old_location.ndb._cached_contents.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+
+        # Update the location's contents (sort it and cache it)
+        if location and hasattr(location, "ndb"):
+            location.ndb._cached_contents = location.contents_cache.get(exclude=None)
+            location.ndb._cached_contents.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
     @location.deleter
     def location(self):
         super(AvenewObject, self)._ObjectDB__location_del()
-        self.db._moved_at = time.time()
 
     def contents_get(self, exclude=None):
         """
@@ -48,11 +57,13 @@ class AvenewObject(object):
             We had ordering of objects.
 
         """
-        con = self.contents_cache.get(exclude=exclude)
-        #TODO: optimize, sorting the content each time is costly
-        con.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
-        # print "contents_get:", self, con, id(self), calledby()  # DEBUG
-        return con
+        if self.ndb._cached_contents is not None:
+            return self.ndb._cached_contents
+        else:
+            con = self.contents_cache.get(exclude=exclude)
+            con.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+            self.ndb._cached_contents = con
+            return con
     contents = property(contents_get)
 
     @property
