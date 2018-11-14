@@ -547,6 +547,9 @@ class EquipmentHandler(object):
             if limb.key not in idents and limb.group not in idents:
                 return
 
+            if self.limbs[limb.key]: # Something is already worn on this limb
+                return
+
             return limb
 
         ident = idents[0]

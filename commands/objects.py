@@ -356,9 +356,6 @@ class CmdEquipment(Command):
     Usage:
       equipment
 
-    Aliases:
-      eq
-
     This command displays your equipment, that is, everything you are wearing or
     holding in your hands.  You will see all you are wearing, even if it's hidden by
     some other worn objects.  For instance, even if you have shoes on, and socks
@@ -385,9 +382,6 @@ class CmdInventory(Command):
 
     Usage:
       inventory [object name]
-
-    Aliases:
-      i
 
     This command displays your inventory, that is, the list of what you are wearing
     and what they contain, if they contain anything.  Usually, when you pick up
@@ -435,3 +429,85 @@ class CmdInventory(Command):
 
         inventory = self.caller.equipment.format_inventory(only_show=only_show)
         self.msg(inventory)
+
+
+class CmdWear(Command):
+    """
+    Wear an object from your inventory.
+
+    Usage:
+      wear <object name>[, <body part>]
+
+    This command allows you to wear an object that you have in your inventory.
+    Something you aren't already wearing.  For instance, let's say you pick up
+    a shirt: when using the |yget|n command, it will go either in one of your
+    containers (like a bag) or in your hands.  To wear it, you need to use the
+    |ywear|n command:
+      |ywear shirt|n
+
+    You can also specify the body part on which to wear this object.  Some objects
+    can be worn on different body parts.  In this case, specify the body part after
+    a comma:
+      |ywear pink sock, right foot|n
+
+    If the object can be worn on various body parts but you don't specify it, the
+    system will try to guess on which body part to wear this object.
+
+    See also: equipment, get, drop, remove, empty, hold.
+
+    """
+
+    key = "wear"
+    aliases = []
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        if "," in self.args:
+            obj_name, body_part = self.args.rsplit(",", 1)
+            obj_name = obj_name.strip()
+            body_part = body_part.strip()
+        else:
+            obj_name = self.args.strip()
+            body_part = ""
+
+        # First, try to find the object to wear
+        objs = self.caller.search(obj_name, quiet=True, candidates=self.caller.equipment.all(only_visible=True))
+        # Filter, removing already-worn objects
+        objs = [obj for obj in objs if self.caller.equipment.can_wear(obj)]
+
+        if not objs:
+            self.msg("|gYou don't find that: {}.|n".format(obj_name))
+            return
+
+        obj = objs[0]
+
+        # Check the body parts
+        first_level = self.caller.equipment.first_level
+        prefered_limbs = []
+        if body_part:
+            for limb in first_level.keys():
+                if limb.name.startswith(body_part):
+                    prefered_limbs.append(limb)
+
+            if not prefered_limbs:
+                self.msg("|gCan't find this body part: {}.|n".format(body_part))
+                return
+
+        if prefered_limbs:
+            for limb in prefered_limbs:
+                if self.caller.equipment.can_wear(obj. imb):
+                    self.caller.equipment.wear(obj, limb)
+                    self.msg(limb.msg("wear", doer=caller))
+                    return
+            self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
+            return
+
+        # Choose the first match
+        limb = self.caller.equipment.can_wear(obj)
+        if limb:
+            self.caller.equipment.wear(obj, limb)
+            self.msg(limb.msg("wear", doer=caller))
+        else:
+            self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))

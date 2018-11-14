@@ -73,7 +73,7 @@ class AvenewObject(object):
         if mass is None:
             mass = 1
 
-        return reduce(lambda x, y: x + y.mass, [mass] + self.contents)
+        return mass + sum(obj.mass for obj in self.contents)
 
     @property
     def locations(self):
