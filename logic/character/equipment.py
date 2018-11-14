@@ -374,9 +374,22 @@ class EquipmentHandler(object):
         else:
             objects = object_or_objects
 
+        # Filter objects than are equipped (let objects that are held)
+        clean = []
+        limbs = self.limbs
+        for obj in objects:
+            key = obj.tags.get(category="eq")
+            if key: # First level, equipped or held?
+                limb = limbs[key]
+                if not limb.can_hold:
+                    continue
+
+            clean.append(obj)
+        objects = clean
+
         # Look for potential containers (even if there is a filter)
         containers = {}
-        extended = self.all()
+        extended = self.all(only_visible=True)
         for obj in extended:
             if hasattr(obj, "types"):
                 types = obj.types.can("get")
@@ -393,6 +406,9 @@ class EquipmentHandler(object):
             in_it = []
             for obj in objects:
                 if obj in to_get:
+                    continue
+
+                if container in obj.locations:
                     continue
 
                 # Try to put the object into the container
@@ -463,9 +479,22 @@ class EquipmentHandler(object):
         else:
             objects = object_or_objects
 
+        # Filter objects than are equipped (let objects that are held)
+        clean = []
+        limbs = self.limbs
+        for obj in objects:
+            key = obj.tags.get(category="eq")
+            if key: # First level, equipped or held?
+                limb = limbs[key]
+                if not limb.can_hold:
+                    continue
+
+            clean.append(obj)
+        objects = clean
+
         # Look for potential containers (even if there is a filter)
         containers = {}
-        extended = self.character.location.contents + self.all()
+        extended = self.character.location.contents + self.all(only_visible=True)
         for obj in extended:
             if hasattr(obj, "types"):
                 types = obj.types.can("get")
@@ -482,6 +511,9 @@ class EquipmentHandler(object):
             in_it = []
             for obj in objects:
                 if obj in to_drop:
+                    continue
+
+                if container in obj.locations:
                     continue
 
                 # Try to put the object into the container
