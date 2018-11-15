@@ -497,9 +497,9 @@ class CmdWear(Command):
 
         if prefered_limbs:
             for limb in prefered_limbs:
-                if self.caller.equipment.can_wear(obj. imb):
+                if self.caller.equipment.can_wear(obj, limb):
                     self.caller.equipment.wear(obj, limb)
-                    self.msg(limb.msg("wear", doer=caller))
+                    self.msg(limb.msg_wear(doer=self.caller, obj=obj))
                     return
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
             return
@@ -508,7 +508,7 @@ class CmdWear(Command):
         limb = self.caller.equipment.can_wear(obj)
         if limb:
             self.caller.equipment.wear(obj, limb)
-            self.msg(limb.msg("wear", doer=caller))
+            self.msg(limb.msg_wear(doer=self.caller, obj=obj))
         else:
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
 
@@ -577,8 +577,8 @@ class CmdRemove(Command):
 
         can_remove = caller.equipment.can_remove(obj, container=into_obj)
         if can_remove:
-            limb = caller.equipment.limbs[obj.tags.get(category="eq")]
-            self.caller.equipment.remove(obj, can_remove)
-            self.msg(limb.msg("remove", doer=caller))
+            caller.equipment.remove(obj, can_remove)
+            caller.msg("You stop wearing {obj}.".format(obj=obj.get_display_name(caller)))
+            caller.location.msg_contents("{caller} stops wearing {obj}.", mapping=dict(caller=caller, obj=obj), exclude=[caller])
         else:
             self.msg("|rYou can't stop wearing {}.|n".format(obj.get_display_name(self.caller)))

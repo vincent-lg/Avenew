@@ -62,7 +62,8 @@ class EquipmentHandler(object):
 
     @property
     def first_level(self):
-        """Return the first-level of equipment for this character.
+        """
+        Return the first-level of equipment for this character.
 
         The search will be performed in the character's content.  Depending
         on the character's list of limbs, limbs will be attributed with
@@ -70,19 +71,18 @@ class EquipmentHandler(object):
         disregarded.
 
         Returns:
-            limbs (list of (Limb, obj or None) tuples): a list containing
-                    tuples, each tuple having the Limb object as first
-                    argument, and the equiped object if any (or None)
-                    corresponding to this limb as second argument.
+            first_level (OrderedDict of {Limb: obj or None}: a dictionary containing
+                    the Limb object as key, and the equiped object if any
+                    (or None) as value.
 
         """
         limbs = self.limbs.values()
-        first_level = []
+        first_level = OrderedDict()
         # Get all contents, we'll filter afterward
         contents = self.character.contents
         for limb in limbs:
             objs = [obj for obj in contents if obj.tags.get(limb.key, category="eq")]
-            first_level.append((limb, objs[0] if objs else None))
+            first_level[limb] = objs[0] if objs else None
 
         return first_level
 
@@ -103,7 +103,7 @@ class EquipmentHandler(object):
         if not isinstance(exclude, (list, tuple)):
             exclude = [exclude]
 
-        for limb, obj in first_level:
+        for limb, obj in first_level.items():
             if limb.can_hold:
                 if obj is not None and obj not in exclude:
                     continue
@@ -278,12 +278,12 @@ class EquipmentHandler(object):
         # We first check what should be hidden
         hidden = []
         if not show_covered:
-            for limb, obj in first_level:
+            for limb, obj in first_level.items():
                 hidden.extend(limb.cover)
 
         # Browse the list of limbs to display them, hiding what should be hidden
         string = ""
-        for limb, obj in first_level:
+        for limb, obj in first_level.items():
             if limb.key in hidden:
                 continue
 
@@ -578,16 +578,17 @@ class EquipmentHandler(object):
 
         # If a limb is specified, check that it is present in this list
         if limb:
+            first_level = self.first_level
             if limb.key not in idents and limb.group not in idents:
                 return
 
-            if self.limbs[limb.key]: # Something is already worn on this limb
+            if first_level.get(limb): # Something is already worn on this limb
                 return
 
             return limb
 
         ident = idents[0]
-        for limb, obj in self.first_level:
+        for limb, obj in self.first_level.items():
             if obj is None:
                 if limb.key == ident or limb.group == ident:
                     return limb
