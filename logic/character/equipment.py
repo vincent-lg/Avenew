@@ -627,7 +627,8 @@ class EquipmentHandler(object):
             return
 
         limb = self.limbs[key]
-        can_get = self.can_get(obj, filter=[container], allow_worn=True)
+        filter = [container] if container else None
+        can_get = self.can_get(obj, filter=filter, allow_worn=True)
         if can_get:
             return list(can_get.keys())[0]
 

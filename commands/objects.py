@@ -511,3 +511,74 @@ class CmdWear(Command):
             self.msg(limb.msg("wear", doer=caller))
         else:
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
+
+
+class CmdRemove(Command):
+    """
+    Stop wearing an object.
+
+    Usage:
+      remove <object name> [into <container>]
+
+    Stop weearing (remove) some object that you are wearing, that is, something
+    that is visible in your equipment (see the |yequipment|n command).  If you are
+    wearing a shirt, for instance, and would like to stop wearing it:
+      |yremove shirt|n
+
+    You can also specify a container in which to drop this object when it is
+    removed.  By default, the system will try to find the container on you (in your
+    pockets or bags) but you can help it, to order your posessions in a better way:
+      |yremove shirt into backpack|n
+
+    See also: get, drop, hold, wear, empty.
+
+    """
+
+    key = "remove"
+    aliases = []
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to stop wearing?|n")
+            return
+
+        # Extract into
+        words = self.args.strip().split(" ")
+        obj_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
+
+        if not obj_text:
+            self.msg("|gYou should at least specify an object name to remove.|n")
+            return
+
+        # Try to find the object
+        objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+        if not objs:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+        obj = objs[0]
+
+        # Try to find the into objects
+        into_obj = None
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True)
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+            into_obj = into_objs[0]
+
+        can_remove = caller.equipment.can_remove(obj, container=into_obj)
+        if can_remove:
+            limb = caller.equipment.limbs[obj.tags.get(category="eq")]
+            self.caller.equipment.remove(obj, can_remove)
+            self.msg(limb.msg("remove", doer=caller))
+        else:
+            self.msg("|rYou can't stop wearing {}.|n".format(obj.get_display_name(self.caller)))
