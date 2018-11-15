@@ -347,13 +347,15 @@ class EquipmentHandler(object):
         else:
             return "You aren't carrying anything."
 
-    def can_get(self, object_or_objects, filter=None):
+    def can_get(self, object_or_objects, filter=None, allow_worn=False):
         """Return the objects the character can get.
 
         Args:
             object_or_objects (Object or list of Object): the object(s) to pick up.
             filter (list of objects, optional): a list of containers, only
                     use these containers if present.
+            allow_worn (bool, optional): allow to test equiped objects
+                    (False by default).
 
         Return:
             objects (dictionary of Object:container): the list of objects the
@@ -374,12 +376,12 @@ class EquipmentHandler(object):
         else:
             objects = object_or_objects
 
-        # Filter objects than are equipped (let objects that are held)
+        # Filter objects than are equiped (let objects that are held)
         clean = []
         limbs = self.limbs
         for obj in objects:
             key = obj.tags.get(category="eq")
-            if key: # First level, equipped or held?
+            if not allow_worn and key: # First level, equiped or held?
                 limb = limbs[key]
                 if not limb.can_hold:
                     continue
@@ -479,12 +481,12 @@ class EquipmentHandler(object):
         else:
             objects = object_or_objects
 
-        # Filter objects than are equipped (let objects that are held)
+        # Filter objects than are equiped (let objects that are held)
         clean = []
         limbs = self.limbs
         for obj in objects:
             key = obj.tags.get(category="eq")
-            if key: # First level, equipped or held?
+            if key: # First level, equiped or held?
                 limb = limbs[key]
                 if not limb.can_hold:
                     continue
@@ -605,3 +607,41 @@ class EquipmentHandler(object):
         """
         obj.location = self.character
         obj.tags.add(limb.key, category="eq")
+
+    def can_remove(self, obj, container=None):
+        """
+        Can we remove this equiped object?
+
+        Args:
+            obj (Object): the object to remove, must be equiped.
+            container (Object, optional): in what container to drop it?
+
+        Returns:
+            container (Object): the object in which we can remove/drop, or
+            None if not possible.
+
+        """
+        key = obj.tags.get(category="eq")
+        if not key:
+            # The object isn't equiped
+            return
+
+        limb = self.limbs[key]
+        can_get = self.can_get(obj, filter=[container], allow_worn=True)
+        if can_get:
+            return list(can_get.keys())[0]
+
+    def remove(self, obj, container):
+        """
+        Remove the equiped object and drop it into the container.
+
+        Note that `can_remove` should had been called and valid before calling
+        `remove`.  This latter is expected to raise no error.
+
+        Args:
+            obj (Object): the object to remove, must be equiped.
+            container (Object): the container in which to drop this object.
+
+        """
+        obj.tags.remove(obj.tags.get(category="eq"), category="eq")
+        self.get({container: [obj]})
