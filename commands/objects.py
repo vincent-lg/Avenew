@@ -109,13 +109,135 @@ class CmdGet(Command):
             self.msg("|rYou can't find that: {}.|n".format(obj_text))
             return
 
+        # Try to find the into objects
+        into_objs = None
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True)
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+
         # Try to put the objects in the caller
-        can_get = self.caller.equipment.can_get(objs)
+        can_get = self.caller.equipment.can_get(objs, filter=into_objs)
         if can_get:
             self.caller.equipment.get(can_get)
             self.msg("You get {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="and")))
         else:
             self.msg("|rIt seems you cannot get that.|n")
+
+
+class CmdDrop(Command):
+    """
+    Drop something.
+
+    Usage:
+      drop [quantity] <object name> [from <container>] [into <container>]
+
+    Drop some object.  The most simple usage is to specify the object name
+    to drop on the floor:
+      |ydrop apple|n
+
+    You can also drop several objects at once:
+      |ydrop 3 apples|n
+
+    Or drop all of them:
+      |ydrop * apples|n
+
+    By default, the objects you want to drop will be searched in your inventory,
+    that is, everything you are wearing and what they contain.  You don't have to
+    specify the origin of the objects: if the apples you try to drop, in the same
+    example, can be found in your inventory, then you don't need to specify the
+    container in which to look for.  But sometimes, it is useful to specify one
+    container from which the objects should be searched.  To do so, specify the
+    container name after the |yfrom|n keyword:
+      |ydrop 5 apples from lunchbox|n
+
+    Finally, you can also drop objects into one or more specific containers.  This
+    syntax is most helpful to put clothes in a drawer for instance, or place a jar
+    in a cupboard.  To drop in a specific container, use the |yinto|n keyword
+    followed by your container name:
+      |ydrop coin into chest|n
+
+    You can combine all these syntaxes if needed:
+      |ydrop 5 apples from basket into lunchbox|n
+
+    See also: get, hold, put, wear, remove.
+
+    """
+
+    key = "drop"
+    aliases = ["put"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to drop?|n")
+            return
+
+        # Extract the quantity, if specified
+        quantity = 1
+        words = self.args.strip().split(" ")
+        if RE_D.search(words[0]):
+            quantity = int(words.pop(0))
+        elif words[0] == "*":
+            quantity = None
+            del words[0]
+
+        # Extract from and into
+        obj_text = from_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "from":
+                from_text = " ".join(words[i + 1:])
+                del words[i:]
+            elif word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
+
+        if not obj_text:
+            self.msg("|gYou should at least specify an object name to drop.|n")
+            return
+
+        # Try to find the from object (higher priority since we need it in the next search)
+        if from_text:
+            candidates = caller.equipment.all(only_visible=True)
+            from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
+            from_objs = [content for obj in from_objs for content in obj.contents]
+            if not from_objs:
+                self.msg("|rYou can't find that: {}.|n".format(from_text))
+                return
+        else:
+            from_objs = caller.equipment.all(only_visible=True)
+
+        # Try to find the object
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
+        if objs:
+            # Alter the list depending on quantity
+            if quantity == 0:
+                quantity = 1
+            objs = objs[:quantity]
+        else:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        # Try to find the into objects
+        into_objs = []
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True)
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+
+        # Try to put the objects in the containers
+        can_drop = self.caller.equipment.can_drop(objs, filter=into_objs)
+        if can_drop:
+            self.caller.equipment.drop(can_drop)
+            self.msg("You drop {}.".format(list_to_string(can_drop.objects().names(self.caller), endsep="and")))
+        else:
+            self.msg("|rIt seems you cannot drop that.|n")
 
 
 class CmdUse(Command):
@@ -234,9 +356,6 @@ class CmdEquipment(Command):
     Usage:
       equipment
 
-    Aliases:
-      eq
-
     This command displays your equipment, that is, everything you are wearing or
     holding in your hands.  You will see all you are wearing, even if it's hidden by
     some other worn objects.  For instance, even if you have shoes on, and socks
@@ -263,9 +382,6 @@ class CmdInventory(Command):
 
     Usage:
       inventory [object name]
-
-    Aliases:
-      i
 
     This command displays your inventory, that is, the list of what you are wearing
     and what they contain, if they contain anything.  Usually, when you pick up
@@ -313,3 +429,156 @@ class CmdInventory(Command):
 
         inventory = self.caller.equipment.format_inventory(only_show=only_show)
         self.msg(inventory)
+
+
+class CmdWear(Command):
+    """
+    Wear an object from your inventory.
+
+    Usage:
+      wear <object name>[, <body part>]
+
+    This command allows you to wear an object that you have in your inventory.
+    Something you aren't already wearing.  For instance, let's say you pick up
+    a shirt: when using the |yget|n command, it will go either in one of your
+    containers (like a bag) or in your hands.  To wear it, you need to use the
+    |ywear|n command:
+      |ywear shirt|n
+
+    You can also specify the body part on which to wear this object.  Some objects
+    can be worn on different body parts.  In this case, specify the body part after
+    a comma:
+      |ywear pink sock, right foot|n
+
+    If the object can be worn on various body parts but you don't specify it, the
+    system will try to guess on which body part to wear this object.
+
+    See also: equipment, get, drop, remove, empty, hold.
+
+    """
+
+    key = "wear"
+    aliases = []
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        if "," in self.args:
+            obj_name, body_part = self.args.rsplit(",", 1)
+            obj_name = obj_name.strip()
+            body_part = body_part.strip()
+        else:
+            obj_name = self.args.strip()
+            body_part = ""
+
+        # First, try to find the object to wear
+        objs = self.caller.search(obj_name, quiet=True, candidates=self.caller.equipment.all(only_visible=True))
+        # Filter, removing already-worn objects
+        objs = [obj for obj in objs if self.caller.equipment.can_wear(obj)]
+
+        if not objs:
+            self.msg("|gYou don't find that: {}.|n".format(obj_name))
+            return
+
+        obj = objs[0]
+
+        # Check the body parts
+        first_level = self.caller.equipment.first_level
+        prefered_limbs = []
+        if body_part:
+            for limb in first_level.keys():
+                if limb.name.startswith(body_part):
+                    prefered_limbs.append(limb)
+
+            if not prefered_limbs:
+                self.msg("|gCan't find this body part: {}.|n".format(body_part))
+                return
+
+        if prefered_limbs:
+            for limb in prefered_limbs:
+                if self.caller.equipment.can_wear(obj, limb):
+                    self.caller.equipment.wear(obj, limb)
+                    self.msg(limb.msg_wear(doer=self.caller, obj=obj))
+                    return
+            self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
+            return
+
+        # Choose the first match
+        limb = self.caller.equipment.can_wear(obj)
+        if limb:
+            self.caller.equipment.wear(obj, limb)
+            self.msg(limb.msg_wear(doer=self.caller, obj=obj))
+        else:
+            self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
+
+
+class CmdRemove(Command):
+    """
+    Stop wearing an object.
+
+    Usage:
+      remove <object name> [into <container>]
+
+    Stop weearing (remove) some object that you are wearing, that is, something
+    that is visible in your equipment (see the |yequipment|n command).  If you are
+    wearing a shirt, for instance, and would like to stop wearing it:
+      |yremove shirt|n
+
+    You can also specify a container in which to drop this object when it is
+    removed.  By default, the system will try to find the container on you (in your
+    pockets or bags) but you can help it, to order your posessions in a better way:
+      |yremove shirt into backpack|n
+
+    See also: get, drop, hold, wear, empty.
+
+    """
+
+    key = "remove"
+    aliases = []
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to stop wearing?|n")
+            return
+
+        # Extract into
+        words = self.args.strip().split(" ")
+        obj_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
+
+        if not obj_text:
+            self.msg("|gYou should at least specify an object name to remove.|n")
+            return
+
+        # Try to find the object
+        objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+        if not objs:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+        obj = objs[0]
+
+        # Try to find the into objects
+        into_obj = None
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True)
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+            into_obj = into_objs[0]
+
+        can_remove = caller.equipment.can_remove(obj, container=into_obj)
+        if can_remove:
+            caller.equipment.remove(obj, can_remove)
+            caller.msg("You stop wearing {obj}.".format(obj=obj.get_display_name(caller)))
+            caller.location.msg_contents("{caller} stops wearing {obj}.", mapping=dict(caller=caller, obj=obj), exclude=[caller])
+        else:
+            self.msg("|rYou can't stop wearing {}.|n".format(obj.get_display_name(self.caller)))

@@ -12,15 +12,17 @@ from collections import OrderedDict
 
 from evennia.utils.utils import inherits_from
 
+from auto.types.clothes import Clothes
 from auto.types.container import Container
 from auto.types.high_tech import Computer, Phone
 
 ## Constants
 # You can change the type order here, it will be reflected in the type list of every object.
 TYPES = OrderedDict()
+TYPES["clothes"] = Clothes
 TYPES["computer"] = Computer
-TYPES["phone"] = Phone
 TYPES["container"] = Container
+TYPES["phone"] = Phone
 
 ## Classes
 class TypeHandler(object):

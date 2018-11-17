@@ -62,7 +62,8 @@ class EquipmentHandler(object):
 
     @property
     def first_level(self):
-        """Return the first-level of equipment for this character.
+        """
+        Return the first-level of equipment for this character.
 
         The search will be performed in the character's content.  Depending
         on the character's list of limbs, limbs will be attributed with
@@ -70,19 +71,18 @@ class EquipmentHandler(object):
         disregarded.
 
         Returns:
-            limbs (list of (Limb, obj or None) tuples): a list containing
-                    tuples, each tuple having the Limb object as first
-                    argument, and the equiped object if any (or None)
-                    corresponding to this limb as second argument.
+            first_level (OrderedDict of {Limb: obj or None}: a dictionary containing
+                    the Limb object as key, and the equiped object if any
+                    (or None) as value.
 
         """
         limbs = self.limbs.values()
-        first_level = []
+        first_level = OrderedDict()
         # Get all contents, we'll filter afterward
         contents = self.character.contents
         for limb in limbs:
             objs = [obj for obj in contents if obj.tags.get(limb.key, category="eq")]
-            first_level.append((limb, objs[0] if objs else None))
+            first_level[limb] = objs[0] if objs else None
 
         return first_level
 
@@ -103,7 +103,7 @@ class EquipmentHandler(object):
         if not isinstance(exclude, (list, tuple)):
             exclude = [exclude]
 
-        for limb, obj in first_level:
+        for limb, obj in first_level.items():
             if limb.can_hold:
                 if obj is not None and obj not in exclude:
                     continue
@@ -149,24 +149,27 @@ class EquipmentHandler(object):
             recursively checking for contents.
 
         """
+        def _explore_contents(to_update, objects):
+            for obj in objects:
+                to_update.append(obj)
+                _explore_contents(to_update, obj.contents)
+
         objs = []
         looker = looker or self.character
-        explore = Queue()
-        explore.put(self.character)
-        while not explore.empty():
-            obj = explore.get()
+        for obj in self.character.contents:
             if obj is not None:
                 if only_visible and not obj.access(looker, "view"):
                     # this is not visible to the character, skip
                     continue
 
+                objs.append(obj)
                 for content in obj.contents:
                     if content in objs:
                         # Protect against infinite recursion
                         continue
 
                     objs.append(content)
-                    explore.put(content)
+                    _explore_contents(objs, content.contents)
 
         return objs
 
@@ -275,12 +278,12 @@ class EquipmentHandler(object):
         # We first check what should be hidden
         hidden = []
         if not show_covered:
-            for limb, obj in first_level:
+            for limb, obj in first_level.items():
                 hidden.extend(limb.cover)
 
         # Browse the list of limbs to display them, hiding what should be hidden
         string = ""
-        for limb, obj in first_level:
+        for limb, obj in first_level.items():
             if limb.key in hidden:
                 continue
 
@@ -309,6 +312,7 @@ class EquipmentHandler(object):
             inventory (str): the formatted inventory.
 
         """
+        looker = looker or self.character
         nested = self.nested(looker=looker, only_show=only_show)
         string = ""
         last_parent = None
@@ -316,7 +320,7 @@ class EquipmentHandler(object):
             indent_m1 = (depth - 1) * 2 * " "
             indent = depth * 2 * " "
             indent_p1 = (depth + 1) * 2 * " "
-            if last_parent is not None and last_parent != parent.location and parent.location != self.character:
+            if last_parent is not None and getattr(parent, "location", None) and last_parent != parent.location and parent.location != self.character:
                 string += "\n" + indent_m1 + "[Back inside " + parent.location.get_display_name(looker) + ", you also see]:"
 
             if getattr(parent, "location", None) == self.character:
@@ -343,11 +347,15 @@ class EquipmentHandler(object):
         else:
             return "You aren't carrying anything."
 
-    def can_get(self, object_or_objects):
+    def can_get(self, object_or_objects, filter=None, allow_worn=False):
         """Return the objects the character can get.
 
         Args:
             object_or_objects (Object or list of Object): the object(s) to pick up.
+            filter (list of objects, optional): a list of containers, only
+                    use these containers if present.
+            allow_worn (bool, optional): allow to test equiped objects
+                    (False by default).
 
         Return:
             objects (dictionary of Object:container): the list of objects the
@@ -361,16 +369,29 @@ class EquipmentHandler(object):
         on several containers if it has to.
 
         """
-        can_hold = self.can_hold()
+        can_hold = self.can_hold() if filter is None else False
         can_get = ContainerSet()
         if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
             objects = [object_or_objects]
         else:
             objects = object_or_objects
 
-        # Look for potential containers
+        # Filter objects than are equiped (let objects that are held)
+        clean = []
+        limbs = self.limbs
+        for obj in objects:
+            key = obj.tags.get(category="eq")
+            if not allow_worn and key: # First level, equiped or held?
+                limb = limbs[key]
+                if not limb.can_hold:
+                    continue
+
+            clean.append(obj)
+        objects = clean
+
+        # Look for potential containers (even if there is a filter)
         containers = {}
-        extended = self.all()
+        extended = self.all(only_visible=True)
         for obj in extended:
             if hasattr(obj, "types"):
                 types = obj.types.can("get")
@@ -380,9 +401,16 @@ class EquipmentHandler(object):
         # Try to get all objects
         to_get = []
         for container, type in containers.items():
+            # If there is a filter, check it, `container` should be in it
+            if filter is not None and container not in filter:
+                continue
+
             in_it = []
             for obj in objects:
                 if obj in to_get:
+                    continue
+
+                if container in obj.locations:
                     continue
 
                 # Try to put the object into the container
@@ -426,3 +454,196 @@ class EquipmentHandler(object):
                     obj.tags.add(limb.key, category="eq")
                 else:
                     obj.location = container
+
+    def can_drop(self, object_or_objects, filter=None):
+        """Return the objects the character can drop.
+
+        Args:
+            object_or_objects (Object or list of Object): the object(s) to drop.
+            filter (list of objects, optional): a list of containers, only
+                    use these containers if present.
+
+        Return:
+            objects (dictionary of Object:container): the list of objects the
+                    character can pick up.  Note that the container can be
+                    a room (Room object), if the object can be put into the
+                    room.
+
+        Object types are checked at this moment.  Rather, browsing through
+        the extended object content, if one object can drop, checks whether
+        it can drop these objects.  This method will spread the objects
+        on several containers if it has to.
+
+        """
+        can_drop = ContainerSet()
+        if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
+            objects = [object_or_objects]
+        else:
+            objects = object_or_objects
+
+        # Filter objects than are equiped (let objects that are held)
+        clean = []
+        limbs = self.limbs
+        for obj in objects:
+            key = obj.tags.get(category="eq")
+            if key: # First level, equiped or held?
+                limb = limbs[key]
+                if not limb.can_hold:
+                    continue
+
+            clean.append(obj)
+        objects = clean
+
+        # Look for potential containers (even if there is a filter)
+        containers = {}
+        extended = self.character.location.contents + self.all(only_visible=True)
+        for obj in extended:
+            if hasattr(obj, "types"):
+                types = obj.types.can("get")
+                if types:
+                    containers[obj] = types[0]
+
+        # Try to drop all objects
+        to_drop = []
+        for container, type in containers.items():
+            # If there is a filter, check it, `container` should be in it
+            if filter is not None and container not in filter:
+                continue
+
+            in_it = []
+            for obj in objects:
+                if obj in to_drop:
+                    continue
+
+                if container in obj.locations:
+                    continue
+
+                # Try to put the object into the container
+                if type.can_get(in_it + [obj]):
+                    can_drop[container].append(obj)
+                    in_it.append(obj)
+                    to_drop.append(obj)
+
+            if all(obj in to_drop for obj in objects):
+                break
+
+        # The remaining objects are dropped into the room if a filter isn't present
+        remaining = [obj for obj in objects if obj not in to_drop]
+        while not filter and remaining:
+            can_drop[self.character.location].append(remaining.pop(0))
+
+        can_drop.remaining = remaining
+        return can_drop
+
+    def drop(self, objects_and_containers):
+        """
+        Drop the specified objects.
+
+        The `can_drop` method should have been called beforehand, and this
+        method should process dropting the objects and putting them in the
+        various containers without error.
+
+        Args:
+            objects_and_containers (dict): the objects to drop, the result
+                    of the `can_drop` method.  No error is assumed to happen
+                    at this point.
+
+        """
+        for container, objects in objects_and_containers.items():
+            for obj in objects:
+                obj.location = container
+
+    def can_wear(self, obj, limb=None):
+        """
+        Return whether the character can wear this object.
+
+        Args:
+            obj (Object): the object to wear.
+            limb (Limb, optional): the limb on which to wear this object.
+
+        Returns:
+            limb (Limb or None): the limb on which the object can be worn,
+                    or None to indicate a failure.
+
+        """
+        types = obj.types.can("wear")
+        if not types:
+            return
+
+        # If obj is already worn, return None
+        if obj.tags.get(category="eq"):
+            return
+
+        idents = [ident for type_obj in types for ident in type_obj.db.get("wear_on", [])]
+
+        # If a limb is specified, check that it is present in this list
+        if limb:
+            first_level = self.first_level
+            if limb.key not in idents and limb.group not in idents:
+                return
+
+            if first_level.get(limb): # Something is already worn on this limb
+                return
+
+            return limb
+
+        ident = idents[0]
+        for limb, obj in self.first_level.items():
+            if obj is None:
+                if limb.key == ident or limb.group == ident:
+                    return limb
+
+    def wear(self, obj, limb):
+        """
+        Wear an object.
+
+        The parameter should have been the ones returned by `can_wear`,
+        called beforehand.  At this point, both the object and limb aren't
+        checked for errors.
+
+        Args:
+            obj (Object): the object to wear.
+            limb (Limb): the limb on which to wear this object.
+
+        """
+        obj.location = self.character
+        obj.tags.add(limb.key, category="eq")
+
+    def can_remove(self, obj, container=None):
+        """
+        Can we remove this equiped object?
+
+        Args:
+            obj (Object): the object to remove, must be equiped.
+            container (Object, optional): in what container to drop it?
+
+        Returns:
+            container (Object): the object in which we can remove/drop, or
+            None if not possible.
+
+        """
+        key = obj.tags.get(category="eq")
+        if not key:
+            # The object isn't equiped
+            return
+
+        limb = self.limbs[key]
+        filter = [container] if container else None
+        can_get = self.can_get(obj, filter=filter, allow_worn=True)
+        if can_get:
+            return list(can_get.keys())[0]
+
+    def remove(self, obj, container):
+        """
+        Remove the equiped object and drop it into the container.
+
+        Note that `can_remove` should had been called and valid before calling
+        `remove`.  This latter is expected to raise no error.
+
+        Args:
+            obj (Object): the object to remove, must be equiped.
+            container (Object): the container in which to drop this object.
+
+        """
+        obj.tags.remove(obj.tags.get(category="eq"), category="eq")
+        self.get({container: [obj]})
