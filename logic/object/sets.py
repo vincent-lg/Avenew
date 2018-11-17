@@ -13,7 +13,15 @@ Available classes:
 from collections import OrderedDict, defaultdict
 
 
-class ContainerSet(OrderedDict, defaultdict):
+class OrderedDefaultDict(OrderedDict, defaultdict):
+
+    """A defaultdict retaining key ordering like OrdereedDict."""
+
+    def __init__(self, default_factory, *args, **kwargs):
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
+
+class ContainerSet(OrderedDefaultDict):
 
     """A defaultdict retaining key ordering like OrdereedDict.
 
@@ -23,8 +31,7 @@ class ContainerSet(OrderedDict, defaultdict):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ContainerSet, self).__init__(*args, **kwargs)
-        self.default_factory = list
+        super(ContainerSet, self).__init__(list, *args, **kwargs)
         self._remaining = ObjectSet()
 
     @property
@@ -56,7 +63,7 @@ class ObjectSet(list):
             names (list of str): the list of names.
 
         """
-        dictionary = defaultdict(list)
+        dictionary = OrderedDefaultDict(list)
         for obj in self:
             singular = obj.key
             dictionary[singular].append(obj)

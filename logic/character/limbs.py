@@ -58,7 +58,7 @@ class Limb:
 
     """
 
-    def __init__(self, key, name, group=None, cover=None, can_hold=False):
+    def __init__(self, key, name, group=None, cover=None, can_hold=False, msg=None):
         group = group or key
         cover = cover or []
         self.key = key
@@ -66,12 +66,33 @@ class Limb:
         self.group = group
         self.cover = cover
         self.can_hold = can_hold
+        self.msg = msg or "on {pronoun} {limb}"
 
     def __repr__(self):
         return "<Limb {!r}>".format(self.key)
 
     def __str__(self):
         return self.name
+
+    def __hash__(self):
+        return id(self.key)
+
+    def msg_wear(self, doer, obj):
+        """
+        Display a formatted text to doer and doer's location when doer wears obj.
+
+        Args:
+            doer (Object): the object (character) wearing the object.
+            obj (Object): the object being worn.
+
+        The `msg` attribute is used and formatted with these information:
+            {limb} is replaced with `self.name`
+            {pronoun} is replaced with "yours" (for the message sent to the doer)
+                    and "their" (for the message sent to the doer's location)
+
+        """
+        doer.msg(("You wear {obj} " + self.msg + ".").format(limb=self.name, pronoun="your", obj=obj.get_display_name(doer)))
+        doer.location.msg_contents(("{{doer}} wears {{obj}} " + self.msg + ".").format(limb=self.name, pronoun="their"), mapping=dict(doer=doer, obj=obj), exclude=[doer])
 
 
 # Lists of limbs

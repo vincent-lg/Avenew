@@ -17,7 +17,6 @@ Example:
 
 from datetime import datetime
 import logging
-import os
 
 loggers = {}
 
@@ -37,11 +36,11 @@ def logger(name):
     """
     if not name:
         address = "main"
-        filename = os.path.join("server", "logs", "main.log")
+        filename = "server/logs/main.log"
         name = "avenew"
     else:
         address = name
-        filename = os.path.join("server", "logs", name + ".log")
+        filename = "server/logs/" + name + ".log"
         name = "avenew." + name
 
     if address in loggers:
@@ -58,8 +57,7 @@ def logger(name):
         logger.addHandler(handler)
 
         # Set a FileHandler for error messages
-        handler = logging.FileHandler(os.path.join("server", "logs",
-                "error.log"), encoding="utf-8")
+        handler = logging.FileHandler("server/logs/error.log", encoding="utf-8")
         handler.setLevel(logging.ERROR)
         handler.setFormatter(formatter)
         logger.addHandler(handler)

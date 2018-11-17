@@ -300,7 +300,7 @@ class Room(AvenewObject, EventRoom):
             string += "\n|wSorties :|n " + ", ".join(exits)
 
         if objects:
-            string += "\n|wVous voyez :|n " + list_to_string(objects.names(looker))
+            string += "\n|wVous voyez :|n " + list_to_string(objects.names(looker), endsep="et")
 
         return string
 

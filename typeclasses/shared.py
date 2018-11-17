@@ -9,11 +9,62 @@ Classes:
 
 """
 
+import time
+
 from evennia.typeclasses.attributes import AttributeHandler
 
 class AvenewObject(object):
 
     """Mix-in containing shared behavior that all typeclasses in the Avenew game should use."""
+
+    @property
+    def location(self):
+        return super(AvenewObject, self)._ObjectDB__location_get()
+    @location.setter
+    def location(self, location):
+        old_location = self.location
+        super(AvenewObject, self)._ObjectDB__location_set(location)
+        self.db._moved_at = time.time()
+
+        # Update the former location's content
+        if old_location and hasattr(old_location, "ndb"):
+            old_location.ndb._cached_contents = old_location.contents_cache.get(exclude=None)
+            old_location.ndb._cached_contents.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+
+        # Update the location's contents (sort it and cache it)
+        if location and hasattr(location, "ndb"):
+            location.ndb._cached_contents = location.contents_cache.get(exclude=None)
+            location.ndb._cached_contents.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+    @location.deleter
+    def location(self):
+        super(AvenewObject, self)._ObjectDB__location_del()
+
+    def contents_get(self, exclude=None):
+        """
+        Returns the contents of this object, i.e. all
+        objects that has this object set as its location.
+        This should be publically available.
+
+        Args:
+            exclude (Object): Object to exclude from returned
+                contents list
+
+        Returns:
+            contents (list): List of contents of this Object.
+
+        Notes:
+            Also available as the `contents` property.
+            We had ordering of objects.
+
+        """
+        if self.ndb._cached_contents is not None:
+            return self.ndb._cached_contents
+        else:
+            con = self.contents_cache.get(exclude=exclude)
+            con.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+            self.ndb._cached_contents = con
+            return con
+    contents = property(contents_get)
 
     @property
     def mass(self):
@@ -22,7 +73,25 @@ class AvenewObject(object):
         if mass is None:
             mass = 1
 
-        return reduce(lambda x, y: x + y.mass, [mass] + self.contents)
+        return mass + sum(obj.mass for obj in self.contents)
+
+    @property
+    def locations(self):
+        """
+        Return the list of location of this object.
+
+        Return the list of location, then locatio.location, and so on util
+        None is reached.
+
+        """
+        locations = []
+        obj = self
+        while obj is not None:
+            obj = obj.location
+            if obj is not None:
+                locations.append(obj)
+
+        return locations
 
     def get_display_name(self, looker, **kwargs):
         """
