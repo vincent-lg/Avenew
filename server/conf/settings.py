@@ -72,7 +72,6 @@ SEARCH_MULTIMATCH_TEMPLATE = "  {number}.{name}{aliases}{info}\n"
 ## Web
 INSTALLED_APPS += (
         "anymail",
-        "background_task",
         "evennia_wiki",
         "web.builder",
         "web.evapp",
@@ -86,35 +85,6 @@ WEBSOCKET_CLIENT_ENABLED = False
 
 ## Communication
 TEST_SESSION = False
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'simple': {
-            'format': '%(asctime)s [%(levelname)s] %(message)s'
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'INFO',
-        },
-        'tasks_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'server/logs/tasks.log',
-            'formatter': 'simple',
-        },
-    },
-    'loggers': {
-        'background_task': {
-            'handlers': ['tasks_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
 
 try:
     from server.conf.secret_settings import *
