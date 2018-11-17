@@ -115,6 +115,9 @@ if os.path.exists("server/ssl.key"):
 for name in os.listdir("server/logs"):
     os.remove("server/logs/" + name)
 
+for name in os.listdir("world/areas"):
+    os.remove("world/areas/" + name)
+
 print "Run migrations..."
 os.system("evennia migrate")
 
