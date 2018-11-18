@@ -71,13 +71,17 @@ def at_server_reload_stop():
     This is called only time the server stops before a reload.
     """
     # Pull the Git repository
-    print "Pulling Evennia master..."
     current = os.getcwd()
-    os.chdir("../evennia")
-    process = subprocess.Popen("git pull", shell=True)
-    process.wait()
-    os.chdir(current)
-    print "Pulling from Github..."
+    if os.path.exists("../evennia"):
+        print "Evennia seems to exist, try to pull from it", current
+        os.chdir("../evennia")
+        process = subprocess.Popen("git pull", shell=True)
+        process.wait()
+        os.chdir(current)
+    else:
+        print "Evennia doesn't exist, don't pull from it."
+
+    print "Pulling Avenew from Github..."
     process = subprocess.Popen("git pull", shell=True)
     process.wait()
 
