@@ -22,21 +22,12 @@ print "Copying the Evennia data..."
 shutil.copytree("toevennia", "dist/avenew/evennia")
 if os.path.exists("avenew"):
     shutil.rmtree("avenew")
-print "Creating the frozen folder."
-os.mkdir("avenew")
+print "Cloning the source code from Git..."
+os.system("git clone -b fr https://github.com/vincent-lg/Avenew avenew")
+
 print "Placing the frozen executables in the frozen folder."
 shutil.copytree("dist/avenew", "avenew/dist")
 shutil.copy("twistd.exe", "avenew")
-
-print "Copying the entire source code..."
-for name in os.listdir(os.getcwd()):
-    if name in ("avenew", "build", "dist", "toevennia", "avenew.py", "freeze.py") or name.startswith(".git") or any(name.endswith(ext) for ext in (".spec", ".bat", ".db")):
-        continue
-
-    if os.path.isfile(name):
-        shutil.copy(name, "avenew")
-    else:
-        shutil.copytree(name, "avenew/" + name)
 
 if os.path.exists("avenew/server/evennia.db3"):
     print "Removing the database."
@@ -112,8 +103,14 @@ if os.path.exists("server/ssl.key"):
     os.remove("server/ssl.key")
 
 # Removing log files
+if not os.path.exists("server/logs"):
+    os.mkdir("server/logs")
+
 for name in os.listdir("server/logs"):
     os.remove("server/logs/" + name)
+
+if not os.path.exists("world/areas"):
+    os.mkdir("world/areas")
 
 for name in os.listdir("world/areas"):
     os.remove("world/areas/" + name)
