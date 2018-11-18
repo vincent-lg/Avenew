@@ -24,6 +24,8 @@ __pycache__
 *.pid
 *.restart
 *.db3
+*.exe
+*.bat
 
 # Installation-specific.
 # For group efforts, comment out some or all of these.
