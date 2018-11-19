@@ -13,21 +13,20 @@ except ImportError:
     sys.exit(1)
 
 # Try to freeze evennia
-print "Trying to freeze Evennia version", evennia.__version__
+print "Trying to freeze Evennia version", evennia.__version__, "with cx_Freeze"
 
-# First, call pyinstaller
-status = os.system("pyinstaller avenew.spec -y")
-print "Finished building avenew.exe with status", status
-print "Copying the Evennia data..."
-shutil.copytree("toevennia", "dist/avenew/evennia")
+# Have to change directory to freeze
+os.chdir("../evennia")
+status = os.system("python freeze.py build")
+print "Finished building avenew.exe and twistd.exe with status", status
+os.chdir("../avenew")
 if os.path.exists("avenew"):
     shutil.rmtree("avenew")
-print "Cloning the source code from Git..."
+print "Cloning the source code from Github..."
 os.system("git clone -b fr https://github.com/vincent-lg/Avenew avenew")
 
 print "Placing the frozen executables in the frozen folder."
-shutil.copytree("dist/avenew", "avenew/dist")
-shutil.copy("twistd.exe", "avenew")
+shutil.copytree("../evennia/dist", "avenew/dist")
 
 if os.path.exists("avenew/server/evennia.db3"):
     print "Removing the database."
