@@ -20,6 +20,7 @@ at_server_cold_stop()
 
 import os
 import subprocess
+import sys
 
 from evennia import TICKER_HANDLER as ticker_handler
 from evennia import ScriptDB, create_script
@@ -35,6 +36,16 @@ def at_server_start():
     """
     # Start the main logger
     begin()
+
+    # Affect default encoding (it's a security on frozen versions)
+    if getattr(sys, "frozen", False):
+        main.info("Running in frozen mode, try to change the default encoding")
+        try:
+            sys.setdefaultencoding("utf-8")
+        except Exception:
+            main.exception("An error occured while changing encoding.")
+        else:
+            main.info("Setting defaultencoding to utf-8")
 
     # Launch the script if it's not running
     try:
