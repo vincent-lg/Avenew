@@ -94,6 +94,23 @@ class Limb:
         doer.msg(("You wear {obj} " + self.msg + ".").format(limb=self.name, pronoun="your", obj=obj.get_display_name(doer)))
         doer.location.msg_contents(("{{doer}} wears {{obj}} " + self.msg + ".").format(limb=self.name, pronoun="their"), mapping=dict(doer=doer, obj=obj), exclude=[doer])
 
+    def msg_hold(self, doer, obj):
+        """
+        Display a formatted text to doer and doer's location when doer holds obj.
+
+        Args:
+            doer (Object): the object (character) holding the object.
+            obj (Object): the object being held.
+
+        The `msg` attribute is used and formatted with these information:
+            {limb} is replaced with `self.name`
+            {pronoun} is replaced with "yours" (for the message sent to the doer)
+                    and "their" (for the message sent to the doer's location)
+
+        """
+        doer.msg("You take {obj} in {pronoun} {limb}.".format(limb=self.name, pronoun="your", obj=obj.get_display_name(doer)))
+        doer.location.msg_contents("{doer} takes {obj} in {pronoun} {limb}.", mapping=dict(doer=doer, obj=obj, limb=self.name, pronoun="their"))
+
 
 # Lists of limbs
 # To add a list of limbs, just create a new variable (all capital like a

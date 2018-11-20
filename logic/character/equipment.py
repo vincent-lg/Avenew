@@ -86,11 +86,12 @@ class EquipmentHandler(object):
 
         return first_level
 
-    def can_hold(self, exclude=None):
+    def can_hold(self, obj=None, exclude=None):
         """
         Return the limbs that can hold something.
 
         Args:
+            obj (Object, optional): the object to hold.
             exclude (Object or list of objects): the optional objects to exclude.
 
         Returns:
@@ -127,7 +128,22 @@ class EquipmentHandler(object):
             number (int): the number of limbs that are free and can hold something.
 
         """
-        return len(self.can_hold(exclude))
+        return len(self.can_hold(exclude=exclude))
+
+    def hold(self, obj, limb):
+        """
+        Hold an object with the specified limb.
+
+        The `can_hold` method is to have been called beforehand.  The `hold`
+        method shouldn't raise an exception.
+
+        Args:
+            obj (Object): the object to hold.
+            limb (Limb): the limb on which to hold this object.
+
+        """
+        obj.location = self.character
+        obj.tags.add(limb.key, category="eq")
 
     def all(self, only_visible=False, looker=None):
         """Return all objects, include these contained.
@@ -551,6 +567,10 @@ class EquipmentHandler(object):
         """
         for container, objects in objects_and_containers.items():
             for obj in objects:
+                tag = obj.tags.get(category="eq")
+                if tag:
+                    obj.tags.remove(tag, category="eq")
+
                 obj.location = container
 
     def can_wear(self, obj, limb=None):

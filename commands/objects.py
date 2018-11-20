@@ -582,3 +582,50 @@ class CmdRemove(Command):
             caller.location.msg_contents("{caller} stops wearing {obj}.", mapping=dict(caller=caller, obj=obj), exclude=[caller])
         else:
             self.msg("|rYou can't stop wearing {}.|n".format(obj.get_display_name(self.caller)))
+
+
+class CmdHold(Command):
+    """
+    Hold an object in your hand.
+
+    Usage:
+      hold <object name>
+
+    Hold an object.  If the object you specify is in your inventory but not in
+    your hand, you will hold it, assuming you have a free hand.  This is useful
+    to quickly hold weapons and use them, rather than having to check your inventory
+    to find it.
+      |yhold baton|n
+
+    See also: get, drop, wear, remove, empty.
+
+    """
+
+    key = "hold"
+    aliases = []
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to hold?|n")
+            return
+
+        # Try to find the object
+        obj_text = self.args.strip()
+        objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+        objs = [obj for obj in objs if not obj.tags.get(category="eq")]
+        if not objs:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        obj = objs[0]
+
+        can_hold = caller.equipment.can_hold(obj)
+        if can_hold:
+            caller.equipment.hold(obj, can_hold[0])
+            can_hold[0].msg_hold(doer=self.caller, obj=obj)
+        else:
+            self.msg("|rYou can't hold {}.|n".format(obj.get_display_name(self.caller)))
