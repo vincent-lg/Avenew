@@ -14,8 +14,6 @@ Most methods can receive either a single object or a list of objects.
 """
 
 from collections import OrderedDict
-from Queue import Queue
-
 from evennia.utils.utils import inherits_from
 
 from logic.character.limbs import Limb

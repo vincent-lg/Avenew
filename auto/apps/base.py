@@ -596,7 +596,7 @@ def get_NET():
     try:
         NET = ScriptDB.objects.get(db_key="global_NET")
     except ScriptDB.DoesNotExist:
-        print "Creating the net..."
+        print("Creating the net...")
         NET = create_script("typeclasses.scripts.Net")
 
     return NET

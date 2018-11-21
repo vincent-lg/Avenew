@@ -36,7 +36,6 @@ def index(request):
 
 def _get_topics(character):
     """Return the categories and topics in two lists."""
-    print "trying", character
     cmdset = character.cmdset.all()[0]
     commands = cmdset.commands
     entries = [entry for entry in HelpEntry.objects.all()]

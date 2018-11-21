@@ -13,7 +13,7 @@ Available classes:
 from collections import OrderedDict, defaultdict
 
 
-class OrderedDefaultDict(OrderedDict, defaultdict):
+class OrderedDefaultDict(defaultdict):
 
     """A defaultdict retaining key ordering like OrdereedDict."""
 

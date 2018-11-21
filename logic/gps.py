@@ -3,7 +3,7 @@
 """Module containing the GPS class."""
 
 from math import fabs, sqrt
-from Queue import PriorityQueue
+from queue import PriorityQueue
 import re
 
 from evennia.typeclasses.tags import Tag

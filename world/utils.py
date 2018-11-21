@@ -30,7 +30,6 @@ def latinify(unicode_string, replace=u"?", mapping=_UNICODE_MAPPING):
 
     """
     # Replace characters found in the mapping
-    print repr(unicode_string)
     for char, repl in mapping.items():
         unicode_string = unicode_string.replace(char, repl)
 
