@@ -629,3 +629,76 @@ class CmdHold(Command):
             can_hold[0].msg_hold(doer=self.caller, obj=obj)
         else:
             self.msg("|rYou can't hold {}.|n".format(obj.get_display_name(self.caller)))
+
+
+class CmdEmpty(Command):
+
+    """
+    Empty a container.
+
+    Usage:
+      empty <container> [into <other container>]
+
+    Empty a container, like a bag.  The simple usage of this command is to empty a
+    container right on the floor:
+      |yempty backpack|n
+
+    All the container content will be dropped to the floor.  Alternatively, you can
+    specify another container in which to empty the first one.  To do so, specify
+    the second container after the |yinto|n keyword:
+      |yempty purse into backpack|n
+
+    Notice that the original container will still be at the same place, it will
+    just be empty, assuming this command succeeds.
+
+    See also: get, drop, hold, wear, remove.
+
+    """
+
+    key = "empty"
+    aliases = ["dump"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to empty?|n")
+            return
+
+        # Extract into
+        words = self.args.strip().split(" ")
+        obj_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
+
+        if not obj_text:
+            self.msg("|gYou should at least specify an object name to empty.|n")
+            return
+
+        # Try to find the object
+        objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+        objs = [content for obj in objs for content in obj.contents]
+        if not objs:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        # Try to find the into objects
+        into_objs = []
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+
+        # Try to put the objects in the containers
+        can_drop = caller.equipment.can_drop(objs, filter=into_objs)
+        if can_drop:
+            self.caller.equipment.drop(can_drop)
+            self.msg("You drop {}.".format(list_to_string(can_drop.objects().names(caller), endsep="and")))
+        else:
+            self.msg("|rIt seems you cannot drop anything from that.|n")

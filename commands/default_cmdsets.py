@@ -27,7 +27,7 @@ from commands.developer import CmdLog
 from commands.driving import CmdDrive
 from commands.help import CmdHelp
 from commands.moving import CmdEnter, CmdLeave
-from commands.objects import CmdAnswer, CmdDrop, CmdGet, CmdHold, CmdEquipment, CmdInventory, CmdRemove, CmdWear, CmdUse
+from commands.objects import CmdAnswer, CmdDrop, CmdEmpty, CmdEquipment, CmdGet, CmdHold, CmdInventory, CmdRemove, CmdWear, CmdUse
 from commands.road import CmdStartRoad
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -47,9 +47,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdEnter())
         self.add(CmdDrive())
         self.add(CmdDrop())
+        self.add(CmdEquipment())
+        self.add(CmdEmpty())
         self.add(CmdGet())
         self.add(CmdHold())
-        self.add(CmdEquipment())
         self.add(CmdInventory())
         self.add(CmdRemove())
         self.add(CmdWear())
