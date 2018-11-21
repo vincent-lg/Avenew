@@ -15,8 +15,10 @@ class TestEquipment(EvenniaTest):
         self.apple1 = create_object("typeclasses.objects.Object", key="an apple 1", location=self.room1)
         self.apple2 = create_object("typeclasses.objects.Object", key="an apple 2", location=self.room1)
         self.apple3 = create_object("typeclasses.objects.Object", key="an apple 3", location=self.room1)
-        self.bag = create_object("typeclasses.objects.Object", key="a black bag", location=self.room1)
-        self.bag.types.add("container")
+        self.bag1 = create_object("typeclasses.objects.Object", key="a black bag", location=self.room1)
+        self.bag1.types.add("container")
+        self.bag2 = create_object("typeclasses.objects.Object", key="a pink purse", location=self.room1)
+        self.bag2.types.add("container")
 
     def test_all(self):
         """Test all the stats with general functions."""
@@ -25,9 +27,9 @@ class TestEquipment(EvenniaTest):
 
         # By default, the number of equiped objects should be 0
         self.assertEqual(0, len(
-                [(l, o) for l, o in self.char3.equipment.first_level if o is not None]))
+                [(l, o) for l, o in self.char3.equipment.first_level.items() if o is not None]))
         self.assertEqual(len(limbs), len(
-                [(l, o) for l, o in self.char3.equipment.first_level if o is None]))
+                [(l, o) for l, o in self.char3.equipment.first_level.items() if o is None]))
 
         # A human character should have two free hands
         self.assertEqual(2, self.char3.equipment.hm_can_hold())
@@ -61,15 +63,25 @@ class TestEquipment(EvenniaTest):
         self.assertIn(self.apple3, can.remaining)
 
         # Now pick up the bag
-        can = self.char3.equipment.can_get([self.bag])
+        can = self.char3.equipment.can_get([self.bag1])
         self.char3.equipment.get(can)
-        self.assertIn(self.bag, self.char3.equipment.all())
+        self.assertIn(self.bag1, self.char3.equipment.all())
 
         # If we try to pick up an apple now, it should go in the bag
         can = self.char3.equipment.can_get([self.apple1, self.apple2])
         self.char3.equipment.get(can)
-        self.assertIn(self.bag, self.char3.equipment.all())
+        self.assertIn(self.bag1, self.char3.equipment.all())
         self.assertIn(self.apple1, self.char3.equipment.all())
-        self.assertIn(self.apple1, self.bag.contents)
+        self.assertIn(self.apple1, self.bag1.contents)
         self.assertIn(self.apple2, self.char3.equipment.all())
-        self.assertIn(self.apple2, self.bag.contents)
+        self.assertIn(self.apple2, self.bag1.contents)
+
+        # Picking up some objects shouldn't be allowed
+        # bag1 is already held
+        self.assertFalse(self.char3.equipment.can_get(self.bag1))
+        # apple3 is now locked against getting
+        self.apple3.locks.add("get:false()")
+        self.assertTrue(self.char3.equipment.can_get(self.apple1))
+        self.assertFalse(self.char3.equipment.can_get(self.apple3))
+        # picking oneself up should be forbidden (infinite loop)
+        self.assertFalse(self.char3.equipment.can_get(self.char3, check_lock=False))

@@ -98,6 +98,13 @@ class EquipmentHandler(object):
             limbs (list of Limb): the free limbs that can hold something.
 
         """
+        if obj and obj.tags.get(category="eq"):
+            # This object is worn or held, it cannot be held again
+            return []
+
+        if obj and obj in [self.character] + self.character.locations:
+            return []
+
         can_hold = []
         first_level = self.first_level
         exclude = exclude or []
@@ -363,7 +370,7 @@ class EquipmentHandler(object):
         else:
             return "You aren't carrying anything."
 
-    def can_get(self, object_or_objects, filter=None, allow_worn=False):
+    def can_get(self, object_or_objects, filter=None, allow_worn=False, check_lock=True):
         """Return the objects the character can get.
 
         Args:
@@ -372,6 +379,9 @@ class EquipmentHandler(object):
                     use these containers if present.
             allow_worn (bool, optional): allow to test equiped objects
                     (False by default).
+            check_lock (bool, optional): check individual locks on objects to
+                    see if they can be gotten (lock 'get').  It is not
+                    recommended to set this to `False` outside of testing.
 
         Return:
             objects (dictionary of Object:container): the list of objects the
@@ -405,6 +415,10 @@ class EquipmentHandler(object):
             clean.append(obj)
         objects = clean
 
+        # Filter objects that are locked for character
+        if check_lock:
+            objects = [obj for obj in objects if obj.access(self.character, 'get')]
+
         # Look for potential containers (even if there is a filter)
         containers = {}
         extended = self.all(only_visible=True)
@@ -426,7 +440,7 @@ class EquipmentHandler(object):
                 if obj in to_get:
                     continue
 
-                if container in obj.locations:
+                if obj in [container] + container.locations:
                     continue
 
                 # Try to put the object into the container
@@ -440,11 +454,16 @@ class EquipmentHandler(object):
 
         # The remaining objects are picked up by the can_hold limbs, if possible
         remaining = [obj for obj in objects if obj not in to_get]
-        while can_hold and remaining:
-            limb = can_hold.pop(0)
-            can_get[limb].append(remaining.pop(0))
+        used_limbs = {}
+        for obj in remaining:
+            limbs = self.can_hold(obj)
+            limbs = [limb for limb in limbs if limb not in used_limbs]
+            if limbs:
+                limb = limbs[0]
+                can_get[limb].append(obj)
+                used_limbs[limb] = obj
 
-        can_get.remaining = remaining
+        can_get.remaining = [obj for obj in objects if obj not in used_limbs.values()]
         return can_get
 
     def get(self, objects_and_containers):
