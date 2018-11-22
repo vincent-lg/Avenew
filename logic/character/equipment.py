@@ -541,10 +541,7 @@ class EquipmentHandler(object):
         """
         for container, objects in containers_and_objects.items():
             for obj in objects:
-                tag = obj.tags.get(category="eq")
-                if tag:
-                    obj.tags.remove(tag, category="eq")
-
+                obj.tags.clear(category="eq")
                 obj.location = container
 
     def can_wear(self, obj, limb=None):
@@ -639,7 +636,7 @@ class EquipmentHandler(object):
             container (Object): the container in which to drop this object.
 
         """
-        obj.tags.remove(obj.tags.get(category="eq"), category="eq")
+        obj.tags.clear(category="eq")
         self.get({container: [obj]})
 
     def can_hold(self, obj=None, exclude=None):

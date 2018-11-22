@@ -146,3 +146,8 @@ class TestEquipment(EvenniaTest):
         self.assertFalse(self.char3.equipment.can_drop(self.bag1, filter=[self.bag1]))
         # char3 can't drop char3
         self.assertFalse(self.char3.equipment.can_drop(self.char3))
+        # Force-wear bag1 on head, dropping it shouldn't work
+        self.bag1.location = self.char3
+        self.bag1.tags.clear(category="eq")
+        self.bag1.tags.add("head", category="eq")
+        self.assertFalse(self.char3.equipment.can_drop(self.bag1))
