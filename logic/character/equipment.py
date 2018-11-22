@@ -6,15 +6,30 @@ The EquipmentHandler centralizes operations on limbs and container objects.
 Its main method are:
     character.equipment.can_get(object_or_objects)
     character.equipment.get(objects_and_containers)
-    character.equipment.can_drop(object_or_objects, location)
-    character.equipment.drop(object_and_containers, location)
+    character.equipment.can_drop(object_or_objects)
+    character.equipment.drop(object_and_containers)
+    character.equipment.can_wear(object)
+    character.equipment.wear(object, limb)
+    character.equipment.can_remove(object)
+    character.equipment.remove(object, container)
+    character.equipment.can_hold(object)
+    character.equipment.hold(object, limb)
 
-Most methods can receive either a single object or a list of objects.
+Some `can_*` methods can receive either a single object or a list of objects.
+Additionally, this handler is responsible for the inventory and smooth
+equipment nesting:
+    character.equipment.limbs: return the dictionary of limbs for that character.
+    character.equipment.first_level: return a dictionary of
+            {limb: equiped_or_held_object}
+    character.equipment.all(): return all objects on that equipment and what
+            they contain, to N level.
+Finally, some methods are here to format:
+    character.equipment.format_equipment()
+    character.equipment.format_inventory()
 
 """
 
 from collections import OrderedDict
-from Queue import Queue
 
 from evennia.utils.utils import inherits_from
 
@@ -22,7 +37,6 @@ from logic.character.limbs import Limb
 from logic.character import limbs as LIMBS
 from logic.object.sets import ContainerSet, ObjectSet
 from world.log import character as log
-
 
 class EquipmentHandler(object):
 
@@ -72,12 +86,13 @@ class EquipmentHandler(object):
 
         Returns:
             first_level (OrderedDict of {Limb: obj or None}: a dictionary containing
-                    the Limb object as key, and the equiped object if any
+                    the Limb object as key, and the equiped/held object if any
                     (or None) as value.
 
         """
         limbs = self.limbs.values()
         first_level = OrderedDict()
+
         # Get all contents, we'll filter afterward
         contents = self.character.contents
         for limb in limbs:
@@ -86,74 +101,9 @@ class EquipmentHandler(object):
 
         return first_level
 
-    def can_hold(self, obj=None, exclude=None):
-        """
-        Return the limbs that can hold something.
-
-        Args:
-            obj (Object, optional): the object to hold.
-            exclude (Object or list of objects): the optional objects to exclude.
-
-        Returns:
-            limbs (list of Limb): the free limbs that can hold something.
-
-        """
-        if obj and obj.tags.get(category="eq"):
-            # This object is worn or held, it cannot be held again
-            return []
-
-        if obj and obj in [self.character] + self.character.locations:
-            return []
-
-        can_hold = []
-        first_level = self.first_level
-        exclude = exclude or []
-        if not isinstance(exclude, (list, tuple)):
-            exclude = [exclude]
-
-        for limb, obj in first_level.items():
-            if limb.can_hold:
-                if obj is not None and obj not in exclude:
-                    continue
-                can_hold.append(limb)
-
-        return can_hold
-
-    def hm_can_hold(self, exclude=None):
-        """
-        Return how many limbs can hold something.
-
-        A character with empty hands will probably have this method
-        return 2 (2 free hands).  If this character picks something
-        in one hand, this will return 1 and so on.
-
-        Args:
-            exclude (Object or list of Object, optional): object or list
-                    of objects to ignore, if any.
-
-        Returns:
-            number (int): the number of limbs that are free and can hold something.
-
-        """
-        return len(self.can_hold(exclude=exclude))
-
-    def hold(self, obj, limb):
-        """
-        Hold an object with the specified limb.
-
-        The `can_hold` method is to have been called beforehand.  The `hold`
-        method shouldn't raise an exception.
-
-        Args:
-            obj (Object): the object to hold.
-            limb (Limb): the limb on which to hold this object.
-
-        """
-        obj.location = self.character
-        obj.tags.add(limb.key, category="eq")
-
     def all(self, only_visible=False, looker=None):
-        """Return all objects, include these contained.
+        """
+        Return all objects, including these contained.
 
         No type checking is performed at this level.  Only the object's
         contents are returned as they are.
@@ -296,7 +246,6 @@ class EquipmentHandler(object):
             formatted (str): the formatted list of limbs as a string.
 
         """
-        # First, retrieve the list of first level
         first_level = self.first_level
         # We first check what should be hidden
         hidden = []
@@ -327,9 +276,9 @@ class EquipmentHandler(object):
 
         Args:
             looker (object, optional): the looker.  If not set, default to
+                    the character who owns this equipment.
             only_show (list of objects, optional): list of objects to filter
                     the inventory.
-                    the character who owns this equipment.
 
         Return:
             inventory (str): the formatted inventory.
@@ -371,7 +320,8 @@ class EquipmentHandler(object):
             return "You aren't carrying anything."
 
     def can_get(self, object_or_objects, filter=None, allow_worn=False, check_lock=True):
-        """Return the objects the character can get.
+        """
+        Return the objects the character can get.
 
         Args:
             object_or_objects (Object or list of Object): the object(s) to pick up.
@@ -384,10 +334,10 @@ class EquipmentHandler(object):
                     recommended to set this to `False` outside of testing.
 
         Return:
-            objects (dictionary of Object:container): the list of objects the
-                    character can pick up.  Note that the container can be
-                    a limb (Limb object), if the object can be picked up in
-                    one of the character's limbs if it can hold something.
+            objects (dictionary of container:list of Object): the list of
+                    objects the character can pick up.  Note that the container
+                    can be a limb (Limb object), if the object can be picked
+                    up in one of the character's limbs if it can hold something.
 
         Object types are checked at this moment.  Rather, browsing through
         the extended object content, if one object can get, checks whether
@@ -466,7 +416,7 @@ class EquipmentHandler(object):
         can_get.remaining = [obj for obj in objects if obj not in used_limbs.values()]
         return can_get
 
-    def get(self, objects_and_containers):
+    def get(self, containers_and_objects):
         """
         Get the specified objects.
 
@@ -475,12 +425,12 @@ class EquipmentHandler(object):
         various containers without error.
 
         Args:
-            objects_and_containers (dict): the objects to get, the result
+            containers_and_objects (dict): the objects to get, the result
                     of the `can_get` method.  No error is assumed to happen
                     at this point.
 
         """
-        for container, objects in objects_and_containers.items():
+        for container, objects in containers_and_objects.items():
             for obj in objects:
                 if isinstance(container, Limb):
                     # It's a first-level, a limb, either hold it or wear it
@@ -491,18 +441,20 @@ class EquipmentHandler(object):
                     obj.location = container
 
     def can_drop(self, object_or_objects, filter=None):
-        """Return the objects the character can drop.
+        """
+        Return the objects the character can drop.
 
         Args:
             object_or_objects (Object or list of Object): the object(s) to drop.
             filter (list of objects, optional): a list of containers, only
-                    use these containers if present.
+                    use these containers if present.  Note that in order to
+                    drop in the character's room, set this to an empty list.
 
         Return:
-            objects (dictionary of Object:container): the list of objects the
-                    character can pick up.  Note that the container can be
-                    a room (Room object), if the object can be put into the
-                    room.
+            objects (dictionary of container:list of Object): the list of
+                    objects the character can drop.  Note that the container
+                    can be a room (Room object), if the object can be put into
+                    the room.
 
         Object types are checked at this moment.  Rather, browsing through
         the extended object content, if one object can drop, checks whether
@@ -529,6 +481,9 @@ class EquipmentHandler(object):
             clean.append(obj)
         objects = clean
 
+        # Remove objects that are not into self.character
+        objects = [obj for obj in objects if self.character in obj.locations]
+
         # Look for potential containers (even if there is a filter)
         containers = {}
         extended = self.character.location.contents + self.all(only_visible=True)
@@ -550,7 +505,7 @@ class EquipmentHandler(object):
                 if obj in to_drop:
                     continue
 
-                if container in obj.locations:
+                if obj in [container] + [container.location]:
                     continue
 
                 # Try to put the object into the container
@@ -570,7 +525,7 @@ class EquipmentHandler(object):
         can_drop.remaining = remaining
         return can_drop
 
-    def drop(self, objects_and_containers):
+    def drop(self, containers_and_objects):
         """
         Drop the specified objects.
 
@@ -579,12 +534,12 @@ class EquipmentHandler(object):
         various containers without error.
 
         Args:
-            objects_and_containers (dict): the objects to drop, the result
+            containers_and_objects (dict): the objects to drop, the result
                     of the `can_drop` method.  No error is assumed to happen
                     at this point.
 
         """
-        for container, objects in objects_and_containers.items():
+        for container, objects in containers_and_objects.items():
             for obj in objects:
                 tag = obj.tags.get(category="eq")
                 if tag:
@@ -686,3 +641,69 @@ class EquipmentHandler(object):
         """
         obj.tags.remove(obj.tags.get(category="eq"), category="eq")
         self.get({container: [obj]})
+
+    def can_hold(self, obj=None, exclude=None):
+        """
+        Return the limbs that can hold something.
+
+        Args:
+            obj (Object, optional): the object to hold.
+            exclude (Object or list of objects): the optional objects to exclude.
+
+        Returns:
+            limbs (list of Limb): the free limbs that can hold something.
+
+        """
+        if obj and obj.tags.get(category="eq"):
+            # This object is worn or held, it cannot be held again
+            return []
+
+        if obj and obj in [self.character] + self.character.locations:
+            return []
+
+        can_hold = []
+        first_level = self.first_level
+        exclude = exclude or []
+        if not isinstance(exclude, (list, tuple)):
+            exclude = [exclude]
+
+        for limb, obj in first_level.items():
+            if limb.can_hold:
+                if obj is not None and obj not in exclude:
+                    continue
+                can_hold.append(limb)
+
+        return can_hold
+
+    def hm_can_hold(self, exclude=None):
+        """
+        Return how many limbs can hold something.
+
+        A character with empty hands will probably have this method
+        return 2 (2 free hands).  If this character picks something
+        in one hand, this will return 1 and so on.
+
+        Args:
+            exclude (Object or list of Object, optional): object or list
+                    of objects to ignore, if any.
+
+        Returns:
+            number (int): the number of limbs that are free and can hold something.
+
+        """
+        return len(self.can_hold(exclude=exclude))
+
+    def hold(self, obj, limb):
+        """
+        Hold an object with the specified limb.
+
+        The `can_hold` method is to have been called beforehand.  The `hold`
+        method shouldn't raise an exception.
+
+        Args:
+            obj (Object): the object to hold.
+            limb (Limb): the limb on which to hold this object.
+
+        """
+        obj.location = self.character
+        obj.tags.add(limb.key, category="eq")

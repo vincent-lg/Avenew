@@ -66,6 +66,8 @@ class TestEquipment(EvenniaTest):
         can = self.char3.equipment.can_get([self.bag1])
         self.char3.equipment.get(can)
         self.assertIn(self.bag1, self.char3.equipment.all())
+        self.assertEqual(self.char3.equipment.first_level["left_hand"], self.bag1)
+        self.assertEqual(self.bag1.tags.get(category="eq"), "left_hand")
 
         # If we try to pick up an apple now, it should go in the bag
         can = self.char3.equipment.can_get([self.apple1, self.apple2])
@@ -85,3 +87,62 @@ class TestEquipment(EvenniaTest):
         self.assertFalse(self.char3.equipment.can_get(self.apple3))
         # picking oneself up should be forbidden (infinite loop)
         self.assertFalse(self.char3.equipment.can_get(self.char3, check_lock=False))
+        # bag2 can go in bag1, but bag1 can't go in bag2 afterward
+        can = self.char3.equipment.can_get(self.bag2)
+        self.assertTrue(can)
+        self.char3.equipment.get(can)
+        self.assertFalse(self.char3.equipment.can_get(self.bag1, filter=[self.bag2]))
+
+    def test_drop(self):
+        """Try to drop objects."""
+        # Move bag1 into char3, apple1 and apple2 into bag1
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.apple1.location = self.bag1
+        self.apple2.location = self.bag1
+        self.assertEqual(self.char3.equipment.first_level["left_hand"], self.bag1)
+
+        # Try to drop apple2 on the floor
+        can = self.char3.equipment.can_drop(self.apple2, filter=[])
+        self.assertTrue(can)
+        self.assertIn(self.room1, can)
+        self.char3.equipment.drop(can)
+        self.assertEqual(self.apple2.location, self.room1)
+        self.assertNotIn(self.apple2, self.bag1.contents)
+
+        # Get apple2 back and try to drop bag1
+        self.apple2.location = self.bag1
+        can = self.char3.equipment.can_drop(self.bag1, filter=[])
+        self.assertTrue(can)
+        self.assertIn(self.room1, can)
+        self.char3.equipment.drop(can)
+        self.assertEqual(self.bag1.location, self.room1)
+        self.assertNotIn(self.bag1, self.char3.contents)
+        self.assertEqual(self.apple1.location, self.bag1)
+        self.assertEqual(self.apple2.location, self.bag1)
+        self.assertFalse(self.bag1.tags.get(category="eq"))
+
+        # Get bag1 back, and try to drop into bag2
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        can = self.char3.equipment.can_drop(self.bag1, filter=[self.bag2])
+        self.assertTrue(can)
+        self.assertIn(self.bag2, can)
+        self.char3.equipment.drop(can)
+        self.assertEqual(self.bag1.location, self.bag2)
+        self.assertNotIn(self.bag1, self.char3.contents)
+        self.assertEqual(self.apple1.location, self.bag1)
+        self.assertEqual(self.apple2.location, self.bag1)
+        self.assertFalse(self.bag1.tags.get(category="eq"))
+
+        # Get bag1 back. Try to drop bag2 into bag1, it should fail
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        can = self.char3.equipment.can_drop(self.bag2, filter=[self.bag1])
+        self.assertFalse(can)
+
+        # Cases that should fail
+        # bag1 can't be dropped into bag1
+        self.assertFalse(self.char3.equipment.can_drop(self.bag1, filter=[self.bag1]))
+        # char3 can't drop char3
+        self.assertFalse(self.char3.equipment.can_drop(self.char3))

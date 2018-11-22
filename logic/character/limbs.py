@@ -75,7 +75,11 @@ class Limb:
         return self.name
 
     def __hash__(self):
-        return id(self.key)
+        return hash(self.key)
+
+    def __eq__(self, other):
+        """Just compare hashes."""
+        return hash(self) == hash(other)
 
     def msg_wear(self, doer, obj):
         """
