@@ -557,13 +557,23 @@ class EquipmentHandler(object):
                     or None to indicate a failure.
 
         """
+        if not hasattr(obj, "types"):
+            return
+
         types = obj.types.can("wear")
         if not types:
             return
 
-        # If obj is already worn, return None
-        if obj.tags.get(category="eq"):
+        # If obj is not owned by the character
+        if self.character not in [obj] + obj.locations:
             return
+
+        # If obj is already worn, return None
+        tag = obj.tags.get(category="eq")
+        if tag:
+            # If obj is held, it's fine
+            if not self.limbs[tag].can_hold:
+                return
 
         idents = [ident for type_obj in types for ident in type_obj.db.get("wear_on", [])]
 
@@ -598,6 +608,7 @@ class EquipmentHandler(object):
 
         """
         obj.location = self.character
+        obj.tags.clear(category="eq")
         obj.tags.add(limb.key, category="eq")
 
     def can_remove(self, obj, container=None):

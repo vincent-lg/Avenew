@@ -19,6 +19,9 @@ class TestEquipment(EvenniaTest):
         self.bag1.types.add("container")
         self.bag2 = create_object("typeclasses.objects.Object", key="a pink purse", location=self.room1)
         self.bag2.types.add("container")
+        self.hat = create_object("typeclasses.objects.Object", key="a purple hat", location=self.room1)
+        self.hat.types.add("clothes")
+        self.hat.types.get("clothes").db["wear_on"] = ["head"]
 
     def test_all(self):
         """Test all the stats with general functions."""
@@ -92,6 +95,11 @@ class TestEquipment(EvenniaTest):
         self.assertTrue(can)
         self.char3.equipment.get(can)
         self.assertFalse(self.char3.equipment.can_get(self.bag1, filter=[self.bag2]))
+        # Force-wear bag1 on head, getting it shouldn't work
+        self.bag1.location = self.char3
+        self.bag1.tags.clear(category="eq")
+        self.bag1.tags.add("head", category="eq")
+        self.assertFalse(self.char3.equipment.can_get(self.bag1))
 
     def test_drop(self):
         """Try to drop objects."""
@@ -151,3 +159,38 @@ class TestEquipment(EvenniaTest):
         self.bag1.tags.clear(category="eq")
         self.bag1.tags.add("head", category="eq")
         self.assertFalse(self.char3.equipment.can_drop(self.bag1))
+
+    def test_wear(self):
+        """Test to wear an object."""
+        # Place the hat in char3's left hand
+        self.hat.location = self.char3
+        self.hat.tags.add("left_hand", category="eq")
+        self.assertEqual(self.char3.equipment.first_level["left_hand"], self.hat)
+
+        # Try to wear hat1 on char3's head
+        limb = self.char3.equipment.can_wear(self.hat)
+        self.assertEqual(limb, self.char3.equipment.limbs["head"])
+        self.char3.equipment.wear(self.hat, limb)
+        self.assertEqual(self.hat.tags.get(category="eq"), "head")
+
+        # Remove the hat, put it into bag1, and wear it again
+        self.hat.location = self.bag1
+        self.hat.tags.clear(category="eq")
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        limb = self.char3.equipment.can_wear(self.hat)
+        self.assertEqual(limb, self.char3.equipment.limbs["head"])
+        self.char3.equipment.wear(self.hat, limb)
+        self.assertTrue(self.hat.location, self.char3)
+        self.assertEqual(self.hat.tags.get(category="eq"), "head")
+
+        # if hat is not in char3, it should fail
+        self.hat.location = self.bag1
+        self.hat.tags.clear(category="eq")
+        self.bag1.location = self.room1
+        self.bag1.tags.clear(category="eq")
+        limb = self.char3.equipment.can_wear(self.hat)
+        self.assertIsNone(limb)
+
+        # Trying to wear char3 should fail
+        self.assertIsNone(self.char3.equipment.can_wear(self.char3))
