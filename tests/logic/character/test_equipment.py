@@ -194,3 +194,48 @@ class TestEquipment(EvenniaTest):
 
         # Trying to wear char3 should fail
         self.assertIsNone(self.char3.equipment.can_wear(self.char3))
+
+    def test_remove(self):
+        """Test to remove (stop wearing)."""
+        # Force-wear the hat ro ewmocw ir
+        self.hat.location = self.char3
+        self.hat.tags.add("head", category="eq")
+        container = self.char3.equipment.can_remove(self.hat)
+        self.assertEqual(container, self.char3.equipment.limbs["left_hand"])
+        self.char3.equipment.remove(self.hat, container)
+        self.assertIn(self.hat, self.char3.contents)
+        self.assertEqual(self.hat.tags.get(category="eq"), "left_hand")
+
+        # Take bag1 ine one hand and try the same thing
+        self.hat.tags.clear(category="eq")
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.hat.location = self.char3
+        self.hat.tags.add("head", category="eq")
+        container = self.char3.equipment.can_remove(self.hat)
+        self.assertEqual(container, self.bag1)
+        self.char3.equipment.remove(self.hat, container)
+        self.assertIn(self.hat, self.bag1.contents)
+        self.assertIsNone(self.hat.tags.get(category="eq"))
+
+        # Try to carry bag1 and bag2 and remove the hat with a filter
+        self.bag2.location = self.char3
+        self.bag2.tags.add("right_hand", category="eq")
+        self.hat.location = self.char3
+        self.hat.tags.add("head", category="eq")
+        container = self.char3.equipment.can_remove(self.hat, self.bag2)
+        self.assertEqual(container, self.bag2)
+        self.char3.equipment.remove(self.hat, container)
+        self.assertIn(self.hat, self.bag2.contents)
+        self.assertIsNone(self.hat.tags.get(category="eq"))
+
+        # Try the same thing with a limb as filter
+        self.bag2.location = self.room1
+        self.bag2.tags.clear(category="eq")
+        self.hat.location = self.char3
+        self.hat.tags.add("head", category="eq")
+        container = self.char3.equipment.can_remove(self.hat, self.char3.equipment.limbs["right_hand"])
+        self.assertEqual(container, self.char3.equipment.limbs["right_hand"])
+        self.char3.equipment.remove(self.hat, container)
+        self.assertIn(self.hat, self.char3.contents)
+        self.assertEqual(self.hat.tags.get(category="eq"), "right_hand")

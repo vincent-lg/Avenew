@@ -345,7 +345,6 @@ class EquipmentHandler(object):
         on several containers if it has to.
 
         """
-        can_hold = self.can_hold() if filter is None else False
         can_get = ContainerSet()
         if inherits_from(object_or_objects, "evennia.objects.objects.DefaultObject"):
             objects = [object_or_objects]
@@ -406,8 +405,11 @@ class EquipmentHandler(object):
         remaining = [obj for obj in objects if obj not in to_get]
         used_limbs = {}
         for obj in remaining:
-            limbs = self.can_hold(obj)
+            limbs = self.can_hold(obj, allow_worn=allow_worn)
             limbs = [limb for limb in limbs if limb not in used_limbs]
+            if filter:
+                limbs = [limb for limb in limbs if limb in filter]
+
             if limbs:
                 limb = limbs[0]
                 can_get[limb].append(obj)
@@ -650,19 +652,20 @@ class EquipmentHandler(object):
         obj.tags.clear(category="eq")
         self.get({container: [obj]})
 
-    def can_hold(self, obj=None, exclude=None):
+    def can_hold(self, obj=None, exclude=None, allow_worn=False):
         """
         Return the limbs that can hold something.
 
         Args:
             obj (Object, optional): the object to hold.
             exclude (Object or list of objects): the optional objects to exclude.
+            allow_worn (bool, optional): allow obj to be worn.
 
         Returns:
             limbs (list of Limb): the free limbs that can hold something.
 
         """
-        if obj and obj.tags.get(category="eq"):
+        if not allow_worn and obj and obj.tags.get(category="eq"):
             # This object is worn or held, it cannot be held again
             return []
 
