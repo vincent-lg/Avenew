@@ -2,6 +2,7 @@
 
 """Test the login menu system."""
 
+from __future__ import absolute_import, unicode_literals
 from django.conf import settings
 from django.core import mail
 from evennia.commands.default.tests import CommandTest

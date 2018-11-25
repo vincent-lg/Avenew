@@ -178,7 +178,12 @@ class AvenewObject(object):
             if hasattr(self, "equipment"):
                 candidates += self.equipment.all(only_visible=True)
 
-        return super(AvenewObject, self).search(searchdata, candidates=candidates, **kwargs)
+        results = super(AvenewObject, self).search(searchdata, candidates=candidates, **kwargs)
+        if kwargs.get("quiet", False):
+            results = list(results)
+            results.sort(key=lambda obj: obj.attributes.get("_moved_at", 0))
+
+        return results
 
 
 class SharedAttributeHandler(AttributeHandler):

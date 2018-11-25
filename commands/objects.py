@@ -8,9 +8,10 @@ from collections import defaultdict
 import re
 from textwrap import wrap
 
-from evennia.utils.utils import crop, inherits_from, list_to_string
+from evennia.utils.utils import crop, inherits_from
 
 from commands.command import Command
+from logic.object.sets import ObjectSet
 
 ## Constants
 CATEGORY = "Object manipulation"
@@ -98,8 +99,8 @@ class CmdGet(Command):
                 return
 
         # Try to find the object
-        from_objs = [content for obj in from_objs for content in obj.contents]
-        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
+        from_obj_contents = [content for obj in from_objs for content in obj.contents]
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj_contents)
         if objs:
             # Alter the list depending on quantity
             if quantity == 0:
@@ -121,7 +122,17 @@ class CmdGet(Command):
         can_get = self.caller.equipment.can_get(objs, filter=into_objs)
         if can_get:
             self.caller.equipment.get(can_get)
-            self.msg("You get {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="and")))
+            my_msg = "You get "
+            my_msg += can_get.objects().wrapped_names(self.caller)
+            #ot_msg = "{char} gets "
+            #ot_msg += can_get.objects().wrapped_names(self.caller)
+            if from_text:
+                my_msg += " from " + ObjectSet(from_objs).wrapped_names(self.caller)
+            if into_text:
+                my_msg += ", and drop {} into ".format("it" if len(can_get.objects()) < 2 else "them")
+                my_msg += ObjectSet(into_objs).wrapped_names(self.caller)
+            my_msg += "."
+            self.msg(my_msg)
         else:
             self.msg("|rIt seems you cannot get that.|n")
 
