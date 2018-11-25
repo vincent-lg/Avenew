@@ -619,7 +619,7 @@ class EquipmentHandler(object):
 
         Args:
             obj (Object): the object to remove, must be equiped.
-            container (Object, optional): in what container to drop it?
+            container (Object or Limb, optional): in what container to drop it?
 
         Returns:
             container (Object): the object in which we can remove/drop, or
@@ -666,7 +666,6 @@ class EquipmentHandler(object):
 
         """
         if not allow_worn and obj and obj.tags.get(category="eq"):
-            # This object is worn or held, it cannot be held again
             return []
 
         if obj and obj in [self.character] + self.character.locations:
@@ -678,11 +677,10 @@ class EquipmentHandler(object):
         if not isinstance(exclude, (list, tuple)):
             exclude = [exclude]
 
-        for limb, obj in first_level.items():
+        for limb, worn in first_level.items():
             if limb.can_hold:
-                if obj is not None and obj not in exclude:
-                    continue
-                can_hold.append(limb)
+                if worn is None or worn in exclude:
+                    can_hold.append(limb)
 
         return can_hold
 
@@ -716,5 +714,6 @@ class EquipmentHandler(object):
             limb (Limb): the limb on which to hold this object.
 
         """
+        obj.tags.clear(category="eq")
         obj.location = self.character
         obj.tags.add(limb.key, category="eq")

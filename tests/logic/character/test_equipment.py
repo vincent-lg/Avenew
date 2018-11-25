@@ -239,3 +239,26 @@ class TestEquipment(EvenniaTest):
         self.char3.equipment.remove(self.hat, container)
         self.assertIn(self.hat, self.char3.contents)
         self.assertEqual(self.hat.tags.get(category="eq"), "right_hand")
+
+    def test_hold(self):
+        """Test to hold something."""
+        # Pick up the hat in one hand
+        self.hat.location = self.char3
+        self.hat.tags.add("left_hand", category="eq")
+        limbs = self.char3.equipment.can_hold(self.hat, allow_worn=True)
+        limb = limbs[0] if limbs else None
+        self.assertEqual(limb, self.char3.equipment.limbs["right_hand"])
+        self.char3.equipment.hold(self.hat, limb)
+        self.assertEqual(self.hat.tags.get(category="eq"), "right_hand")
+
+        # Try to hold something which is in a bag
+        self.hat.location = self.bag1
+        self.hat.tags.clear(category="eq")
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        limbs = self.char3.equipment.can_hold(self.hat, allow_worn=True)
+        limb = limbs[0] if limbs else None
+        self.assertEqual(limb, self.char3.equipment.limbs["right_hand"])
+        self.char3.equipment.hold(self.hat, limb)
+        self.assertEqual(self.hat.tags.get(category="eq"), "right_hand")
+        self.assertEqual(self.hat.location, self.char3)
