@@ -122,17 +122,26 @@ class CmdGet(Command):
         can_get = self.caller.equipment.can_get(objs, filter=into_objs)
         if can_get:
             self.caller.equipment.get(can_get)
+
+            # Messages to display
+            ot_kwargs = {"char": self.caller}
+            objs = can_get.objects()
             my_msg = "You get "
-            my_msg += can_get.objects().wrapped_names(self.caller)
-            #ot_msg = "{char} gets "
-            #ot_msg += can_get.objects().wrapped_names(self.caller)
+            my_msg += objs.wrapped_names(self.caller)
+            ot_msg = "{char} gets {objs}"
+            ot_kwargs["objs"] = objs
             if from_text:
-                my_msg += " from " + ObjectSet(from_objs).wrapped_names(self.caller)
+                from_objs = ObjectSet(from_objs)
+                my_msg += " from " + from_objs.wrapped_names(self.caller)
+                ot_msg += " from {from_objs}"
+                ot_kwargs["from_objs"] = from_objs
             if into_text:
                 my_msg += ", and drop {} into ".format("it" if len(can_get.objects()) < 2 else "them")
                 my_msg += ObjectSet(into_objs).wrapped_names(self.caller)
             my_msg += "."
+            ot_msg += "."
             self.msg(my_msg)
+            self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
         else:
             self.msg("|rIt seems you cannot get that.|n")
 

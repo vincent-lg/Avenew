@@ -106,4 +106,3 @@ class TestObjects(CommandTest):
         self.assertEqual(self.apple1.location, self.bag2)
         self.assertEqual(self.apple2.location, self.bag2)
         self.assertEqual(self.apple3.location, self.bag2)
-        print self.msgs[-1]

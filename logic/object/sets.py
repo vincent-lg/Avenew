@@ -90,3 +90,5 @@ class ObjectSet(list):
 
         """
         return list_to_string(self.names(looker), endsep="and")
+
+    get_display_name = wrapped_names
