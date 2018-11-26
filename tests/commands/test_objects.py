@@ -106,3 +106,23 @@ class TestObjects(CommandTest):
         self.assertEqual(self.apple1.location, self.bag2)
         self.assertEqual(self.apple2.location, self.bag2)
         self.assertEqual(self.apple3.location, self.bag2)
+
+    def test_drop(self):
+        """Test the drop command."""
+        # Try to drop a held apple
+        self.apple1.location = self.char3
+        self.apple1.tags.add("left_hand", category="eq")
+        self.call(CmdDrop(), "apple", caller=self.char3)
+        self.assertEqual(self.apple1.location, self.room3)
+        self.assertFalse(self.apple1.tags.get(category="eq"))
+
+        # Same test, but with two apples
+        self.apple1.location = self.char3
+        self.apple1.tags.add("left_hand", category="eq")
+        self.apple2.location = self.char3
+        self.apple2.tags.add("right_hand", category="eq")
+        self.call(CmdDrop(), "2 apples", caller=self.char3)
+        self.assertEqual(self.apple1.location, self.room3)
+        self.assertFalse(self.apple1.tags.get(category="eq"))
+        self.assertEqual(self.apple2.location, self.room3)
+        self.assertFalse(self.apple2.tags.get(category="eq"))

@@ -225,15 +225,15 @@ class CmdDrop(Command):
         if from_text:
             candidates = caller.equipment.all(only_visible=True)
             from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
-            from_objs = [content for obj in from_objs for content in obj.contents]
-            if not from_objs:
+            from_obj_contents = [content for obj in from_objs for content in obj.contents]
+            if not from_obj_contents:
                 self.msg("|rYou can't find that: {}.|n".format(from_text))
                 return
         else:
-            from_objs = caller.equipment.all(only_visible=True)
+            from_obj_contents = caller.equipment.all(only_visible=True)
 
         # Try to find the object
-        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj_contents)
         if objs:
             # Alter the list depending on quantity
             if quantity == 0:
@@ -255,7 +255,28 @@ class CmdDrop(Command):
         can_drop = self.caller.equipment.can_drop(objs, filter=into_objs)
         if can_drop:
             self.caller.equipment.drop(can_drop)
-            self.msg("You drop {}.".format(list_to_string(can_drop.objects().names(self.caller), endsep="and")))
+
+            # Messages to display
+            ot_kwargs = {"char": self.caller}
+            objs = can_drop.objects()
+            my_msg = "You drop " + objs.wrapped_names(self.caller)
+            ot_msg = "{char} drops {objs}"
+            ot_kwargs["objs"] = objs
+            if from_text:
+                from_objs = ObjectSet(from_objs)
+                my_msg += " from " + from_objs.wrapped_names(self.caller)
+                ot_msg += " from {from_objs}"
+                ot_kwargs["from_objs"] = from_objs
+            if into_text:
+                into_objs = ObjectSet(into_objs)
+                my_msg += ", and put {} into ".format("it" if len(objs) < 2 else "them")
+                my_msg += into_objs.wrapped_names(self.caller)
+                ot_msg = "{char} puts {objs} into {into_objs}"
+                ot_kwargs["into_objs"] = into_objs
+            my_msg += "."
+            ot_msg += "."
+            self.msg(my_msg)
+            self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
         else:
             self.msg("|rIt seems you cannot drop that.|n")
 
