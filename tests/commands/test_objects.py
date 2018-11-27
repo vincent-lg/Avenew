@@ -126,3 +126,33 @@ class TestObjects(CommandTest):
         self.assertFalse(self.apple1.tags.get(category="eq"))
         self.assertEqual(self.apple2.location, self.room3)
         self.assertFalse(self.apple2.tags.get(category="eq"))
+
+        # Try to drop all apples in a bag
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        for apple in (self.apple1, self.apple2, self.apple3):
+            apple.tags.clear(category="eq")
+            apple.location = self.bag1
+        self.call(CmdDrop(), "* apples", caller=self.char3)
+        self.assertEqual(self.apple1.location, self.room3)
+        self.assertEqual(self.apple2.location, self.room3)
+        self.assertEqual(self.apple3.location, self.room3)
+
+        # Try to drop the apples into bag2
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.bag2.location = self.char3
+        self.bag2.tags.add("right_hand", category="eq")
+        for apple in (self.apple1, self.apple2, self.apple3):
+            apple.tags.clear(category="eq")
+            apple.location = self.bag1
+        self.call(CmdDrop(), "* apples into purse", caller=self.char3)
+        self.assertEqual(self.apple1.location, self.bag2)
+        self.assertEqual(self.apple2.location, self.bag2)
+        self.assertEqual(self.apple3.location, self.bag2)
+
+        # Try to drop 2 apples from bag2 into bag1
+        self.call(CmdDrop(), "2 apples into black bag from purse", caller=self.char3)
+        self.assertEqual(self.apple1.location, self.bag1)
+        self.assertEqual(self.apple2.location, self.bag1)
+        self.assertEqual(self.apple3.location, self.bag2)
