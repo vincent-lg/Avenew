@@ -28,6 +28,9 @@ class TestObjects(CommandTest):
         self.hat = create_object("typeclasses.objects.Object", key="a purple hat", location=self.room3)
         self.hat.types.add("clothes")
         self.hat.types.get("clothes").db["wear_on"] = ["head"]
+        self.sock = create_object("typeclasses.objects.Object", key="an orange sock", location=self.room3)
+        self.sock.types.add("clothes")
+        self.sock.types.get("clothes").db["wear_on"] = ["stockings"]
         self.msgs = []
 
     def call(self, *args, **kwargs):
@@ -156,3 +159,27 @@ class TestObjects(CommandTest):
         self.assertEqual(self.apple1.location, self.bag1)
         self.assertEqual(self.apple2.location, self.bag1)
         self.assertEqual(self.apple3.location, self.bag2)
+
+    def test_wear(self):
+        """Test the wear command."""
+        # Wear the hat when it's carried in one's hand
+        self.hat.location = self.char3
+        self.hat.tags.add("left_hand", category="eq")
+        self.call(CmdWear(), "purple hat", caller=self.char3)
+        self.assertEqual(self.hat.location, self.char3)
+        self.assertEqual(self.hat.tags.get(category="eq"), "head")
+
+        # Same thing, but put the hat in a bag
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.hat.location = self.bag1
+        self.hat.tags.clear(category="eq")
+        self.call(CmdWear(), "purple hat", caller=self.char3)
+        self.assertEqual(self.hat.location, self.char3)
+        self.assertEqual(self.hat.tags.get(category="eq"), "head")
+
+        # Try to wear the sock on the right foot
+        self.sock.location = self.bag1
+        self.call(CmdWear(), "sock, right foot", caller=self.char3)
+        self.assertEqual(self.sock.location, self.char3)
+        self.assertEqual(self.sock.tags.get(category="eq"), "right_stocking")
