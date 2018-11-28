@@ -183,3 +183,30 @@ class TestObjects(CommandTest):
         self.call(CmdWear(), "sock, right foot", caller=self.char3)
         self.assertEqual(self.sock.location, self.char3)
         self.assertEqual(self.sock.tags.get(category="eq"), "right_stocking")
+
+    def test_remove(self):
+        """Test the remove command."""
+        # Remove the hat when wearing no container
+        self.hat.location = self.char3
+        self.hat.tags.add("head", category="eq")
+        self.call(CmdRemove(), "purple hat", caller=self.char3)
+        self.assertEqual(self.hat.location, self.char3)
+        self.assertEqual(self.hat.tags.get(category="eq"), "left_hand")
+
+        # Do the same thing, but with a bag to hold the hat
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.hat.tags.clear(category="eq")
+        self.hat.tags.add("head", category="eq")
+        self.call(CmdRemove(), "hat", caller=self.char3)
+        self.assertEqual(self.hat.location, self.bag1)
+        self.assertFalse(self.hat.tags.get(category="eq"))
+
+        # Hold two containers, remove in bag2
+        self.bag2.location = self.char3
+        self.bag2.tags.add("right_hand", category="eq")
+        self.hat.tags.clear(category="eq")
+        self.hat.tags.add("head", category="eq")
+        self.call(CmdRemove(), "hat into pink purse", caller=self.char3)
+        self.assertEqual(self.hat.location, self.bag2)
+        self.assertFalse(self.hat.tags.get(category="eq"))
