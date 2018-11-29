@@ -210,3 +210,47 @@ class TestObjects(CommandTest):
         self.call(CmdRemove(), "hat into pink purse", caller=self.char3)
         self.assertEqual(self.hat.location, self.bag2)
         self.assertFalse(self.hat.tags.get(category="eq"))
+
+    def test_hold(self):
+        """Test the hold command."""
+        # Put the hat in bag1, bag1 in char3, then hold hat
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.hat.location = self.bag1
+        self.call(CmdHold(), "hat", caller=self.char3)
+        self.assertEqual(self.hat.location, self.char3)
+        self.assertEqual(self.hat.tags.get(category="eq"), "right_hand")
+
+        # The same thing with both hands holding something shouldn't work
+        self.hat.location = self.bag1
+        self.hat.tags.clear(category="eq")
+        self.bag2.location = self.char3
+        self.bag2.tags.add("right_hand", category="eq")
+        self.call(CmdHold(), "hat", caller=self.char3)
+        self.assertEqual(self.hat.location, self.bag1)
+        self.assertFalse(self.hat.tags.get(category="eq"))
+
+    def test_empty(self):
+        """Test the empty command."""
+        # Empty bag1 in the room
+        self.bag1.location = self.char3
+        self.bag1.tags.add("left_hand", category="eq")
+        self.hat.location = self.bag1
+        self.sock.location = self.bag1
+        self.bag2.location = self.bag1
+        self.call(CmdEmpty(), "black bag", caller=self.char3)
+        self.assertEqual(self.bag1.location, self.char3)
+        self.assertEqual(self.hat.location, self.room3)
+        self.assertEqual(self.sock.location, self.room3)
+        self.assertEqual(self.bag2.location, self.room3)
+
+        # Empty bag2 into bag1
+        self.bag2.location = self.char3
+        self.bag2.tags.add("right_hand", category="eq")
+        self.sock.location = self.bag2
+        self.hat.location = self.bag2
+        self.call(CmdEmpty(), "pink purse into black bag", caller=self.char3)
+        self.assertEqual(self.bag1.location, self.char3)
+        self.assertEqual(self.bag2.location, self.char3)
+        self.assertEqual(self.hat.location, self.bag1)
+        self.assertEqual(self.sock.location, self.bag1)

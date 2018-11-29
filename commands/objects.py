@@ -740,6 +740,21 @@ class CmdEmpty(Command):
         can_drop = caller.equipment.can_drop(objs, filter=into_objs)
         if can_drop:
             self.caller.equipment.drop(can_drop)
-            self.msg("You drop {}.".format(list_to_string(can_drop.objects().names(caller), endsep="and")))
+            # Messages to display
+            ot_kwargs = {"char": self.caller}
+            objs = can_drop.objects()
+            my_msg = "You drop " + objs.wrapped_names(self.caller)
+            ot_msg = "{char} drops {objs}"
+            ot_kwargs["objs"] = objs
+            if into_text:
+                into_objs = ObjectSet(into_objs)
+                my_msg += ", and put {} into ".format("it" if len(objs) < 2 else "them")
+                my_msg += into_objs.wrapped_names(self.caller)
+                ot_msg = "{char} puts {objs} into {into_objs}"
+                ot_kwargs["into_objs"] = into_objs
+            my_msg += "."
+            ot_msg += "."
+            self.msg(my_msg)
+            self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
         else:
             self.msg("|rIt seems you cannot drop anything from that.|n")
