@@ -22,7 +22,7 @@ class CmdGet(Command):
     """
     Ramasse quelque chose.
 
-    Usage:
+    Syntaxe :
       get [quantité] <nom de l'objet> [from <conteneur>] [into <conteneur>]
 
     Ramasse un ou plusieurs objets. La syntaxe la plus simple de cette commande
@@ -54,7 +54,7 @@ class CmdGet(Command):
     Vous pouvez combiner ces différentes syntaxes si besoin :
       |yget 5 pommes from panier into filet|n
 
-    Voir aussi : drop, hold, put, wear, remove.
+    Voir aussi : drop, wear, remove, hold, empty.
 
     """
 
@@ -120,7 +120,7 @@ class CmdGet(Command):
         if into_text:
             into_objs = self.caller.search(into_text, quiet=True)
             if not into_objs:
-                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                self.msg("|rVous ne voyez pas cela : {}.|n".format(into_text))
                 return
 
         # Try to put the objects in the caller
@@ -152,45 +152,48 @@ class CmdGet(Command):
 
 class CmdDrop(Command):
     """
-    Drop something.
+    Pose quelque chose.
 
-    Usage:
-      drop [quantity] <object name> [from <container>] [into <container>]
+    Syntaxe :
+      drop [quantité] <nom de l'objet> [from <conteneur>] [into <conteneur>]
 
-    Drop some object.  The most simple usage is to specify the object name
-    to drop on the floor:
-      |ydrop apple|n
+    Pose des objets sur le sol ou ailleurs. La syntaxe la plus simple de cette
+    commande est de préciser le nom de l'objet à poser :
+      |ydrop pomme|n
 
-    You can also drop several objects at once:
-      |ydrop 3 apples|n
+    Vous pouvez aussi poser plusieurs objets d'un coup :
+      |ydrop 3 pommes|n
 
-    Or drop all of them:
-      |ydrop * apples|n
+    Ou poser tous les objets de ce nom :
+      |ydrop * pommes|n
 
-    By default, the objects you want to drop will be searched in your inventory,
-    that is, everything you are wearing and what they contain.  You don't have to
-    specify the origin of the objects: if the apples you try to drop, in the same
-    example, can be found in your inventory, then you don't need to specify the
-    container in which to look for.  But sometimes, it is useful to specify one
-    container from which the objects should be searched.  To do so, specify the
-    container name after the |yfrom|n keyword:
-      |ydrop 5 apples from lunchbox|n
+    Par défaut, les objets que vous voulez poser seront cherchés dans votre
+    inventaire, c'est-à-dire, tous les conteneurs que vous portez actuellement sur
+    vous. Il n'est pas nécessaire de préciser l'origine des objets à poser : en
+    suivant le même exemple, si les pommes que vous souhaitez poser peuvent se
+    trouver dans votre inventaire, il n'est pas nécessaire d'indiquer leur
+    conteneur spécifiquement. Parfois cependant, il est utile de préciser dans quel
+    conteneur regarder en particulier pour trouver les objets indiqués. Pour ce
+    faire, préciser le nom du conteneur après le mot-clé |yfrom|n :
+      |ydrop 5 pommes from boîte en plastique|n
 
-    Finally, you can also drop objects into one or more specific containers.  This
-    syntax is most helpful to put clothes in a drawer for instance, or place a jar
-    in a cupboard.  To drop in a specific container, use the |yinto|n keyword
-    followed by your container name:
-      |ydrop coin into chest|n
+    Vous pouvez également placer ces objets, non pas sur le sol de la salle où
+    vous vous trouvez, mais dans un conteneur spécifique, soit dans la salle (comme
+    un coffre), soit sur vous. Cette syntaxe particulière est surtout utile pour
+    placer des vêtements dans un tiroir par exemple, ou bien un pot dans un
+    placard. Pour placer les objets dans un conteneur spécifique, utilisez
+    le mot-clé |yinto|n suivi du nom du conteneur :
+      |ydrop billet into coffre|n
 
-    You can combine all these syntaxes if needed:
-      |ydrop 5 apples from basket into lunchbox|n
+    Vous pouvez mélanger toutes ces syntaxes dans une commande si besoin :
+      |ydrop 5 pommes from panier into filet|n
 
-    See also: get, hold, put, wear, remove.
+    Voir aussi : get, wear, remove, hold, empty.
 
     """
 
     key = "drop"
-    aliases = ["put"]
+    aliases = ["put", "poser", "mettre", "placer"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -198,7 +201,7 @@ class CmdDrop(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|gWhat do you want to drop?|n")
+            self.msg("|gQue voulez-vous poser ?|n")
             return
 
         # Extract the quantity, if specified
@@ -222,7 +225,7 @@ class CmdDrop(Command):
         obj_text = " ".join(words)
 
         if not obj_text:
-            self.msg("|gYou should at least specify an object name to drop.|n")
+            self.msg("|gPrécisez au moins le nom de l'objet à poser.|n")
             return
 
         # Try to find the from object (higher priority since we need it in the next search)
@@ -231,7 +234,7 @@ class CmdDrop(Command):
             from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
             from_obj_contents = [content for obj in from_objs for content in obj.contents]
             if not from_obj_contents:
-                self.msg("|rYou can't find that: {}.|n".format(from_text))
+                self.msg("|rVous ne voyez pas cela : {}.|n".format(from_text))
                 return
         else:
             from_obj_contents = caller.equipment.all(only_visible=True)
@@ -244,7 +247,7 @@ class CmdDrop(Command):
                 quantity = 1
             objs = objs[:quantity]
         else:
-            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            self.msg("|rVous ne voyez pas cela : {}.|n".format(obj_text))
             return
 
         # Try to find the into objects
@@ -252,7 +255,7 @@ class CmdDrop(Command):
         if into_text:
             into_objs = self.caller.search(into_text, quiet=True)
             if not into_objs:
-                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                self.msg("|rVous ne voyez pas cela : {}.|n".format(into_text))
                 return
 
         # Try to put the objects in the containers
@@ -261,19 +264,19 @@ class CmdDrop(Command):
             # Messages to display
             ot_kwargs = {"char": self.caller}
             objs = can_drop.objects()
-            my_msg = "You drop " + objs.wrapped_names(self.caller)
-            ot_msg = "{char} drops {objs}"
+            my_msg = "Vous posez " + objs.wrapped_names(self.caller)
+            ot_msg = "{char} pose {objs}"
             ot_kwargs["objs"] = objs
             if from_text:
                 from_objs = ObjectSet(from_objs)
-                my_msg += " from " + from_objs.wrapped_names(self.caller)
-                ot_msg += " from {from_objs}"
+                my_msg += " depuis " + from_objs.wrapped_names(self.caller)
+                ot_msg += " depuis {from_objs}"
                 ot_kwargs["from_objs"] = from_objs
             if into_text:
                 into_objs = ObjectSet(into_objs)
-                my_msg += ", and put {} into ".format("it" if len(objs) < 2 else "them")
+                my_msg += ", dans "
                 my_msg += into_objs.wrapped_names(self.caller)
-                ot_msg = "{char} puts {objs} into {into_objs}"
+                ot_msg = "{char} place {objs} dans {into_objs}"
                 ot_kwargs["into_objs"] = into_objs
             my_msg += "."
             ot_msg += "."
@@ -281,7 +284,7 @@ class CmdDrop(Command):
             self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
             self.caller.equipment.drop(can_drop)
         else:
-            self.msg("|rIt seems you cannot drop that.|n")
+            self.msg("|rIl semble que vous ne puissiez pas poser cela|n")
 
 
 class CmdUse(Command):
@@ -289,7 +292,7 @@ class CmdUse(Command):
     """
     Use an object given in argument.
 
-    Usage:
+    Syntaxe :
         use <object name>
 
     This command allows you to use an object with an obvious usage, like a phone
@@ -407,7 +410,7 @@ class CmdEquipment(Command):
     chaussures que chaussettes, contrairement aux autres personnages qui vous
     regardent et ne verront que vos chaussures, ce qui est somme toute préférable.
 
-    Voir aussi : inventory, get, drop, wear, remove, empty, hold.
+    Voir aussi : inventory, get, drop, wear, remove, hold, empty.
 
     """
 
@@ -423,42 +426,47 @@ class CmdEquipment(Command):
 
 class CmdInventory(Command):
     """
-    Display your inventory.
+    Affiche votre inventaire.
 
-    Usage:
-      inventory [object name]
+    Syntaxe :
+      inventory [nom de l'objet]
 
-    This command displays your inventory, that is, the list of what you are wearing
-    and what they contain, if they contain anything.  Usually, when you pick up
-    something, it will end up in one of your hands.  However, if you have some
-    pocket or a backpack or similar, what you pick up will probably end up in there,
-    assuming there is room.  A container can contain other containers, too, so that
-    you can have a backpack containing a plastic bag containing apples.  In this
-    case, when you type |yinventory|n, you will see your backpack, inside of it the
-    plastic bag, and inside of it your apples.  This command is useful to list
-    everything you are carrying, even if it's hidden in various containers.
+    Cette commande affiche votre inventaire, c'est-à-dire, la liste des conteneurs
+    que vous portez et ce qu'ils contiennent, si ils contiennent quelque chose. Si
+    vous ne portez rien, en utilisant la commande |yget|n pour ramasser quelque
+    chose, vous ramasserez cet objet avec l'une de vos mains. La plupart du temps,
+    vous aurez des habits, certains avec des poches, peut-être des sacs ou autres,
+    tous pouvant contenir quelques objets variant en poids et taille. Un conteneur
+    peut contenir d'autres conteneurs également, vous pouvez donc porter un sac à
+    dos qui contient un sac en plastique dans lequel se trouve des pommes. La
+    commande |yinventory|n vous permet de voir, d'un coup d'un seul, ce que vous
+    portez et leur contenu, si biien que vous verrez le sac à dos, contenant le sac
+    en plastique, contenant les pommes dans cet exemple. Cette commande permet donc
+    de garder une vue d'ensemble de ce que vous portez sans examiner tous vos
+    conteneurs un par un.
 
-    You can also specify an object name to filter based on this name.  This allows
-    to use |yinventory|n as a request: find where are my apples.  Following the same
-    example, you could use |yinventory apples|n and it will only display your apples
-    and where they are, not displaying you the rest of your inventory.  Notice that
-    containers that contain your apples are still displayed for clarity.  This will
-    help you retrieve something you have lost, something you know you are carrying but
-    can't remember where.  In a way, it's a bit like patting your pockets and
-    looking into all your bags to find something, but it will be much quicker.
+    Si vous cherchez un objet, ou plusieurs objets du même nom, et souhaitez savoir
+    où ils se trouvent, vous pouvez aussi préciser un argument en paramètre de
+    cette commande. Ne seront alors listés que les objets dont le nom correspond à
+    ce paramètre, ainsi que leur conteneur. En suivant le même exemple, si vous
+    avez oublié où se trouvent vos pommes, vous pouvez entrer |yinventory pommes|n
+    qui affichera alors les pommes que vous portez et le chemin y menant (vous
+    pouvez très bien avoir plusieurs pommes éparpillées sur plusieurs conteneurs,
+    ils seront tous affichés). Dans un sens, cette syntaxe permet de "fouiller" ses
+    poches et différents conteneurs d'une façon simple et réaliste.
 
-    Remember that you do not need to specify the containers to use your objcts:
-    following the same example, of your backpack containing a plastic bag containg
-    your apples, if you want to eat one, you just need to enter |yeat apple|n.
-    The system will find them automatically, no need to get them manually from the
-    plastic bag.
+    N'oubliez pas cependant que la plupart du temps, pour manipuler vos objets,
+    vous n'avez pas besoin de préciser le conteneur d'où ils viennent, tant que ce
+    conteneur est sur vous. Suivant le même exemple des pommes contenus dans un sac
+    plastique contenu dans un sac à dos que vous portez, si vous voulez manger une
+    pomme, il vous suffit d'entrer |yeat pomme|n sans préciser son conteneur.
 
-    See also: equipment, get, drop, wear, remove, empty, hold.
+    Voir aussi : equipment, get, drop, wear, remove, hold, empty.
 
     """
 
     key = "inventory"
-    aliases = ["i"]
+    aliases = ["i", "inventaire"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -469,7 +477,7 @@ class CmdInventory(Command):
             candidates = self.caller.equipment.all(only_visible=True, looker=self.caller)
             only_show = self.caller.search(self.args, candidates=candidates, quiet=True)
             if not only_show:
-                self.msg("You don't carry that.")
+                self.msg("Vous ne portez pas cela.")
                 return
 
         inventory = self.caller.equipment.format_inventory(only_show=only_show)
@@ -478,32 +486,34 @@ class CmdInventory(Command):
 
 class CmdWear(Command):
     """
-    Wear an object from your inventory.
+    Équipe un objet que vous possédez dans votre inventaire.
 
-    Usage:
-      wear <object name>[, <body part>]
+    Syntaxe :
+      wear <nom de l'objet>[, <partie du corps à équiper>]
 
-    This command allows you to wear an object that you have in your inventory.
-    Something you aren't already wearing.  For instance, let's say you pick up
-    a shirt: when using the |yget|n command, it will go either in one of your
-    containers (like a bag) or in your hands.  To wear it, you need to use the
-    |ywear|n command:
-      |ywear shirt|n
+    Cette comme vous permet de porter (équiper) un objet que vous possédez dans
+    votre inventaire. Pour prendre un exemple simple, admettons que vous venez de
+    ramasser une chemise : en utilisant la commande |yget|n, cette chemise ira soit
+    dans l'une de vos mains, soit dans un conteneur que vous portez (comme un sac à
+    dos). Pour porter cette chemise, utilisez la commande |ywear|n :
+      |ywear chemise|n
 
-    You can also specify the body part on which to wear this object.  Some objects
-    can be worn on different body parts.  In this case, specify the body part after
-    a comma:
-      |ywear pink sock, right foot|n
+    Parfois, un objet peut être équipé sur différentes parties du corps. Une
+    chaussette, par exemple, peut aller sur un pied ou l'autre. Vous pouvez
+    préciser le nom de la partie du corps à équiper dans ce cas, après une virgule :
+      |ywear chaussette rose, pied droit|n
 
-    If the object can be worn on various body parts but you don't specify it, the
-    system will try to guess on which body part to wear this object.
+    Cette syntaxe n'est pas obligatoire si l'objet peut être porté à plusieurs
+    emplacements, mais que vous ne précisez pas la partie du corps. La partie du
+    corps la plus logique sera, dans ce cas, choisie automatiquement.
+      |ywear chaussette rose|n
 
-    See also: equipment, get, drop, remove, empty, hold.
+    Voir aussi : equipment, inventory, get, drop, remove, hold, empty.
 
     """
 
     key = "wear"
-    aliases = []
+    aliases = ["porter", "équiper", "equiper"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -523,7 +533,7 @@ class CmdWear(Command):
         objs = [obj for obj in objs if self.caller.equipment.can_wear(obj)]
 
         if not objs:
-            self.msg("|gYou don't find that: {}.|n".format(obj_name))
+            self.msg("|gVous ne voyez pas cela : {}.|n".format(obj_name))
             return
 
         obj = objs[0]
@@ -537,7 +547,7 @@ class CmdWear(Command):
                     prefered_limbs.append(limb)
 
             if not prefered_limbs:
-                self.msg("|gCan't find this body part: {}.|n".format(body_part))
+                self.msg("|gImpossible de trouver cette partie du corps : {}.|n".format(body_part))
                 return
 
         if prefered_limbs:
@@ -546,7 +556,7 @@ class CmdWear(Command):
                     limb.msg_wear(doer=self.caller, obj=obj)
                     self.caller.equipment.wear(obj, limb)
                     return
-            self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
+            self.msg("|rVous ne pouvez porter {} nulle part.|n".format(obj.get_display_name(self.caller)))
             return
 
         # Choose the first match
@@ -555,32 +565,34 @@ class CmdWear(Command):
             limb.msg_wear(doer=self.caller, obj=obj)
             self.caller.equipment.wear(obj, limb)
         else:
-            self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
+            self.msg("|rVous ne pouvez porter {} nulle part.|n".format(obj.get_display_name(self.caller)))
 
 
 class CmdRemove(Command):
     """
-    Stop wearing an object.
+    Déséquipe un objet.
 
-    Usage:
-      remove <object name> [into <container>]
+    Syntaxe :
+      remove <nom de l'objet [into <conteneur>]
 
-    Stop weearing (remove) some object that you are wearing, that is, something
-    that is visible in your equipment (see the |yequipment|n command).  If you are
-    wearing a shirt, for instance, and would like to stop wearing it:
-      |yremove shirt|n
+    Déséquipe (cesse de porter) un objet que vous portez actuellement, c'est-à-dire,
+    quelque chose de visible dans votre équipement (voir la commande |yequipment|n).
+    Si vous équipez une chemise, par exemple, et voulez la retirer :
+      |yremove chemise|n
 
-    You can also specify a container in which to drop this object when it is
-    removed.  By default, the system will try to find the container on you (in your
-    pockets or bags) but you can help it, to order your posessions in a better way:
-      |yremove shirt into backpack|n
+    Vous pouvez également préciser un conteneur dans lequel placer cet objet une
+    fois retiré. Par défaut, cette commande cherchera le conteneur cible sur vous
+    (dans votre inventaire), mais vous pouvez l'aider à trouver un meilleur endroit
+    où poser l'objet précédemment équipé. Utilisez le mot-clé |yinto|n suivi du nom
+    du conteneur dans lequel placer l'objet retiré :
+      |yremove chemise into sac à dos|n
 
-    See also: get, drop, hold, wear, empty.
+    Voir aussi : get, drop, wear, hold, empty.
 
     """
 
     key = "remove"
-    aliases = []
+    aliases = ["retirer"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -588,7 +600,7 @@ class CmdRemove(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|gWhat do you want to stop wearing?|n")
+            self.msg("|gQue voulez-vous déséquiper ?|n")
             return
 
         # Extract into
@@ -601,13 +613,13 @@ class CmdRemove(Command):
         obj_text = " ".join(words)
 
         if not obj_text:
-            self.msg("|gYou should at least specify an object name to remove.|n")
+            self.msg("|gPrécisez au moins le nom de l'objet à retirer.|n")
             return
 
         # Try to find the object
         objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
         if not objs:
-            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            self.msg("|rVous ne voyez pas cela : {}.|n".format(obj_text))
             return
         obj = objs[0]
 
@@ -616,38 +628,40 @@ class CmdRemove(Command):
         if into_text:
             into_objs = self.caller.search(into_text, quiet=True)
             if not into_objs:
-                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                self.msg("|rVous ne voyez pas cela : {}.|n".format(into_text))
                 return
             into_obj = into_objs[0]
 
         can_remove = caller.equipment.can_remove(obj, container=into_obj)
         if can_remove:
             caller.equipment.remove(obj, can_remove)
-            caller.msg("You stop wearing {obj}.".format(obj=obj.get_display_name(caller)))
-            caller.location.msg_contents("{caller} stops wearing {obj}.", mapping=dict(caller=caller, obj=obj), exclude=[caller])
+            caller.msg("Vous retirez {obj}.".format(obj=obj.get_display_name(caller)))
+            caller.location.msg_contents("{caller} retire {obj}.", mapping=dict(caller=caller, obj=obj), exclude=[caller])
         else:
-            self.msg("|rYou can't stop wearing {}.|n".format(obj.get_display_name(self.caller)))
+            self.msg("|rVous ne pouvez déséquiper {}.|n".format(obj.get_display_name(self.caller)))
 
 
 class CmdHold(Command):
     """
-    Hold an object in your hand.
+    Place un objet dans votre main.
 
-    Usage:
-      hold <object name>
+    Syntaxe :
+      hold <nom de l'objet>
 
-    Hold an object.  If the object you specify is in your inventory but not in
-    your hand, you will hold it, assuming you have a free hand.  This is useful
-    to quickly hold weapons and use them, rather than having to check your inventory
-    to find it.
-      |yhold baton|n
+    Cette commande permet de placer un objet dans l'une de vos mains, si l'un est
+    libre. Si l'objet que vous préciser se trouve dans votre inventaire mais pas
+    dans votre main, vous le prendrez directement à la main, admettant que vous
+    ayiez une main de libre. Cette commande est utile pour saisir rapidement des
+    armes et les utiliser, sans avoir à fouiller frénétiquement votre inventaire
+    pour les trouver :
+      |yhold matraque|n
 
-    See also: get, drop, wear, remove, empty.
+    Voir aussi : get, drop, wear, remove, empty.
 
     """
 
     key = "hold"
-    aliases = []
+    aliases = ["tenir"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -655,7 +669,7 @@ class CmdHold(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|gWhat do you want to hold?|n")
+            self.msg("|gQue voulez-vous tenir ?|n")
             return
 
         # Try to find the object
@@ -663,7 +677,7 @@ class CmdHold(Command):
         objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
         objs = [obj for obj in objs if not obj.tags.get(category="eq")]
         if not objs:
-            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            self.msg("|rVous ne voyez pas cela : {}.|n".format(obj_text))
             return
 
         obj = objs[0]
@@ -673,35 +687,37 @@ class CmdHold(Command):
             can_hold[0].msg_hold(doer=self.caller, obj=obj)
             caller.equipment.hold(obj, can_hold[0])
         else:
-            self.msg("|rYou can't hold {}.|n".format(obj.get_display_name(self.caller)))
+            self.msg("|rVous ne pouvez pas tenir {}.|n".format(obj.get_display_name(self.caller)))
 
 
 class CmdEmpty(Command):
 
     """
-    Empty a container.
+    Vide un conteneur.
 
-    Usage:
-      empty <container> [into <other container>]
+    Syntaxe :
+      empty <conteneur> [into <autre conteneur>]
 
-    Empty a container, like a bag.  The simple usage of this command is to empty a
-    container right on the floor:
-      |yempty backpack|n
+    Cette commande vous permet de vider un conteneur, comme un sac que vous portez.
+    La syntaxe la plus simple de cette commande est de prçiser le nom du conteneur
+    à vider sur le sol :
+      |yempty sac à dos|n
 
-    All the container content will be dropped to the floor.  Alternatively, you can
-    specify another container in which to empty the first one.  To do so, specify
-    the second container after the |yinto|n keyword:
-      |yempty purse into backpack|n
+    Le contenu du conteneur sera posé au sol, à vos pieds. Vous pouvez également
+    préciser un second conteneur, dans lequel vider le premier. Pour ce faire,
+    utilisez le mot-clé |yinto|n suivi du nom du second conteneur :
+      |yempty sac à main into sac à dos|n
 
-    Notice that the original container will still be at the same place, it will
-    just be empty, assuming this command succeeds.
+    Remarquez que le premier conteneur sera toujours à la même place dans votre
+    inventaire : il sera simplement vidé de son contenu, il sera donc complètement
+    vide si cette commande ne rencontre aucun obstacle infranchissable.
 
-    See also: get, drop, hold, wear, remove.
+    Voir aussi : get, drop, hold, wear, remove.
 
     """
 
     key = "empty"
-    aliases = ["dump"]
+    aliases = ["dump", "vider"]
     locks = "cmd:all()"
     help_category = CATEGORY
 
@@ -709,7 +725,7 @@ class CmdEmpty(Command):
         """Implements the command."""
         caller = self.caller
         if not self.args.strip():
-            self.msg("|gWhat do you want to empty?|n")
+            self.msg("|gQue voulez-vous vider ?|n")
             return
 
         # Extract into
@@ -722,14 +738,14 @@ class CmdEmpty(Command):
         obj_text = " ".join(words)
 
         if not obj_text:
-            self.msg("|gYou should at least specify an object name to empty.|n")
+            self.msg("|gPrécisez au minimum un nom de conteneur à vider.|n")
             return
 
         # Try to find the object
         objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
         objs = [content for obj in objs for content in obj.contents]
         if not objs:
-            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            self.msg("|rVous ne voyez pas cela : {}.|n".format(obj_text))
             return
 
         # Try to find the into objects
@@ -737,7 +753,7 @@ class CmdEmpty(Command):
         if into_text:
             into_objs = self.caller.search(into_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
             if not into_objs:
-                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                self.msg("|rVous ne voyez pas cela : {}.|n".format(into_text))
                 return
 
         # Try to put the objects in the containers
@@ -746,14 +762,14 @@ class CmdEmpty(Command):
             # Messages to display
             ot_kwargs = {"char": self.caller}
             objs = can_drop.objects()
-            my_msg = "You drop " + objs.wrapped_names(self.caller)
-            ot_msg = "{char} drops {objs}"
+            my_msg = "You posez " + objs.wrapped_names(self.caller)
+            ot_msg = "{char} pose {objs}"
             ot_kwargs["objs"] = objs
             if into_text:
                 into_objs = ObjectSet(into_objs)
-                my_msg += ", and put {} into ".format("it" if len(objs) < 2 else "them")
+                my_msg += ", dans "
                 my_msg += into_objs.wrapped_names(self.caller)
-                ot_msg = "{char} puts {objs} into {into_objs}"
+                ot_msg = "{char} place {objs} dans {into_objs}"
                 ot_kwargs["into_objs"] = into_objs
             my_msg += "."
             ot_msg += "."
@@ -761,4 +777,4 @@ class CmdEmpty(Command):
             self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
             self.caller.equipment.drop(can_drop)
         else:
-            self.msg("|rIt seems you cannot drop anything from that.|n")
+            self.msg("|rIl semble que vous ne puissiez vider ce conteneur.|n")
