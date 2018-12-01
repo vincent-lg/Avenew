@@ -121,8 +121,6 @@ class CmdGet(Command):
         # Try to put the objects in the caller
         can_get = self.caller.equipment.can_get(objs, filter=into_objs)
         if can_get:
-            self.caller.equipment.get(can_get)
-
             # Messages to display
             ot_kwargs = {"char": self.caller}
             objs = can_get.objects()
@@ -142,6 +140,7 @@ class CmdGet(Command):
             ot_msg += "."
             self.msg(my_msg)
             self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
+            self.caller.equipment.get(can_get)
         else:
             self.msg("|rIt seems you cannot get that.|n")
 
@@ -254,8 +253,6 @@ class CmdDrop(Command):
         # Try to put the objects in the containers
         can_drop = self.caller.equipment.can_drop(objs, filter=into_objs)
         if can_drop:
-            self.caller.equipment.drop(can_drop)
-
             # Messages to display
             ot_kwargs = {"char": self.caller}
             objs = can_drop.objects()
@@ -277,6 +274,7 @@ class CmdDrop(Command):
             ot_msg += "."
             self.msg(my_msg)
             self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
+            self.caller.equipment.drop(can_drop)
         else:
             self.msg("|rIt seems you cannot drop that.|n")
 
@@ -539,8 +537,8 @@ class CmdWear(Command):
         if prefered_limbs:
             for limb in prefered_limbs:
                 if self.caller.equipment.can_wear(obj, limb):
+                    limb.msg_wear(doer=self.caller, obj=obj)
                     self.caller.equipment.wear(obj, limb)
-                    self.msg(limb.msg_wear(doer=self.caller, obj=obj))
                     return
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
             return
@@ -548,8 +546,8 @@ class CmdWear(Command):
         # Choose the first match
         limb = self.caller.equipment.can_wear(obj)
         if limb:
+            limb.msg_wear(doer=self.caller, obj=obj)
             self.caller.equipment.wear(obj, limb)
-            self.msg(limb.msg_wear(doer=self.caller, obj=obj))
         else:
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
 
@@ -666,8 +664,8 @@ class CmdHold(Command):
 
         can_hold = caller.equipment.can_hold(obj)
         if can_hold:
-            caller.equipment.hold(obj, can_hold[0])
             can_hold[0].msg_hold(doer=self.caller, obj=obj)
+            caller.equipment.hold(obj, can_hold[0])
         else:
             self.msg("|rYou can't hold {}.|n".format(obj.get_display_name(self.caller)))
 
@@ -739,7 +737,6 @@ class CmdEmpty(Command):
         # Try to put the objects in the containers
         can_drop = caller.equipment.can_drop(objs, filter=into_objs)
         if can_drop:
-            self.caller.equipment.drop(can_drop)
             # Messages to display
             ot_kwargs = {"char": self.caller}
             objs = can_drop.objects()
@@ -756,5 +753,6 @@ class CmdEmpty(Command):
             ot_msg += "."
             self.msg(my_msg)
             self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
+            self.caller.equipment.drop(can_drop)
         else:
             self.msg("|rIt seems you cannot drop anything from that.|n")
