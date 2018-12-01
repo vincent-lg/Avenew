@@ -8,9 +8,10 @@ from collections import defaultdict
 import re
 from textwrap import wrap
 
-from evennia.utils.utils import crop, inherits_from, list_to_string
+from evennia.utils.utils import crop, inherits_from
 
 from commands.command import Command
+from logic.object.sets import ObjectSet
 
 ## Constants
 CATEGORY = "Manipulation des objets"
@@ -103,8 +104,8 @@ class CmdGet(Command):
                 return
 
         # Try to find the object
-        from_objs = [content for obj in from_objs for content in obj.contents]
-        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
+        from_obj_contents = [content for obj in from_objs for content in obj.contents]
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj_contents)
         if objs:
             # Alter the list depending on quantity
             if quantity == 0:
@@ -125,8 +126,26 @@ class CmdGet(Command):
         # Try to put the objects in the caller
         can_get = self.caller.equipment.can_get(objs, filter=into_objs)
         if can_get:
+            # Messages to display
+            ot_kwargs = {"char": self.caller}
+            objs = can_get.objects()
+            my_msg = "Vous ramassez "
+            my_msg += objs.wrapped_names(self.caller)
+            ot_msg = "{char} ramasse {objs}"
+            ot_kwargs["objs"] = objs
+            if from_text:
+                from_objs = ObjectSet(from_objs)
+                my_msg += " depuis " + from_objs.wrapped_names(self.caller)
+                ot_msg += " depuis {from_objs}"
+                ot_kwargs["from_objs"] = from_objs
+            if into_text:
+                my_msg += ", dans "
+                my_msg += ObjectSet(into_objs).wrapped_names(self.caller)
+            my_msg += "."
+            ot_msg += "."
+            self.msg(my_msg)
+            self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
             self.caller.equipment.get(can_get)
-            self.msg("Vous ramassez {}.".format(list_to_string(can_get.objects().names(self.caller), endsep="et")))
         else:
             self.msg("|rOn dirait que vous ne pouvez pas ramasser cela.|n")
 
@@ -210,15 +229,15 @@ class CmdDrop(Command):
         if from_text:
             candidates = caller.equipment.all(only_visible=True)
             from_objs = self.caller.search(from_text, quiet=True, candidates=candidates)
-            from_objs = [content for obj in from_objs for content in obj.contents]
-            if not from_objs:
+            from_obj_contents = [content for obj in from_objs for content in obj.contents]
+            if not from_obj_contents:
                 self.msg("|rYou can't find that: {}.|n".format(from_text))
                 return
         else:
-            from_objs = caller.equipment.all(only_visible=True)
+            from_obj_contents = caller.equipment.all(only_visible=True)
 
         # Try to find the object
-        objs = self.caller.search(obj_text, quiet=True, candidates=from_objs)
+        objs = self.caller.search(obj_text, quiet=True, candidates=from_obj_contents)
         if objs:
             # Alter the list depending on quantity
             if quantity == 0:
@@ -239,8 +258,28 @@ class CmdDrop(Command):
         # Try to put the objects in the containers
         can_drop = self.caller.equipment.can_drop(objs, filter=into_objs)
         if can_drop:
+            # Messages to display
+            ot_kwargs = {"char": self.caller}
+            objs = can_drop.objects()
+            my_msg = "You drop " + objs.wrapped_names(self.caller)
+            ot_msg = "{char} drops {objs}"
+            ot_kwargs["objs"] = objs
+            if from_text:
+                from_objs = ObjectSet(from_objs)
+                my_msg += " from " + from_objs.wrapped_names(self.caller)
+                ot_msg += " from {from_objs}"
+                ot_kwargs["from_objs"] = from_objs
+            if into_text:
+                into_objs = ObjectSet(into_objs)
+                my_msg += ", and put {} into ".format("it" if len(objs) < 2 else "them")
+                my_msg += into_objs.wrapped_names(self.caller)
+                ot_msg = "{char} puts {objs} into {into_objs}"
+                ot_kwargs["into_objs"] = into_objs
+            my_msg += "."
+            ot_msg += "."
+            self.msg(my_msg)
+            self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
             self.caller.equipment.drop(can_drop)
-            self.msg("You drop {}.".format(list_to_string(can_drop.objects().names(self.caller), endsep="and")))
         else:
             self.msg("|rIt seems you cannot drop that.|n")
 
@@ -504,8 +543,8 @@ class CmdWear(Command):
         if prefered_limbs:
             for limb in prefered_limbs:
                 if self.caller.equipment.can_wear(obj, limb):
+                    limb.msg_wear(doer=self.caller, obj=obj)
                     self.caller.equipment.wear(obj, limb)
-                    self.msg(limb.msg_wear(doer=self.caller, obj=obj))
                     return
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
             return
@@ -513,8 +552,8 @@ class CmdWear(Command):
         # Choose the first match
         limb = self.caller.equipment.can_wear(obj)
         if limb:
+            limb.msg_wear(doer=self.caller, obj=obj)
             self.caller.equipment.wear(obj, limb)
-            self.msg(limb.msg_wear(doer=self.caller, obj=obj))
         else:
             self.msg("|rYou can't wear {} anywhere.|n".format(obj.get_display_name(self.caller)))
 
@@ -588,3 +627,138 @@ class CmdRemove(Command):
             caller.location.msg_contents("{caller} stops wearing {obj}.", mapping=dict(caller=caller, obj=obj), exclude=[caller])
         else:
             self.msg("|rYou can't stop wearing {}.|n".format(obj.get_display_name(self.caller)))
+
+
+class CmdHold(Command):
+    """
+    Hold an object in your hand.
+
+    Usage:
+      hold <object name>
+
+    Hold an object.  If the object you specify is in your inventory but not in
+    your hand, you will hold it, assuming you have a free hand.  This is useful
+    to quickly hold weapons and use them, rather than having to check your inventory
+    to find it.
+      |yhold baton|n
+
+    See also: get, drop, wear, remove, empty.
+
+    """
+
+    key = "hold"
+    aliases = []
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to hold?|n")
+            return
+
+        # Try to find the object
+        obj_text = self.args.strip()
+        objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+        objs = [obj for obj in objs if not obj.tags.get(category="eq")]
+        if not objs:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        obj = objs[0]
+
+        can_hold = caller.equipment.can_hold(obj)
+        if can_hold:
+            can_hold[0].msg_hold(doer=self.caller, obj=obj)
+            caller.equipment.hold(obj, can_hold[0])
+        else:
+            self.msg("|rYou can't hold {}.|n".format(obj.get_display_name(self.caller)))
+
+
+class CmdEmpty(Command):
+
+    """
+    Empty a container.
+
+    Usage:
+      empty <container> [into <other container>]
+
+    Empty a container, like a bag.  The simple usage of this command is to empty a
+    container right on the floor:
+      |yempty backpack|n
+
+    All the container content will be dropped to the floor.  Alternatively, you can
+    specify another container in which to empty the first one.  To do so, specify
+    the second container after the |yinto|n keyword:
+      |yempty purse into backpack|n
+
+    Notice that the original container will still be at the same place, it will
+    just be empty, assuming this command succeeds.
+
+    See also: get, drop, hold, wear, remove.
+
+    """
+
+    key = "empty"
+    aliases = ["dump"]
+    locks = "cmd:all()"
+    help_category = CATEGORY
+
+    def func(self):
+        """Implements the command."""
+        caller = self.caller
+        if not self.args.strip():
+            self.msg("|gWhat do you want to empty?|n")
+            return
+
+        # Extract into
+        words = self.args.strip().split(" ")
+        obj_text = into_text = ""
+        for i, word in reversed(list(enumerate(words))):
+            if word.lower() == "into":
+                into_text = " ".join(words[i + 1:])
+                del words[i:]
+        obj_text = " ".join(words)
+
+        if not obj_text:
+            self.msg("|gYou should at least specify an object name to empty.|n")
+            return
+
+        # Try to find the object
+        objs = caller.search(obj_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+        objs = [content for obj in objs for content in obj.contents]
+        if not objs:
+            self.msg("|rYou can't find that: {}.|n".format(obj_text))
+            return
+
+        # Try to find the into objects
+        into_objs = []
+        if into_text:
+            into_objs = self.caller.search(into_text, quiet=True, candidates=caller.equipment.all(only_visible=True))
+            if not into_objs:
+                self.msg("|rYou can't find that: {}.|n".format(into_text))
+                return
+
+        # Try to put the objects in the containers
+        can_drop = caller.equipment.can_drop(objs, filter=into_objs)
+        if can_drop:
+            # Messages to display
+            ot_kwargs = {"char": self.caller}
+            objs = can_drop.objects()
+            my_msg = "You drop " + objs.wrapped_names(self.caller)
+            ot_msg = "{char} drops {objs}"
+            ot_kwargs["objs"] = objs
+            if into_text:
+                into_objs = ObjectSet(into_objs)
+                my_msg += ", and put {} into ".format("it" if len(objs) < 2 else "them")
+                my_msg += into_objs.wrapped_names(self.caller)
+                ot_msg = "{char} puts {objs} into {into_objs}"
+                ot_kwargs["into_objs"] = into_objs
+            my_msg += "."
+            ot_msg += "."
+            self.msg(my_msg)
+            self.caller.location.msg_contents(ot_msg, exclude=[self.caller], mapping=ot_kwargs)
+            self.caller.equipment.drop(can_drop)
+        else:
+            self.msg("|rIt seems you cannot drop anything from that.|n")

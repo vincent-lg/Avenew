@@ -12,6 +12,7 @@ Available classes:
 
 from collections import OrderedDict, defaultdict
 
+from evennia.utils.utils import list_to_string
 
 class OrderedDefaultDict(OrderedDict, defaultdict):
 
@@ -74,3 +75,20 @@ class ObjectSet(list):
             names.append(objects[0].get_numbered_name(len(objects), looker))
 
         return names
+
+    def wrapped_names(self, looker):
+        """
+        Return a wrapped list of names.
+
+        This method uses `list_to_string` to combine all names.
+
+        Args:
+            looker (Object): the looker.
+
+        Returns:
+            names (str): the list of names, wrapped for friendly display.
+
+        """
+        return list_to_string(self.names(looker), endsep="and")
+
+    get_display_name = wrapped_names
