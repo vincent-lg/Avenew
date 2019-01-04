@@ -13,7 +13,6 @@ from textwrap import dedent
 
 from evennia.commands.cmdset import CmdSet
 from evennia.utils.create import create_object
-from evennia.utils.spawner import spawn
 
 from commands.command import Command
 from logic.geo import *
@@ -589,7 +588,7 @@ class CmdGPS(Command):
         try:
             gps = GPS(crossroad, address)
             t2 = time.time()
-        except ValueError, e:
+        except ValueError as e:
             e = str(e)
             self.msg(e[0].upper() + e[1:] + ".")
             return

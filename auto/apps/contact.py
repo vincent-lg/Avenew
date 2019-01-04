@@ -88,10 +88,10 @@ class ContactApp(BaseApp):
 
         """
         # Remove dashes from the phone number
-        if isinstance(phone_number, basestring):
+        if isinstance(phone_number, str):
             phone_number = phone_number.replace("-", "")
 
-        if not isinstance(phone_number, basestring) or not phone_number.isdigit() or len(phone_number) != 7:
+        if not isinstance(phone_number, str) or not phone_number.isdigit() or len(phone_number) != 7:
             raise ValueError("the specified phone number is invalid: {}".format(phone_number))
 
         # Find a contact with this phone number
@@ -201,10 +201,10 @@ class ContactApp(BaseApp):
 
         """
         info = contact.info
-        if phone_number and isinstance(phone_number, basestring):
+        if phone_number and isinstance(phone_number, str):
             phone_number = phone_number.replace("-", "")
 
-        if phone_number is not None and (not isinstance(phone_number, basestring) or not phone_number.isdigit() or len(phone_number) != 7):
+        if phone_number is not None and (not isinstance(phone_number, str) or not phone_number.isdigit() or len(phone_number) != 7):
             raise ValueError("the specified phone number is invalid: {}".format(phone_number))
 
         if contact in self.contacts:
@@ -302,7 +302,7 @@ class MainScreen(BaseScreen):
     def get_text(self):
         """Display the app."""
         number = self.obj.tags.get(category="phone number")
-        if not number or not isinstance(number, basestring):
+        if not number or not isinstance(number, str):
             self.msg("Your phone number couldn't be found.")
             self.back()
             return

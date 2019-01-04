@@ -136,7 +136,7 @@ class EmailMessage(SharedMemoryModel):
 
             from_email = OUTGOING_ALIASES.get(from_email)
 
-        if isinstance(to, basestring):
+        if isinstance(to, str):
             to = [to]
 
         if html:

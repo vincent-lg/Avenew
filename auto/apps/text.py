@@ -161,7 +161,7 @@ class MainScreen(BaseScreen):
                 status = " " if thread.has_read(number) else "|rU|n"
                 table.add_row(status, self.format_cmd(str(i)), sender, content, text.sent_ago.capitalize())
                 i += 1
-            lines = unicode(table).splitlines()
+            lines = str(table).splitlines()
             del lines[0]
             lines = [line.rstrip() for line in lines]
             string += "\n" + "\n".join(lines)

@@ -319,7 +319,7 @@ class ChannelCommand(Command):
                 if msg:
                     try:
                         channel.locks.add(msg)
-                    except LockException, err:
+                    except LockException as err:
                         self.msg(err)
                         return
                     else:

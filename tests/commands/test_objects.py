@@ -33,6 +33,10 @@ class TestObjects(CommandTest):
         self.sock.types.get("clothes").db["wear_on"] = ["stockings"]
         self.msgs = []
 
+        # Force location to update
+        for obj in [self.char3, self.apple1, self.apple2, self.apple3, self.bag1, self.bag2, self.hat, self.sock]:
+            obj.location = self.room3
+
     def call(self, *args, **kwargs):
         """Call and store the message for later references."""
         self.msgs.append(super(TestObjects, self).call(*args, **kwargs))

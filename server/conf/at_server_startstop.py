@@ -84,15 +84,15 @@ def at_server_reload_stop():
     # Pull the Git repository
     current = os.getcwd()
     if os.path.exists("../evennia"):
-        print "Evennia seems to exist, try to pull from it", current
+        print("Evennia seems to exist, try to pull from it", current)
         os.chdir("../evennia")
         process = subprocess.Popen("git pull", shell=True)
         process.wait()
         os.chdir(current)
     else:
-        print "Evennia doesn't exist, don't pull from it."
+        print("Evennia doesn't exist, don't pull from it.")
 
-    print "Pulling Avenew from Github..."
+    print("Pulling Avenew from Github...")
     process = subprocess.Popen("git pull", shell=True)
     process.wait()
 

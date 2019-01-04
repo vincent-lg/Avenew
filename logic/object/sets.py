@@ -14,7 +14,7 @@ from collections import OrderedDict, defaultdict
 
 from evennia.utils.utils import list_to_string
 
-class OrderedDefaultDict(OrderedDict, defaultdict):
+class OrderedDefaultDict(defaultdict):
 
     """A defaultdict retaining key ordering like OrdereedDict."""
 

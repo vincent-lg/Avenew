@@ -62,7 +62,7 @@ def load_apps(path="auto.apps", errors=None):
 def return_appearance(type, looker, number=False, header=""):
     """Return the formatted appearance for a phone or computer."""
     phone_number = type.obj.tags.get(category="phone number")
-    if not isinstance(phone_number, basestring):
+    if not isinstance(phone_number, str):
         phone_number = "|gunset|n"
     else:
         phone_number = phone_number[:3] + "-" + phone_number[3:]
@@ -128,7 +128,7 @@ class Phone(BaseType):
     def number(self):
         """Return the phone number of this object or None."""
         number = self.obj.tags.get(category="phone number")
-        if not number or not isinstance(number, basestring):
+        if not number or not isinstance(number, str):
             return None
 
         return number
