@@ -62,7 +62,7 @@ class ContactMixin:
         """
         obj = obj or self.obj
         number = obj.tags.get(category="phone number")
-        if not number or not isinstance(number, basestring):
+        if not number or not isinstance(number, str):
             raise ValueError("unknown or invalid phone number")
 
         if pretty:
@@ -163,10 +163,10 @@ class ContactMixin:
 
         """
         # Remove dashes from the phone number
-        if isinstance(phone_number, basestring):
+        if isinstance(phone_number, str):
             phone_number = phone_number.replace("-", "")
 
-        if not isinstance(phone_number, basestring) or not phone_number.isdigit() or len(phone_number) != 7:
+        if not isinstance(phone_number, str) or not phone_number.isdigit() or len(phone_number) != 7:
             raise ValueError("the specified phone number is invalid: {}".format(phone_number))
 
         # Find a contact with this phone number

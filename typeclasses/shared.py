@@ -178,7 +178,7 @@ class AvenewObject(object):
             if hasattr(self, "equipment"):
                 candidates += self.equipment.all(only_visible=True)
 
-        if isinstance(searchdata, basestring):
+        if isinstance(searchdata, str):
             if searchdata.lower() in ("ici", ):
                 searchdata = "here"
             elif searchdata.lower() in ("moi", ):

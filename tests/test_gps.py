@@ -27,7 +27,7 @@ class TestGPS(TestRoad):
         for choice in coordinates:
             street = Crossroad.get_street(*choice)
             if street[0] is None:
-                print "error", choice
+                print("error", choice)
 
             left = street[2]["left"]["coordinates"]
             for number in street[2]["left"]["numbers"]:

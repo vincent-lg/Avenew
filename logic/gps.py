@@ -2,8 +2,9 @@
 
 """Module containing the GPS class."""
 
+from itertools import count
 from math import fabs, sqrt
-from Queue import PriorityQueue
+from queue import PriorityQueue
 import re
 
 from evennia.typeclasses.tags import Tag
@@ -16,6 +17,7 @@ from world.log import logger
 # Constants
 RE_ADDRESS = re.compile(r"^(?P<num>[0-9 ]*)?\s*(?P<road>.*?)(,\s*(?P<city>.*))?$")
 RE_NUMBER = re.compile(r"(\d+)")
+UNIQUE = count()
 log = logger("gps")
 
 class GPS(object):
@@ -33,9 +35,9 @@ class GPS(object):
         self.destination = destination
         self.address = ""
         self.path = []
-        if isinstance(origin, basestring):
+        if isinstance(origin, str):
             self.origin = self.find_address(origin)
-        if isinstance(destination, basestring):
+        if isinstance(destination, str):
             self.destination = self.find_address(destination, is_dest=True)
 
     def find_address(self, address, is_dest=False):
@@ -116,7 +118,7 @@ class GPS(object):
 
                 # If the destination is closer to the end crossroad, choose it instead
                 remaining = number - current_number - 1
-                distance = 1 + remaining / info.get("interval", 1) / 2
+                distance = 1 + remaining // info.get("interval", 1) // 2
                 projected = end.db.exits[direction]["coordinates"][distance - 1]
 
                 # If the number is odd, look for the other side of the street
@@ -172,25 +174,25 @@ class GPS(object):
 
         # A* algorithm to find the path
         frontier = PriorityQueue()
-        frontier.put((0, start))
+        frontier.put((0, next(UNIQUE), start))
         came_from = {}
         cost_so_far = {}
         came_from[start] = None
         cost_so_far[start] = 0
         while not frontier.empty():
-            current = frontier.get()[1]
+            current = frontier.get()[2]
             if current is goal:
                 break
 
             for direction, info in current.db.exits.items():
-                next = info["crossroad"]
-                new_cost = cost_so_far[current] + distance_between(current.x, current.y, 0, next.x, next.y, 0)
-                if next not in cost_so_far or new_cost < cost_so_far[next]:
-                    cost_so_far[next] = new_cost
+                next_cr = info["crossroad"]
+                new_cost = cost_so_far[current] + distance_between(current.x, current.y, 0, next_cr.x, next_cr.y, 0)
+                if next_cr not in cost_so_far or new_cost < cost_so_far[next_cr]:
+                    cost_so_far[next_cr] = new_cost
                     priority = new_cost + sqrt(
-                            (next.x - goal.x) ** 2 + (next.y - goal.y) ** 2)
-                    frontier.put((priority, next))
-                    came_from[next] = (current, direction)
+                            (next_cr.x - goal.x) ** 2 + (next_cr.y - goal.y) ** 2)
+                    frontier.put((priority, next(UNIQUE), next_cr))
+                    came_from[next_cr] = (current, direction)
 
         path = []
         while current is not start:

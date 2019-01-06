@@ -360,7 +360,7 @@ def create_password(caller, input):
         """.strip("\n")).format(LEN_PASSWD)
     else:
         # Redirects to the "confirm_passwrod" node
-        caller.db._password = sha256(password).hexdigest()
+        caller.db._password = sha256(password.encode()).hexdigest()
         text = "Entrez votre mot de passe de nouveau."
         options = (
             {
@@ -394,7 +394,7 @@ def confirm_password(caller, input):
 
     accountname = caller.db._accountname
     first_password = caller.db._password
-    second_password = sha256(password).hexdigest()
+    second_password = sha256(password.encode()).hexdigest()
     if first_password != second_password:
         text = dedent("""
             |rLe mot de passe que vous avez entré ne correspond pas au mot de passe entré

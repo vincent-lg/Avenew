@@ -30,7 +30,6 @@ Finally, some methods are here to format:
 """
 
 from collections import OrderedDict
-
 from evennia.utils.utils import inherits_from
 
 from logic.character.limbs import Limb

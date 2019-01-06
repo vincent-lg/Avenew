@@ -87,7 +87,7 @@ class BaseApp(object):
 
         """
         screen = screen or cls.start_screen
-        if isinstance(screen, basestring):
+        if isinstance(screen, str):
             if "." not in screen:
                 screen = cls.__module__ + "." + screen
         else:
@@ -211,7 +211,7 @@ class BaseScreen(object):
     def _load_commands(self):
         """Load the required commands."""
         for i, cmd in enumerate(type(self).commands):
-            if isinstance(cmd, basestring):
+            if isinstance(cmd, str):
                 if "." not in cmd:
                     cmd = type(self).__module__ + "." + cmd
                 type(self).commands[i] = class_from_module(cmd)
@@ -364,7 +364,7 @@ class BaseScreen(object):
         app = folder = None
         if previous:
             previous, app, folder, db = previous
-            if isinstance(previous, basestring):
+            if isinstance(previous, str):
                 previous = class_from_module(previous)
 
             self.close()
@@ -413,7 +413,7 @@ class BaseScreen(object):
 
         """
         app = app or self.app
-        if isinstance(screen, basestring):
+        if isinstance(screen, str):
             if "." not in screen: # We assume it means a relative import in the current module
                 screen = type(app).__module__ + "." + screen
 
@@ -597,7 +597,7 @@ def get_NET():
     try:
         NET = ScriptDB.objects.get(db_key="global_NET")
     except ScriptDB.DoesNotExist:
-        print "Creating the net..."
+        print("Creating the net...")
         NET = create_script("typeclasses.scripts.Net")
 
     return NET
