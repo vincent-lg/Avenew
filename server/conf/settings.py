@@ -80,9 +80,6 @@ INSTALLED_APPS += (
         "web.text",
 )
 
-# Temporarily disable websocket on the client
-WEBSOCKET_CLIENT_ENABLED = False
-
 ## Communication
 TEST_SESSION = False
 
