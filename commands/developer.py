@@ -41,6 +41,7 @@ class CmdLog(MuxCommand):
             lines = tail_log_file(filename, 0, 20)
             render = []
             for line in lines:
+                line = line.decode("utf-8")
                 if line.count(" ") >= 2:
                     date, time, message = line.split(" ", 2)
                     try:
