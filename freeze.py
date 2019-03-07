@@ -9,34 +9,34 @@ from textwrap import dedent
 try:
     import evennia
 except ImportError:
-    print "evennia cannot be found on this Python path.  You should run this script from a Python environment where evennia is installed."
+    print("evennia cannot be found on this Python path.  You should run this script from a Python environment where evennia is installed.")
     sys.exit(1)
 
 # Try to freeze evennia
-print "Trying to freeze Evennia version", evennia.__version__, "with cx_Freeze"
+print("Trying to freeze Evennia version", evennia.__version__, "with cx_Freeze")
 
 # Have to change directory to freeze
 os.chdir("../evennia")
 status = os.system("python freeze.py build")
-print "Finished building avenew.exe and twistd.exe with status", status
+print("Finished building avenew.exe and twistd.exe with status", status)
 os.chdir("../avenew")
 if os.path.exists("avenew"):
     shutil.rmtree("avenew")
-print "Cloning the source code from Github..."
+print("Cloning the source code from Github...")
 os.system("git clone -b fr https://github.com/vincent-lg/Avenew avenew")
 
-print "Placing the frozen executables in the frozen folder."
+print("Placing the frozen executables in the frozen folder.")
 shutil.copytree("../evennia/dist", "avenew/dist")
 
 if os.path.exists("avenew/server/evennia.db3"):
-    print "Removing the database."
+    print("Removing the database.")
     os.remove("avenew/server/evennia.db3")
 
 # Change directory to frozen
 os.chdir("avenew")
 
 # Override a few sensitive files
-print "Overriding settings..."
+print("Overriding settings...")
 with open("server/conf/secret_settings.py", "w") as file:
     file.write(dedent('''
         # -*- coding: utf-8 -*-
@@ -114,7 +114,7 @@ if not os.path.exists("world/areas"):
 for name in os.listdir("world/areas"):
     os.remove("world/areas/" + name)
 
-print "Run migrations..."
+print("Run migrations...")
 os.system("evennia migrate")
 
 # Redirect stdin
