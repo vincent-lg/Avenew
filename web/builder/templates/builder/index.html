@@ -2,8 +2,12 @@
 {% block titleblock %}Builder portal{% endblock %}
 {% block content %}
 <h2>Builder portal</h2>
-<p>Welcome, builder!</p>
+<p>Welcome, builders!  From hwere, you can learn more about Avenew, access
+specific guides and create the world.  Please read
+<a href="/wiki/doc/building/workflow">the builder's workflow</a>.  This
+document is essential to understand correctly before building anything
+in Avenew.</p>
 <ul>
-<li><a href="{% url 'builder:batch' %}">Batch building</a></li>
+    <li><a href="{% url 'builder:batches' %}">Batch building</a></li>
 </ul>
 {% endblock %}

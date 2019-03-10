@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block titleblock %}Builder batch {{ file.name }}{% endblock %}
+{% block content %}
+<h2>Builder batch {{ file.name }}</h2>
+<p>Number of documents: <span id="num-documents">unknown</span>.</p>
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        var documents = {{ file.documents|safe }};
+    </script>
+    <script src="{% static 'builder/js/map.js' %}"></script>
+{% endblock %}
