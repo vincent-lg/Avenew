@@ -3,11 +3,30 @@
 {% block titleblock %}Builder batch {{ file.name }}{% endblock %}
 {% block content %}
 <h2>Builder batch {{ file.name }}</h2>
-<p>Number of documents: <span id="num-documents">unknown</span>.</p>
+<table>
+    <tr>
+        <td>Name</td>
+        <td><span id="name"></span></td>
+        <td>File</td>
+        <td>{{ file.rel_path }}</td>
+        <td>Size</td>
+        <td>{{ file.size|filesizeformat }}</td>
+    </tr>
+    <tr>
+        <td>Author</td>
+        <td><span id="author"></span></td>
+        <td>Identifier</td>
+        <td><span id="ident"></span></td>
+        <td>Documents</td>
+        <td><span id="num-documents"></span></td>
+    </tr>
+</table>
+<p id="note">Nothing</p>
 {% endblock %}
 {% block scripts %}
     <script type="text/javascript">
         var documents = {{ file.documents|safe }};
+        var lang = '{{ lang }}';
     </script>
     <script src="{% static 'builder/js/map.js' %}"></script>
 {% endblock %}

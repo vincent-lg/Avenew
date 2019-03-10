@@ -52,7 +52,7 @@ def batch_view(request, filename):
                 'documents': [],
         }
 
-    return render(request, 'builder/batch/view.html', {'file': file})
+    return render(request, 'builder/batch/view.html', {'file': file, 'lang': settings.LANGUAGE_CODE})
 
 @ensure_perm(permission="builder")
 def batch_apply(request):
