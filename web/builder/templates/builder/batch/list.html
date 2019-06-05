@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titleblock %}Builder batch files{% endblock %}
+{% block content %}
+<h2>Builder batch files</h2>
+<table>
+    <tr>
+        <th>File</th>
+        <th>Size</th>
+    </tr>
+{% for file in files %}
+    <tr>
+        <td><a href="{% url 'builder:batch' file.rel_path %}">{{ file.name }}</a></td>
+        <td>{{ file.size|filesizeformat }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endblock %}

@@ -331,7 +331,7 @@ class CmdNew(UnixCommand):
             if road_name == "AUTO":
                 roads = origin.tags.get(category="road")
                 roads = roads or []
-                roads = [roads] if isinstance(roads, basestring) else roads
+                roads = [roads] if isinstance(roads, str) else roads
                 for name in roads:
                     # Get all coordinates for this road
                     coordinates = Crossroad.get_road_coordinates(name,

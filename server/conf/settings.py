@@ -82,6 +82,7 @@ INSTALLED_APPS += (
 
 ## Communication
 TEST_SESSION = False
+BATCH_DIR = r"C:\Users\Vincent Le Goff\Dropbox\Avenew one\Quartiers"
 
 # Language options
 USE_I18N = True

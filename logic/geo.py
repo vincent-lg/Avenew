@@ -234,7 +234,7 @@ def get_direction(direction):
         direction, aliases, and opposite directions.
 
     """
-    if isinstance(direction, basestring):
+    if isinstance(direction, str):
         direction = NAME_DIRECTIONS.get(direction.strip().lower())
         if direction is None:
             return None

@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block titleblock %}Portail des bâtisseurs{% endblock %}
 {% block content %}
-<h2>Portail des bâtisseurs</h2>
-<p>Bienvenue, bâtisseur !</p>
+<h2>Builder portal</h2>
+<p>Welcome, builders!  From hwere, you can learn more about Avenew, access
+specific guides and create the world.  Please read
+<a href="/wiki/doc/building/workflow">the builder's workflow</a>.  This
+document is essential to understand correctly before building anything
+in Avenew.</p>
 <ul>
-<li><a href="{% url 'builder:batch' %}">Bâtissage par fichier batch</a></li>
+    <li><a href="{% url 'builder:batches' %}">Batch building</a></li>
 </ul>
 {% endblock %}
