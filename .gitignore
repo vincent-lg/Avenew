@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+bui.egg-info
+build
+dist
+pyenv
+
+# Test and coverage
+.coverage
+htmlcov
+
+# Log files
+*.log
+
+# Database
+*.db
+
+# Private settings
+src/blueprints/*.yml
+src/settings/private.py
+*.cert
+*.key
+
+# TalisMUD build scripts
+src/game
+src/game.exe
+src/graphical.exe
+src/portal
+src/portal.exe
+src/talismud
+src/talismud.exe
