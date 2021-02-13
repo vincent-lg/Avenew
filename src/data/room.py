@@ -30,6 +30,7 @@
 """Room entity."""
 
 import asyncio
+from typing import Sequence
 
 from pony.orm import Optional, PrimaryKey, Required, Set
 
@@ -94,6 +95,27 @@ class Room(PicklableEntity, db.Entity):
         return [content for content in self.contents
                 if isinstance(content, db.Character)]
 
+    @property
+    def objects(self):
+        """Return a list of objects in this room."""
+        return [content for content in self.contents
+                if isinstance(content, db.Object)]
+
+    def objects_of_prototype(self,
+            prototype: 'db.ObjectPrototype') -> Sequence['db.Object']:
+        """
+        Return the objects of the specified prototype.
+
+        Args:
+            prototype (ObjectPrototype): the object prototype.
+
+        Returns:
+            objects (list): list of objects of this prototype.
+
+        """
+        return [o for o in self.objects
+                if getattr(o, "prototype", None) is prototype]
+
     # Database hooks
     def after_update(self):
         """Save in the room blueprints, if any."""
@@ -140,6 +162,14 @@ class Room(PicklableEntity, db.Entity):
         if characters:
             names = group_names(characters, character)
             names = [f"- {name}" for name in names]
+            lines.append("")
+            lines.extend(names)
+
+        # Add the present objects
+        objects = self.objects
+        if objects:
+            names = group_names(objects, character)
+            names = [f"+ {name}" for name in names]
             lines.append("")
             lines.extend(names)
 

@@ -35,8 +35,9 @@ from data.character import Character
 from data.delay import Delay
 from data.exit import Exit
 from data.npc import NPC
+from data.object import Object
 from data.player import Player
-from data.prototypes.character import CharacterPrototype
+from data import prototypes
 from data.room import Room, RoomRepop
 from data.session import Session
 from web.session import WebSession

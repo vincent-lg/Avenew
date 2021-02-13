@@ -53,6 +53,9 @@ DOCUMENT_TYPES = {
         "account": "data.blueprints.account.AccountDocument",
         "char_proto": ("data.blueprints.models.prototypes."
                 "character.CharacterPrototypeDocument"),
+        "object": "data.blueprints.models.object.ObjectDocument",
+        "object_proto": ("data.blueprints.models.prototypes."
+                "object.ObjectPrototypeDocument"),
         "player": "data.blueprints.player.PlayerDocument",
         "exit": "data.blueprints.exit.ExitDocument",
         "room": "data.blueprints.room.RoomDocument",

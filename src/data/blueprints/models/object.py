@@ -27,7 +27,38 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Data prototypes."""
+"""Blueprint document for objects."""
 
-from data.prototypes.character import CharacterPrototype
-from data.prototypes.object import ObjectPrototype
+from data.base import db
+from data.blueprints.document import Document
+from data.blueprints.exceptions import DelayMe
+
+class ObjectDocument(Document):
+
+    """Object document to add objects in blueprints."""
+
+    doc_type = "object"
+    doc_dump = False
+    fields = {
+        "room": {
+            "type": "str",
+            "presence": "optional",
+        },
+        "number": {
+            "type": "int",
+            "presence": "required",
+        },
+    }
+
+    def apply(self, prototype=None):
+        """Apply the document, spawn objects in the room."""
+        room = db.Room.get(barcode=self.cleaned.room)
+        number = self.cleaned.number
+        if prototype is None or room is None:
+            raise DelayMe
+
+        # If the object already exists
+        current = len(room.objects_of_prototype(prototype))
+        needed = number - current
+        for _ in range(needed):
+            prototype.create_at(room)
