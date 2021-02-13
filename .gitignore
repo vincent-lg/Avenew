@@ -15,9 +15,10 @@ htmlcov
 
 # Database
 *.db
+*.db-journal
 
 # Private settings
-src/blueprints/*.yml
+src/blueprints/*
 src/settings/private.py
 *.cert
 *.key
@@ -26,7 +27,10 @@ src/settings/private.py
 src/game
 src/game.exe
 src/graphical.exe
+src/lib
 src/portal
 src/portal.exe
+src/python3*.dll
 src/talismud
 src/talismud.exe
+src/vcruntime*.dll
