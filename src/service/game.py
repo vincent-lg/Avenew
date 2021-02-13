@@ -285,7 +285,7 @@ class Service(BaseService):
         await context.handle_input(decoded)
 
     async def handle_create_admin(self, reader, username: str,
-            password: str, email: str = ""):
+            password: str, email: str = "", blueprint: bool = False):
         """
         Try to create an admin character and account.
 
@@ -319,11 +319,22 @@ class Service(BaseService):
         # Otherwise create the account
         account = db.Account.create_with_password(username, password, email)
 
-        # Now create the character
-        character = account.characters.create(name=username.title())
+        # Now create the player.
+        player = account.players.create(name=username.title())
 
-        # Give the new character admin permissions
-        character.permissions.add("admin")
+        # Give the new player admin permissions
+        player.permissions.add("admin")
+
+        # Save in a blueprint, if asked to do so.
+        if blueprint:
+            account.blueprints.add("account")
+            player.blueprints.add("account")
+            for blueprint in account.blueprints.get(player):
+                blueprint.update_document_from_object(account)
+                blueprint.update_document_from_object(player)
+            account.blueprints.save(player)
+
+        # Send a confirmation.
         if host.writer:
             await host.send_cmd(host.writer, "created_admin",
                     dict(success=True))

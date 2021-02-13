@@ -292,7 +292,7 @@ class Service(BaseService):
         await telnet.disconnect_session(session_id)
 
     async def handle_create_admin(self, reader, username: str,
-            password: str, email: str = ""):
+            password: str, email: str = "", blueprint: bool = False):
         """
         Send a 'create_admin' command to the game, to create a new admin.
 
@@ -310,7 +310,8 @@ class Service(BaseService):
         if self.game_writer:
             self.logger.debug(f"Sending 'create_admin' to game ID {self.game_id}...")
             await crux.send_cmd(self.game_writer, "create_admin",
-                    dict(username=username, password=password, email=email))
+                    dict(username=username, password=password, email=email,
+                    blueprint=blueprint))
 
         success, args = await crux.wait_for_cmd(self.game_reader,
                 "created_admin", timeout=60)

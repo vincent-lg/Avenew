@@ -57,11 +57,12 @@ class TalismudWindow(Window):
 
         # If an admin is needed
         if MUDOp.NEED_ADMIN in self.service.operations:
-            dialog = self.pop_dialog("""
+            dialog = await self.pop_dialog("""
                 <dialog title="New admin account">
                   <text x=1 y=2 id=username>Enter your new username:</text>
                   <text x=1 y=3 id=password hidden>Enter your account password:</text>
                   <text x=1 y=4 id=email>Enter your optional account email address:</text>
+                  <checkbox x=1 y=5 id=blueprint>Should this administrator be saved in a blueprint?</checkbox>
                   <button x=5 y=2 set_true>OK</button>
                   <button x=5 y=4 set_false>Cancel</button>
                 </dialog>
@@ -71,11 +72,12 @@ class TalismudWindow(Window):
                 username = dialog["username"].value
                 password = dialog["password"].value
                 email = dialog["email"].value
+                blueprint = dialog["blueprint"].checked
                 success = await self.service.action_create_admin(username,
-                        password, email)
+                        password, email, blueprint)
 
                 if success:
-                    self.pop_dialog("""
+                    await self.pop_dialog("""
                         <dialog title="Success">
                           <text x=1 y=2 id=message read-only>
                             Your new administrator account was successfully
@@ -85,7 +87,7 @@ class TalismudWindow(Window):
                         </dialog>
                     """)
                 else:
-                    self.pop_dialog("""
+                    await self.pop_dialog("""
                         <dialog title="Error">
                           <text x=1 y=2 id=message read-only>
                             The administrator account couldn't be created.

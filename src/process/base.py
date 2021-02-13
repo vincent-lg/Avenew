@@ -210,7 +210,7 @@ class Process(metaclass=ABCMeta):
         """
         # Under Windows, specify a different creation flag
         creationflags = 0x08000000 if platform.system() == "Windows" else 0
-        command = f"python {process_name}.py"
+        command = f"{sys.executable} {process_name}.py"
         frozen = getattr(sys, "frozen", False)
         if frozen:
             command = process_name
@@ -226,7 +226,8 @@ class Process(metaclass=ABCMeta):
             command = command.split(" ")
 
         self.logger.debug(
-            f"Starting the {process_name!r} process: {command!r}"
+            f"Starting the {process_name!r} process: {command!r}, "
+            f"(frozen={frozen}, stdout={stdout}, stderr={stderr})"
         )
         process = Popen(command, stdout=stdout, stderr=stderr,
             creationflags=creationflags)

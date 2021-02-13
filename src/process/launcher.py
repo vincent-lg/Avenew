@@ -90,10 +90,21 @@ class Launcher(Process):
                 username = input("Username to create: ")
                 password = getpass("New account's password: ")
                 email = input("New account's email (can be blank): ")
+                blueprint = input(
+                        "Should this user be saved in a blueprint "
+                        "(on disk, not recommended for produciton)? [y/n, "
+                        "default n]"
+                )
+                blueprint = blueprint.lower() in ("y", "yes")
                 success = await launcher.action_create_admin(username,
-                        password, email)
+                        password, email, blueprint)
                 if success:
                     print("The new admin account and password were created.")
+                    if blueprint:
+                        print(
+                                "The new admin was saved (encrypted) "
+                                "on the disk as well."
+                        )
                 else:
                     print(
                             "An error occurred while creating the "

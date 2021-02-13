@@ -388,7 +388,7 @@ class Service(BaseService):
             )
 
     async def action_create_admin(self, username: str,
-            password: str, email: str = ""):
+            password: str, email: str = "", blueprint: bool = False):
         """
         Send a 'create_admin' command to the game, to create a new admin.
 
@@ -405,7 +405,8 @@ class Service(BaseService):
         host = self.services["host"]
         if host.writer:
             await host.send_cmd(host.writer, "create_admin",
-                    dict(username=username, password=password, email=email))
+                    dict(username=username, password=password, email=email,
+                    blueprint=blueprint))
 
         success, args = await host.wait_for_cmd(host.reader,
                 "created_admin", timeout=60)

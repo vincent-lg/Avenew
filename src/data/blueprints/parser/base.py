@@ -46,7 +46,7 @@ use your new one).
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import List
+from typing import List, Sequence
 
 from data.blueprints.blueprint import Blueprint
 
@@ -173,3 +173,24 @@ class AbstractParser(metaclass=ABCMeta):
     def store_blueprints(self):
         """Store all blueprints."""
         pass
+
+    def create_blueprint(self, unique_name: str,
+            documents: Sequence['Document']) -> Blueprint:
+        """
+        Create and return a new blueprint.
+
+        This method assumes that the blueprint doesn't already exist,
+        and the blueprint, at this point, will be a representation
+        in memory.
+
+        Args:
+            unique_name (str): the unique blueprint name.  Not two
+                    blueprints should share this name.
+            documents (list of documents): the documents in
+                    this blueprint.
+
+        Returns:
+            blueprint (Blueprint): the newly-created blueprint.
+
+        """
+        return Blueprint(unique_name, list(documents))

@@ -118,8 +118,7 @@ class YAMLParser(AbstractParser):
                     unique_name = str(relative.stem)
                 else:
                     unique_name = str(parent / relative.stem)
-
-                blueprint = Blueprint(unique_name, list(documents))
+                blueprint = self.create_blueprint(unique_name, documents)
 
             num_docs = len(blueprint.documents)
             logger.info(
@@ -176,8 +175,13 @@ class YAMLParser(AbstractParser):
             blueprint (Blueprint): the blueprint to store.
 
         """
-        path = self.directory / self.paths[blueprint]
-        if self.backup:
+        path = self.directory
+        if (relative := self.paths.get(blueprint)):
+            path /= relative
+        else:
+            path /= blueprint.name + ".yml"
+
+        if self.backup and path.exists():
             path.replace(str(path)[:-4] + ".old")
 
         documents = blueprint.dictionaries

@@ -73,8 +73,8 @@ class BlueprintHandler(TagHandler):
         for link in query:
             blueprint = type(self).current_parser.blueprints.get(link.tag.name)
             if blueprint is None:
-                raise ValueError(f"cannot get the blueprint of name {link.tag.name}")
-
+                blueprint = type(self).current_parser.create_blueprint(
+                        link.tag.name, ())
             blueprints.add(blueprint)
 
         return tuple(blueprints)
