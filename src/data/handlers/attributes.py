@@ -58,7 +58,7 @@ class AttributeHandler:
         return self._get_attribute_of_name(name).value
 
     def __setattr__(self, name, value):
-        if name.startswith("_"):
+        if name.startswith("_") or name in ("subset", ):
             super().__setattr__(name, value)
         else:
             attr = self._get_attribute_of_name(name, default=None)
