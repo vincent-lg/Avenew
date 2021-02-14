@@ -27,30 +27,61 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Search argument."""
+"""Argument branch."""
 
 from typing import Optional, Union
 
-from command.args.base import ArgSpace, Argument, ArgumentError, Result
+from command.args.base import ARG_TYPES
+from command.args.error import ArgumentError
+from command.args.namespace import Namespace
 
-class Search(Argument):
+from command.args.result import Result
 
-    """Search class for argument."""
+NOT_SET = object()
 
-    name = "search"
-    space = ArgSpace.UNKNOWN
-    in_namespace = True
-    _search = None
+class Branch:
 
-    def __init__(self, dest, optional=False, default=None):
-        super().__init__(dest, optional=optional, default=default)
-        self.search_in = None
-        self.only_one = False
-        self.msg_cannot_find = "'{search}' cannot be found."
-        self.msg_mandatory = "You should specify a name to search."
+    """
+    Argument branch, a suite of arguments.
+
+    A branch should be checked in sequence to be valid.  However, some
+    arguments in a branch can be optional.
+
+    """
+
+    def __init__(self, optional=False):
+        from command.args.args import CommandArgs, _NOT_SET
+        self.optional = optional
+        self.arguments = []
+        self._args = CommandArgs()
 
     def __repr__(self):
-        return "<Search arg>"
+        return f"<ArgBranch>"
+
+    def add_argument(self, arg_type: str, *args, dest: Optional[str] = None,
+            optional=False, default=NOT_SET, **kwargs):
+        """
+        Add a new argument to the parser.
+
+        Args:
+            arg_type (str): the argument type.
+            dest (str, optional): the attribute name in the namespace.
+            optional (bool, optional): is this argument optional?
+
+        Additional keyword arguments are sent to the argument class.
+
+        """
+        from command.args.args import _NOT_SET
+        default = _NOT_SET if default is NOT_SET else default
+        arg_class = ARG_TYPES.get(arg_type)
+        if arg_class is None:
+            raise KeyError(f"invalid argument type: {arg_type!r}")
+
+        dest = dest or arg_type
+        argument = arg_class(*args, dest=dest, optional=optional,
+                default=default, **kwargs)
+        self._args.arguments.append(argument)
+        return argument
 
     def parse(self, character: 'db.Character', string: str, begin: int = 0,
             end: Optional[int] = None) -> Union[Result, ArgumentError]:
@@ -67,41 +98,11 @@ class Search(Argument):
             result (Result or ArgumentError).
 
         """
-        search = type(self)._search
-        if search is None:
-            from data.search import search
-            type(self)._search = search
-
-        end = len(string) if end is None else end
-        attempt = string[begin:end]
-
-        # Return an error if the argument is mandatory.
-        if not attempt.strip():
-            if not self.optional:
-                return ArgumentError(self.msg_mandatory)
-
-        # Try searching for the result with this name
-        search_in = self.search_in
-        if callable(search_in):
-            search_in = search_in(character)
-        found = None
-        if attempt.strip():
-            found = search(attempt, limit_to=search_in)
-
-        if not found:
-            if attempt.strip():
-                return ArgumentError(self.msg_cannot_find.format(
-                        search=attempt))
-
-        if self.only_one and found:
-            found = found[0] # Ignore the others
-
-        result = Result(begin, end, string)
-        result.value = found
+        namespace = self._args.parse(character, string, begin, end)
+        if isinstance(namespace, Namespace):
+            result = Result(0, None, "")
+            result.namespace = namespace
+        else:
+            result = namespace
 
         return result
-
-    def add_to_namespace(self, result, namespace):
-        """Add the parsed number to the namespace."""
-        value = result.value
-        setattr(namespace, self.dest, value)

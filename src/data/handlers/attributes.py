@@ -29,6 +29,7 @@
 
 """Attribute handler, to handle database attributes."""
 
+from contextlib import contextmanager
 import pickle
 import typing as ty
 
@@ -50,6 +51,7 @@ class AttributeHandler:
         if owner.id is None:
             commit()
         self.__object_id = owner.id
+        self.__if_necessary = False
 
     def __getattr__(self, name):
         """Return the attribute value or raises AttributeError."""
@@ -61,7 +63,9 @@ class AttributeHandler:
         else:
             attr = self._get_attribute_of_name(name, default=None)
             if attr:
-                attr.pickled = pickle.dumps(value)
+                # The attribute exists, don't update it, unless necessary.
+                if not self.__if_necessary:
+                    attr.pickled = pickle.dumps(value)
             else:
                 Attribute(subset=self.subset, object_class=self.__object_class,
                         object_id=self.__object_id, name=name,
@@ -90,6 +94,27 @@ class AttributeHandler:
     def __len__(self):
         """Return the number of stored attributes for this instance."""
         return len(self._get_all_attributes()[:])
+
+    @property
+    @contextmanager
+    def if_necessary(self):
+        """
+        Return a context manager, update only if the attribute doesn't exist.
+
+        You can use this pretty simply:
+
+            >>> with self.db.if_necessary as update:
+            ...     update.attr1 = "value"
+            ...
+
+        In this example, `attr1` will be created if it doesn't exist,
+        but if it already exists as an attribute, nothing will be
+        done.  This is very useful to set default values in a flexible way.
+
+        """
+        self.__if_necessary = True
+        yield self
+        self.__if_necessary = False
 
     def get(self, attribute: str, default: ty.Optional[ty.Any] = NOT_SET):
         """

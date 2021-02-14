@@ -35,3 +35,7 @@ class Namespace:
 
     def __repr__(self):
         return f"Namespace{self.__dict__}"
+
+    def __iter__(self):
+        """Iterate over the namespace."""
+        return iter(self.__dict__.items())

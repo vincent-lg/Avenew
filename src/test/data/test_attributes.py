@@ -133,3 +133,31 @@ class TestAttributes(BaseTest):
 
                 # But accessing 'tmp2' should still work as expected
                 self.assertEqual(tested.db.tmp2, 300)
+
+    def test_if_necessary(self):
+        """Make sure if_necessary works as expected."""
+        for supported in SUPPORTED:
+            cls_name = supported.__name__
+            with self.subTest(msg=f"in class {cls_name}"):
+                tested = self.create_instance(supported)
+                with self.assertRaises(ValueError):
+                    _ = tested.db.name
+
+                with tested.db.if_necessary as update:
+                    update.name = "Vincent"
+
+                # The name should now exist in attributes.
+                self.assertEqual(tested.db.name, "Vincent")
+
+                # But if we try again, it shouldn't work.
+                with tested.db.if_necessary as update:
+                    update.name = "Caroline"
+
+                self.assertEqual(tested.db.name, "Vincent")
+
+                # Delete and try again.
+                del tested.db.name
+                with tested.db.if_necessary as update:
+                    update.name = "Caroline"
+
+                self.assertEqual(tested.db.name, "Caroline")

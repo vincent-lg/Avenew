@@ -27,30 +27,44 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Search argument."""
+"""Argument group, containing branches."""
 
 from typing import Optional, Union
 
-from command.args.base import ArgSpace, Argument, ArgumentError, Result
+from command.args.base import ArgSpace
+from command.args.branch import Branch
+from command.args.error import ArgumentError
+from command.args.result import DefaultResult, Result
 
-class Search(Argument):
+class Group:
 
-    """Search class for argument."""
+    """
+    Command argument group, to have several branches.
 
-    name = "search"
+    A group in command arguments is meant to represent a set of argument
+    branches.  An argument branch is a set of arguments, and a branch
+    can either be verified or not.  A group in turn can contain
+    several branches and help choose which one to execute through
+    a partial parsing.  The group can then decide to propagate
+    any error it meets, to use the one working branch or
+    to generate an error of its own.
+
+    """
+
     space = ArgSpace.UNKNOWN
     in_namespace = True
-    _search = None
 
-    def __init__(self, dest, optional=False, default=None):
-        super().__init__(dest, optional=optional, default=default)
-        self.search_in = None
-        self.only_one = False
-        self.msg_cannot_find = "'{search}' cannot be found."
-        self.msg_mandatory = "You should specify a name to search."
+    def __init__(self, parser, optional=False):
+        self.parser = parser
+        self.branches = []
+        self.optional = optional
+        self.msg_error = "Specify something."
 
-    def __repr__(self):
-        return "<Search arg>"
+    def add_branch(self):
+        """Add and return a new branch."""
+        branch = Branch(self)
+        self.branches.append(branch)
+        return branch
 
     def parse(self, character: 'db.Character', string: str, begin: int = 0,
             end: Optional[int] = None) -> Union[Result, ArgumentError]:
@@ -67,41 +81,27 @@ class Search(Argument):
             result (Result or ArgumentError).
 
         """
-        search = type(self)._search
-        if search is None:
-            from data.search import search
-            type(self)._search = search
+        # Parse the several branches.  The aim is to select one
+        # branch... or none at all.
+        success = []
+        for branch in self.branches:
+            result = branch.parse(character, string, begin, end)
+            if isinstance(result, Result):
+                success.append((branch, result))
 
-        end = len(string) if end is None else end
-        attempt = string[begin:end]
+        # If there's more than one success, retrieve the most limited one.
+        if len(success) > 1:
+            success = max(success, key=lambda tup: len(tup[0].arguments))[1]
+        elif len(success) == 1:
+            success = success[0][1]
 
-        # Return an error if the argument is mandatory.
-        if not attempt.strip():
-            if not self.optional:
-                return ArgumentError(self.msg_mandatory)
+        if success:
+            return success
 
-        # Try searching for the result with this name
-        search_in = self.search_in
-        if callable(search_in):
-            search_in = search_in(character)
-        found = None
-        if attempt.strip():
-            found = search(attempt, limit_to=search_in)
-
-        if not found:
-            if attempt.strip():
-                return ArgumentError(self.msg_cannot_find.format(
-                        search=attempt))
-
-        if self.only_one and found:
-            found = found[0] # Ignore the others
-
-        result = Result(begin, end, string)
-        result.value = found
-
-        return result
+        return ArgumentError(self.msg_error)
 
     def add_to_namespace(self, result, namespace):
-        """Add the parsed number to the namespace."""
-        value = result.value
-        setattr(namespace, self.dest, value)
+        """Add the result to the namespace."""
+        other = result.namespace
+        for key, value in other:
+            setattr(namespace, key, value)

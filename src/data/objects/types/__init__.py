@@ -27,17 +27,5 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Data package, to host database entities and data handlers."""
+"""Package containing object types."""
 
-from data.account import Account
-from data.blueprints.record import BlueprintRecord
-from data.character import Character
-from data.delay import Delay
-from data.exit import Exit
-from data.npc import NPC
-from data.objects import Object
-from data.player import Player
-from data import prototypes
-from data.room import Room, RoomRepop
-from data.session import Session
-from web.session import WebSession

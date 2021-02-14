@@ -72,7 +72,7 @@ class Number(Argument):
             result (Result or ArgumentError).
 
         """
-        result = super().parse(string, begin, end)
+        result = super().parse(character, string, begin, end)
 
         # Try to convert the result to an int
         attempt = result.portion

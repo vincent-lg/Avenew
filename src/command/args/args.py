@@ -33,6 +33,7 @@ from typing import Optional, Union
 
 from command.args.base import ArgSpace, ARG_TYPES
 from command.args.error import ArgumentError
+from command.args.group import Group
 from command.args.namespace import Namespace
 from command.args.result import DefaultResult, Result
 
@@ -92,7 +93,7 @@ class CommandArgs:
     def __init__(self):
         self.arguments = []
 
-    def add_argument(self, arg_type: str, dest: Optional[str] = None,
+    def add_argument(self, arg_type: str, *args, dest: Optional[str] = None,
             optional=False, default=_NOT_SET, **kwargs):
         """
         Add a new argument to the parser.
@@ -110,13 +111,20 @@ class CommandArgs:
             raise KeyError(f"invalid argument type: {arg_type!r}")
 
         dest = dest or arg_type
-        argument = arg_class(dest, optional=optional, default=default,
+        argument = arg_class(*args, dest=dest, optional=optional, default=default,
                 **kwargs)
         self.arguments.append(argument)
         return argument
 
+    def add_group(self):
+        """Add an argument group."""
+        group = Group(self)
+        self.arguments.append(group)
+        return group
+
     def parse(self, character: 'db.Character',
-            arguments: str) -> Union[Namespace, ArgumentError]:
+            arguments: str, begin: Optional[int] = 0,
+            end: Optional[int] = None) -> Union[Namespace, ArgumentError]:
         """
         Try to parse the command arguments.
 
@@ -126,6 +134,8 @@ class CommandArgs:
         Args:
             character (Character): the character running the command.
             arguments (str): the unparsed arguments as a string.
+            begin (int, opt): the optional parse beginning.
+            end (int, opt): the optional parse ending.
 
         Returns:
             result (`Namespace` or `ArgumentError`): the parsed result.
@@ -145,6 +155,7 @@ class CommandArgs:
                 tuple(self.arguments),
         )
 
+        end = len(arguments) if end is None else end
         for attempt in attempts:
             for arg in attempt:
                 i = self.arguments.index(arg)
@@ -152,38 +163,40 @@ class CommandArgs:
                     continue
 
                 # If there's a previous result, parse after it
-                begin = 0
+                t_begin = begin
                 if i > 0:
                     prev_results = [result for result in results[:i]
                             if isinstance(result, Result)]
                     if prev_results:
                         prev_result = prev_results[-1]
-                        begin = prev_result.end
+                        t_begin = prev_result.end
 
                 # Skip over spaces
-                while begin < len(arguments):
-                    if arguments[begin].isspace():
-                        begin += 1
+                while t_begin < len(arguments):
+                    if arguments[t_begin].isspace():
+                        t_begin += 1
                     else:
                         break
 
                 # If there's a following result, parse before it
-                end = len(arguments)
+                t_end = end
                 if i < len(self.arguments) - 1:
                     next_results = [result for result in results[i + 1:]
                             if isinstance(result, Result)]
                     if next_results:
                         next_result = next_results[0]
-                        end = next_result.begin
+                        t_end = next_result.begin
 
-                if begin == end and not arg.optional:
+                if t_begin == t_end and not arg.optional:
                     return ArgumentError(arg.msg_mandatory.format(
                             argument=arg.name))
 
-                result = arg.parse(character, arguments, begin, end)
-                if (isinstance(result, ArgumentError) and
-                        arg.default is not _NOT_SET):
-                    result = DefaultResult(arg.default)
+                result = arg.parse(character, arguments, t_begin, t_end)
+                if isinstance(result, ArgumentError):
+                    if arg.default is not _NOT_SET:
+                        result = DefaultResult(arg.default)
+                    #else:
+                    #    return result
                 results[i] = result
 
         # If an error has occurred, return the first
