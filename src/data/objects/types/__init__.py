@@ -29,3 +29,4 @@
 
 """Package containing object types."""
 
+from data.objects.types.clothing import Clothing

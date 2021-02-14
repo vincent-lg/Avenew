@@ -27,65 +27,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Module containing the abstract object type."""
+"""Phone object type."""
 
-from abc import ABCMeta, abstractmethod
-from typing import Union
+from data.objects.types.abc import AbstractType
 
-from data.base import db
+class Clothing(AbstractType):
 
-TYPES = {} # Dictionary of object types
+    """Phone object type."""
 
-class MetaType(ABCMeta):
+    name = "clothing"
 
-    """Metaclass for object types."""
-
-    def __init__(cls, name, bases, attrs):
-        super().__init__(name, bases, attrs)
-        if (name := cls.name) is not None:
-            TYPES[name] = cls
-
-
-class AbstractType(metaclass=MetaType):
-
-    """
-    Abstract type.
-
-    Each object type should inherit from this class and implement the
-    abstract methods.
-
-    """
-
-    name = None # The object name, should be unique across types.
-
-    def __init__(self, obj: Union['db.Object', 'db.ObjectPrototype']):
-        if isinstance(obj, db.Object):
-            self.obj = obj
-            self.prototype = obj.prototype
-        elif isinstance(obj, db.ObjectPrototype):
-            self.obj = None
-            self.prototype = obj
-        else:
-            raise ValueError("invalid object")
-
-    @property
-    def db(self):
-        """Return the attribute handler for the type storage."""
-        if (handler := getattr(self, "cached_db_handler", None)):
-            return handler
-
-        from data.handlers import AttributeHandler
-        obj = self.obj or self.prototype
-        category = "object" if self.obj else "prototype"
-        if obj is None:
-            raise ValueError("the object is not set")
-
-        handler = AttributeHandler(obj)
-        handler.subset = f"type.{category}:{obj.id}.{self.name}"
-        self.cached_db_handler = handler
-        return handler
-
-    @abstractmethod
     def update_prototype(self):
         """
         Called when the object prototype is added or updated.
@@ -105,9 +56,10 @@ class AbstractType(metaclass=MetaType):
         if they don't already exist.
 
         """
-        pass
+        with self.db.if_necessary as update:
+            update.protection = 35
+            update.color = 8
 
-    @abstractmethod
     def update_object(self, prototype: 'AbstractType'):
         """
         Called when the object is created or updated.
@@ -136,4 +88,6 @@ class AbstractType(metaclass=MetaType):
                     allows to transfer attributes quickly.
 
         """
-        pass
+        with self.db.if_necessary as update:
+            update.max_protection = prototype.db.protection
+            update.cur_color = prototype.db.color

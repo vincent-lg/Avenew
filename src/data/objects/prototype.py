@@ -39,6 +39,7 @@ from data.handlers import (
         AttributeHandler, BlueprintHandler, DescriptionHandler,
         NameHandler, TagHandler,
 )
+from data.objects.types.handler import TypeHandler
 
 class ObjectPrototype(PicklableEntity, db.Entity):
 
@@ -66,6 +67,10 @@ class ObjectPrototype(PicklableEntity, db.Entity):
     @lazy_property
     def description(self):
         return DescriptionHandler(self)
+
+    @lazy_property
+    def types(self):
+        return TypeHandler(self)
 
     def create_at(self, location: 'db.Room'):
         """
@@ -95,5 +100,9 @@ class ObjectPrototype(PicklableEntity, db.Entity):
         # Subscribe to names
         obj.names.register(self.names.singular)
         obj.names.register(self.names.plural)
+
+        # Add object types
+        for obj_type in self.types:
+            obj.types.add(obj_type)
 
         return obj

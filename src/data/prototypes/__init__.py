@@ -29,5 +29,5 @@
 
 """Data prototypes."""
 
+from data.objects.prototype import ObjectPrototype
 from data.prototypes.character import CharacterPrototype
-from data.prototypes.object import ObjectPrototype

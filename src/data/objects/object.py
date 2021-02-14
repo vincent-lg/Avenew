@@ -40,6 +40,7 @@ from data.handlers import (
         AttributeHandler, BlueprintHandler, LocatorHandler,
         NameHandler, TagHandler,
 )
+from data.objects.types.handler import TypeHandler
 
 class Object(CanBeNamed, PicklableEntity, db.Entity):
 
@@ -83,6 +84,10 @@ class Object(CanBeNamed, PicklableEntity, db.Entity):
     @lazy_property
     def names(self):
         return NameHandler(self)
+
+    @lazy_property
+    def types(self):
+        return TypeHandler(self)
 
     def get_name_for(self, group_for: 'db.Character',
             group: Sequence['CanBeNamed']):
