@@ -23,4 +23,4 @@ file.  This will help you organize your settings.
 """
 
 # 1. Game name and general settings
-GAME_NAME = "TalisMUD"
+GAME_NAME = "Avenew"
