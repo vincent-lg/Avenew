@@ -45,12 +45,12 @@ class ConfirmPassword(SessionContext):
     """
 
     text = """
-        You've chosen your password.  Please retype it now, to make sure
-        you entered it correctly.  If you make a mistake don't
-        worry, you'll be asked to create a new passord again.
-
-        Confirm your new password:
+        Vous avez choisi un mot de passe pour ce compte. Veuillez l'entrer
+        à nouveau, afin d'être sûr qu'il s'agisse bien de votre choix.
+        Si vous voulez changer de mot de passe, entrez / pour revenir
+        à l'écran précédent.
     """
+    prompt = "Confirmez votre mot de passe :"
 
     async def input(self, password):
         """The user entered something."""
@@ -58,8 +58,9 @@ class ConfirmPassword(SessionContext):
 
         if not original:
             await self.msg(
-                "How did you get here?  Something went wrong, sorry, "
-                "better to enter a new password."
+                "Comment êtes-vous arrivés à cette étape ? Quelque chose "
+                "d'inattendu s'est produit, il vaut mieux entrer de nouveau "
+                "votre mot de passe."
             )
             await self.move("account.create_password")
             return
@@ -67,12 +68,12 @@ class ConfirmPassword(SessionContext):
         # Check that the passwords aren't different
         if original != password:
             await self.msg(
-                "Oops, it seems you didn't enter the same password.  "
-                "To be certain, let's go back to the previous step."
+                "Oops, il semble que vous n'ayez pas entré le même mot "
+                "de passe cete fois. Mieux vaut réessayer."
             )
             await self.move("account.create_password")
             return
 
         # That's the correct password
-        await self.msg("Thanks for confirming your password.")
+        await self.msg("Merci d'avoir confirmé votre mot de passe.")
         await self.move("account.email")

@@ -31,6 +31,19 @@
 
 from context.session_context import SessionContext
 
+TEXT = r"""Bienvenue sur
+
+              ,
+            /'/
+          /' /
+       ,/'  /.     ,   ____     ,____     ____ .   . ,   ,
+      /`--,/ |    /  /'    )   /'    )  /'    )|   |/   /
+    /'    /  |  /' /(___,/'  /'    /' /(___,/' |  /|  /'
+(,/'     (_,_|/(__(________/'    /(__(_________|/' |/(__
+
+Avenew One, utilisant le moteur TalisMUD 0.1.0.
+"""
+
 class MOTD(SessionContext):
 
     """
@@ -40,16 +53,7 @@ class MOTD(SessionContext):
 
     """
 
-    text = r"""Welcome to
-          *   )           )                   (    (  (
-        ` )  /(  (     ( /((        (  (      )\   )\ )\
-         ( )(_))))\(   )\())\  (    )\))(  ((((_)(((_)(_)
-        (_(_())/((_)\ (_))((_) )\ )((_))\   )\ _ )\)_()_)
-        |_   _(_))((_)| |_ (_)_(_/( (()(_)  (_)_\(_) || |
-          | | / -_|_-<|  _|| | ' \)) _` |    / _ \ | || |
-          |_| \___/__/ \__||_|_||_|\__, |   /_/ \_\|_||_|
-                                   |___/
-    """
+    text = TEXT
 
     async def refresh(self):
         """Leave this context at once."""

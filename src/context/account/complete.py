@@ -53,21 +53,24 @@ class Complete(SessionContext):
         # Check that all data are filled
         if username is None or Account.get(username=username):
             await self.msg(
-                "Hmmm... something went wrong.  What was your username again?"
+                "Hmmm... une erreur s'est produite. Quel était "
+                "votre nom d'utilisateur ?"
             )
             await self.move("account.new")
             return
 
         if password is None:
             await self.msg(
-                "Hmmm... something went wrong.  What was your password again?"
+                "Hmmm... une erreur s'est produite. Quel était "
+                "votre mot de passe ?"
             )
             await self.move("account.create_password")
             return
 
         if email is None or (email and Account.get(email=email)):
             await self.msg(
-                "Hmmm... something went wrong.  What was your email again?"
+                "Hmmm... une erreur s'est produite. Quel était "
+                "votre adresse e-mail ?"
             )
             await self.move("account.email")
             return
@@ -78,10 +81,13 @@ class Complete(SessionContext):
                     plain_password=password, email=email)
             commit()
         except OrmError:
-            await self.msg("Some error occurred.  We'll have to try again.")
+            await self.msg(
+                    "Une erreur s'est produite. Il va falloir "
+                    "recommencer hélas."
+            )
             await self.move("account.new")
             return
 
         self.session.account = account
-        await self.msg(f"The account {username!r} was created successfully.")
+        await self.msg(f"Le compte utilisateur {username!r} a bien été créé.")
         await self.move("character.name")

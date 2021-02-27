@@ -45,18 +45,21 @@ class CreatePassword(SessionContext):
     """
 
     text = """
-        Now that you have chosen your account username, you should
-        choose a password.  Remember that both the username and password
-        will protect your characters on the game.  Other players will
-        not be able to see your username and will not know your password,
-        unless you tell them, which you shouldn't.
+        Puisque vous avez choisi votre nom d'utilisateur, veuillez maintenant
+        entrer le mot de passe associé à ce compte. Il vous sera demandé à
+        chaque connexion.
 
-        Preferably choose a password which will be hard to guess, not just
-        a word from the dictionary.  You can include letters (without
-        or with accents), digits, special characters and so on.  Just
-        make sure your password isn't too short.
+        Il est important de se souvenir que le nom d'utilisateur et le
+        mot de passe peuvent protéger vos personnages. Les autres joueurs ne
+        verront ni votre nom de compte (raison pour laquelle il est préférable
+        que le nom de compte diffère du nom de votre personnage en jeu) ni,
+        bien sûr, votre mot de passe.
 
-        Your new password:
+        Essayez d'avoir un mot de passe sécurisé (incluant des minuscules,
+        majuscules, chiffres et symboles) pour éviter que d'autres utilisent
+        votre compte, et vos personnages.
+
+        Entrez votre nouveau mot de passe :
     """
 
     async def input(self, password):
@@ -64,12 +67,11 @@ class CreatePassword(SessionContext):
         # Check that the password isn't too short
         if len(password) < settings.MIN_PASSWORD:
             await self.msg(
-                f"This password is incorrect.  It should be "
-                f"at least {settings.MIN_PASSWORD} characters long.  "
-                "Please try again."
+                f"Ce mot de passe est invalide. Il devrait "
+                f"au moins contenir {settings.MIN_PASSWORD} caractères. "
+                "Veuillez réessayer."
             )
             return
 
-        await self.msg("You selected a password. Great!")
         self.session.options["password"] = password
         await self.move("account.confirm_password")

@@ -43,20 +43,21 @@ class Players(SessionContext):
         """Display the players' screen."""
         account = self.session.account
         screen = dedent(f"""
-            Welcome to your account, {account.username}!
+            Bienvenue sur votre compte Avenew, {account.username}!
 
-            You can select your players here.  Enter a number to
-            play one of these characters or the letter 'c' to create a new one.
+            Vous pouvez jouer un de vos personnages en entrant le numéro
+            associé (voir la liste plus bas), ou entrer 'c' pour créer
+            un nouveau personnage.
 
-            Available characters:
+            Personnages existants sur ce compte :
         """.strip("\n"))
 
         for i, player in enumerate(
                 account.players.sort_by(db.Player.created_on)):
-            screen += f"\n  {i + 1} to play {player.name}"
+            screen += f"\n  {i + 1} pour jouer {player.name}"
 
         screen += "\n\n" + dedent("""
-            Type 'c' to create a new player.
+            Entrez 'c' pour créer un personnage sur ce compte.
         """.strip("\n"))
 
         return screen
@@ -76,4 +77,4 @@ class Players(SessionContext):
                 await self.move("connection.login")
                 return
 
-        await self.msg("Invalid command.")
+        await self.msg("Commande invalide.")

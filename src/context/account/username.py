@@ -46,16 +46,25 @@ class Username(SessionContext):
     """
 
     text = """
-        New user, welcome to TalisMUD!
+        Nouvel utilisateur, bienvenue sur Avenew !
 
-        You wish to create a new account.  The first step for you is
-        to create a username.  This username (and the password you will
-        select next) will be needed to access your characters.
-        You should choose both a username and password no one can easily
-        guess.
+        Vous souhaitez donc vous créer un compte. La premièrre étape est
+        de choisir un nom d'utilisateur (ou nom de compte). Il est préférable,
+        pour des raisons de sécurité, que ce nom soit différent du nom
+        de vos personnages. Votre compte utilisateur permet juste de
+        regrouper plusieurs personnages ensemble. Votre nom de compte est
+        différent de votre nom de personnage. Personne en jeu ne verra votre
+        nom de compte, si ce n'est les administrateurs qui ne communiqueront
+        pas cette information à d'autres joueurs. Ainsi, si quelqu'un souhaite
+        jouer avec vos personnages, il lui faudra deviner le nom de compte et
+        le mot de passe, ce qui rend le cas hautement improbable.
 
-        Please enter your username here:
+        Tout comme le mot de passe, il est conseillé de ne pas communiquer
+        votre nom de compte, même à des joueurs dont vous êtes proches. Le
+        nom de compte pourra être modifié par la suite, toujours pour des
+        raisons de sécurité. Il vous sera demandé à chaque connexion.
     """
+    prompt = "Entrez votre nouveau nom de compte :"
 
     async def input(self, username):
         """The user entered something."""
@@ -64,17 +73,16 @@ class Username(SessionContext):
         # Check that the name isn't too short
         if len(username) < settings.MIN_USERNAME:
             await self.msg(
-                f"The username {username!r} is incorrect.  It should be "
-                f"at least {settings.MIN_USERNAME} characters long.  "
-                "Please try again."
+                f"Le nom de compte {username!r} est invalide. Il doit "
+                f"comprendre au moins {settings.MIN_USERNAME} caractères."
             )
             return
 
         # Check that the username isn't a forbidden name
         if username in settings.FORBIDDEN_USERNAMES:
             await self.msg(
-                f"The username {username!r} is forbidden.  Please "
-                "choose another one."
+                f"Le nom de compte {username!r} est un nom interdit. "
+                "Vous ne pouvez créer un compte avec ce nom."
             )
             return
 
@@ -82,11 +90,11 @@ class Username(SessionContext):
         account = Account.get(username=username)
         if account:
             await self.msg(
-                f"The username {username!r} already exists.  Please "
-                "choose another one."
+                f"Le nom d'utilisateur {username!r} existe déjà. "
+                "Choisissez-en un différent."
             )
             return
 
-        await self.msg(f"You selected the username: {username!r}.")
+        await self.msg(f"Votre nouveau nom de compte : {username!r}.")
         self.session.options["username"] = username
         await self.move("account.create_password")

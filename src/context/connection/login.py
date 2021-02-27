@@ -51,8 +51,8 @@ class Login(SessionContext):
         # Check that all data are filled
         if player is None:
             await self.msg(
-                "Hmmm... something went wrong.  What was your "
-                "character name again?"
+                "Hmmm... une erreur s'est produite. Quel est votre "
+                "nom de votre personnage ?"
             )
             await self.move("player.name")
             return

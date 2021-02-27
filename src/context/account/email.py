@@ -46,37 +46,64 @@ class Email(SessionContext):
     """
 
     text = """
-        Finally, please enter an email address.  This email address
-        will ONLY be available to administrators who might need to
-        reach you in case of a problem.  This will also help you reset
-        your password in case you forgot it.  Additionally, if the game
-        has a NewsLetter system or want to share notifications, you can
-        receive emails unless you toggle these options off.
+        À présent, veuillez entrer une adresse e-mail. Celle-ci sera
+        associée à votre compte et ne sera pas visible par les autres joueurs.
+        Elle n'est pas strictement obligatoire, vous pouvez n'entrer
+        aucune adresse e-mail, aucune confirmation ne vous sera demandée.
+        Cependant, avoir une adresse e-mail valide n'est pas sans avantage :
 
-        But if you really, really don't want to share your email address,
-        just press RETURN.
+        *  Vous pourrez être averti de la communication en jeu (comme les
+           SMS que vous recevrez pendant votre déconnexion). Cette option,
+           comme toutes les autres, peut être désactivée tout en gardant
+           une adresse e-mail valide ;
+        *  En cas de rapport de bug ou de suggestion, les administrateurs
+           seront en mesure de vous répondre directement. Bien que vous
+           aurez accès à leur réponse dans tous les cas, le fait de la recevoir
+           par e-mail vous permettra de mieux gérer ces notifications ;
+        *  Si vous perdez le mot de passe d'accès à votre compte, il ne sera
+           pas possible de renouveler votre mot de passe si vous n'avez pas
+           d'adresse e-mail valide renseignée ;
+        *  Si vous avez besoin d'entrer en contact (hors du jeu) avec l'équipe
+           d'administration, l'adresse e-mail sera considérée comme la preuve
+           que vous possédez bien ce compte. Si vous n'en avez pas associé,
+           ces e-mails risquent d'avoir moins de crédibilité ;
+        *  Les utilisateurs ayant précisés une adresse e-mail valide pourront
+           être notifiés des nouveautés, incluant les corrections de bug,
+           ajouts de commande, ajouts de nouveautés dans l'univers et
+           évènements RP. Il est bien facile de manquer ces annonces (surtout
+           les évènements RP), spécifier une adresse e-mail valide est une
+           garantie d'avoir toutes les informations en temps et heure.
 
-        Your email address:
+        En dernier recours, il est préférable de préciser une adresse e-mail
+        valide ici ou de ne rien préciser du tout et appuyer sur ENTRÉE pour
+        continuer. Il n'est pas encouragé de préciser une "fausse adresse
+        e-mail", cela ne profite à personne.
     """
+    prompt = "Entrez une adresse e-mail ou appuyer sur ENTRÉE :"
 
     async def input(self, email):
         """The user entered something."""
         # Very basic test to try and filter invalid email adresses
         email = email.strip()
         if email and "@" not in email:
-            await self.msg(f"Well!  It sounds like {email!r} isn't a valid email address.  Please try again!")
+            await self.msg(
+                    f"Bon ! On dirait que {email!r} n'est pas une adresse "
+                    "e-mail valide. Veuillez réessayer."
+            )
             return
 
         account = Account.get(email=email)
         if account:
             await self.msg(
-                    f"Sorry, {email!r} is already in use.  Please "
-                    "choose another email address.")
+                    f"Désolé, l'adresse e-mail {email!r} est déjà utilisée "
+                    "par un autre compte. Veuillez entrer une nouvelle "
+                    "adresse e-mail."
+            )
             return
 
         self.session.options["email"] = email
         await self.msg(
-            f"Thank you!  Your email address, {email}, "
-            "was successfully registered."
+            f"Merci ! Votre adresse e-mail, {email}, a bien été associée "
+            "à ce compte sur Avenew."
         )
         await self.move("account.complete")

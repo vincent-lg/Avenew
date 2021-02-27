@@ -35,16 +35,19 @@ class Password(SessionContext):
 
     """Context to enter the account's password."""
 
-    prompt = "Your password:"
+    prompt = "Entrez votre mot de passe :"
     text = """
-        Enter your accoun't password.
+        Entrez le mot de passe associé à ce compte sur Avenew.
     """
 
     async def greet(self) -> str:
         """Greet the user."""
         account = self.session.options["account"]
         if account.options.get("wrong_password"):
-            return "Please wait, you can't retry your password just yet."
+            return (
+                    "Vous ne pouvez entrer de mot de passe, "
+                    "attendez quelques secondes..."
+            )
         else:
             return await super().greet()
 
@@ -52,25 +55,30 @@ class Password(SessionContext):
         """Check the account's password."""
         account = self.session.options.get("account")
         if account is None:
-            await self.msg("A problem occurred, please try logging in again.")
+            await self.msg(
+                    "Une erreur inattendue s'est produite. Veuillez "
+                    "réessayer de vous connecter."
+            )
             await self.move("account.home")
             return
 
         if account.options.get("wrong_password"):
             await self.msg(
-                    "Please wait, you can't retry your password just yet."
+                    "Veuillez attendre quelques secondes avant de "
+                    "réessayer un nouveau mot de passe."
             )
             return
 
         if account.is_correct_password(password):
-            await self.msg("Correct password!")
+            await self.msg("Le mot de passe entré est valide.")
             _ = account.options.pop("wrong_password", None)
             self.session.account = account
             await self.move("connection.players")
         else:
             account.options["wrong_password"] = True
             await self.msg(
-                    "Incorrect password.  Please try again in 3 seconds."
+                    "Mot de passe incorrect. Veuillez attendre quelques "
+                    "secondes avant de réessayer."
             )
             self.call_in(3, self.allow_new_password, account)
 

@@ -43,24 +43,26 @@ class Home(SessionContext):
 
     """
 
-    prompt = "Your username:"
+    prompt = "Entrez votre nom d'utilisateur :"
     text = """
-        If you already have an account, enter its username.
-        Otherwise, type 'new' to create a new account.
+        Si vous possédez déjà un compte sur Avenew, entrez à présent son nom.
+        Si ce n'est pas le cas, entrez 'nouveau' pour créer un compte.
     """
 
-    async def input_new(self):
+    async def input_nouveau(self):
         """The user has input 'new' to create a new account."""
         await self.move("account.username")
 
     async def input(self, username: str):
         """The user entered something else."""
         username = username.lower()
-        account = Account.get(username=username.lower())
+        account = Account.get(username=username)
         if account is None:
             await self.msg(
-                f"The account {username!r} couldn't be found.  If you "
-                "want to create it, type 'new', otherwise try another name.")
+                    f"Le compte {username!r} n'a pas pu être trouvé. Si vous "
+                    "souhaitez le créer, entrez la commande 'nouveau', sinon "
+                    "essayez un autre nom."
+            )
             return
 
         self.session.options["account"] = account

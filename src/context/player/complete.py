@@ -52,7 +52,8 @@ class Complete(SessionContext):
         # Check that all data are filled
         if name is None:
             await self.msg(
-                "Hmmm... something went wrong.  What was your character name again?"
+                "Une erreur inattendue s'est produite. Retour au début "
+                "de la création du personnage."
             )
             await self.move("player.name")
             return
@@ -62,12 +63,15 @@ class Complete(SessionContext):
             player = db.Player(name=name, account=self.session.account)
             commit()
         except OrmError:
-            await self.msg("Some error occurred.  We'll have to try again.")
+            await self.msg(
+                "Une erreur inattendue s'est produite. Retour au début "
+                "de la création du personnage."
+            )
             await self.move("player.name")
             return
 
         self.session.options["player"] = player
         player.db.saved_location = db.Room.get(
                 barcode=settings.START_ROOM)
-        await self.msg(f"The character named {name} was created successfully.")
+        await self.msg(f"Le personnage nommé {name} a bien été créé.")
         await self.move("connection.login")
