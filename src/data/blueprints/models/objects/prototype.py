@@ -34,7 +34,7 @@ from typing import Optional
 from data.base import db
 from data.blueprints.document import Document
 from data.blueprints.exceptions import BlueprintAlert, DelayMe, DelayDocument
-
+from data.blueprints.models.objects.types.abc import DOC_SUBTYPES
 import settings
 
 class ObjectPrototypeDocument(Document):
@@ -60,18 +60,29 @@ class ObjectPrototypeDocument(Document):
             "type": "str",
             "presence": "required",
         },
-        "objects": {
+        "types": {
             "type": "subset",
-            "document_type": "object",
+            "document_type": ...,
         },
     }
 
-    def fill_from_object(self, proto):
+    def fill_from_object(self, prototype):
         """Draw the document from an object."""
-        self.cleaned.barcode = proto.barcode
-        self.cleaned.singular = proto.names.singular
-        self.cleaned.plural = proto.names.plural
-        self.cleaned.description = proto.description.text
+        self.cleaned.barcode = prototype.barcode
+        self.cleaned.singular = prototype.names.singular
+        self.cleaned.plural = prototype.names.plural
+        self.cleaned.description = prototype.description.text
+
+        # Browse types
+        self.cleaned.types = []
+        for obj_type in prototype.types:
+            doc_type = DOC_SUBTYPES.get(obj_type.name)
+            assert doc_type, f"The document for {obj_type.name} wasn't found"
+            doc = doc_type(None)
+            doc.fill_from_prototype(obj_type)
+            attrs = doc.prototype_dictionary
+            attrs["type"] = obj_type.name
+            self.cleaned.types.append(attrs)
 
     def register(self):
         """Register the object for the blueprint."""
@@ -99,9 +110,15 @@ class ObjectPrototypeDocument(Document):
         if description:
             prototype.description.set(description)
 
-        # Add the objects
-        for obj in self.cleaned.objects:
+        # Add the types
+        for obj_type in self.cleaned.types:
+            name = obj_type.pop("type", None)
+            assert name, "The object type hasn't been set in this document"
+            doc_type = DOC_SUBTYPES.get(name)
+            assert doc_type, f"The document for {name} wasn't found"
+            doc = doc_type(self.blueprint)
+            doc.fill_for_prototypes(obj_type)
             try:
-                obj.apply(prototype)
+                doc.apply_prototype(prototype)
             except DelayMe:
-                raise DelayDocument(player)
+                raise DelayDocument(prototype)

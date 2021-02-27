@@ -27,38 +27,68 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Blueprint document for objects."""
+"""Blueprint document for the clothing type."""
 
 from data.base import db
 from data.blueprints.document import Document
 from data.blueprints.exceptions import DelayMe
 
-class ObjectDocument(Document):
+class ClothingTypeDocument(Document):
 
-    """Object document to add objects in blueprints."""
+    """Blueprint for the clothing object type."""
 
-    doc_type = "object"
+    doc_type = "clothing"
     doc_dump = False
-    fields = {
-        "room": {
-            "type": "str",
-            "presence": "optional",
+    fields = {}
+    fields_for_prototypes = {
+        "protection": {
+            "type": "int",
+            "presence": "required",
         },
-        "number": {
+    }
+    fields_for_objects = {
+        "max_protection": {
             "type": "int",
             "presence": "required",
         },
     }
 
-    def apply(self, prototype=None):
-        """Apply the document, spawn objects in the room."""
-        room = db.Room.get(barcode=self.cleaned.room)
-        number = self.cleaned.number
-        if prototype is None or room is None:
-            raise DelayMe
+    @property
+    def prototype_dictionary(self):
+        """Return the dictionary for prototypes."""
+        return {
+                "protection": self.cleaned.protection,
+        }
 
-        # If the object already exists
-        current = len(room.objects_of_prototype(prototype))
-        needed = number - current
-        for _ in range(needed):
-            prototype.create_at(room)
+    @property
+    def object_dictionary(self):
+        """Return the dictionary for objects."""
+        return {
+                "max_protection": self.cleaned.max_protection,
+        }
+
+    def fill_for_prototypes(self, document):
+        """Fill a document for object prototypes."""
+        return super().fill(document, type(self).fields_for_prototypes)
+
+    def fill_for_objects(self, document):
+        """Fill a document for objects."""
+        return super().fill(document, type(self).fields_for_objects)
+
+    def fill_from_prototype(self, obj_type):
+        """Fill the object for a prototype."""
+        self.cleaned.protection = obj_type.db.protection
+
+    def fill_from_object(self, obj_type):
+        """Fill the object for an object."""
+        self.cleaned.max_protection = obj_type.db.max_protection
+
+    def apply_prototype(self, prototype=None):
+        """Apply the document."""
+        with prototype.db.if_necessary as db:
+            db.protection = self.cleaned.protection
+
+    def apply_object(self, obj=None):
+        """Apply the document."""
+        with obj.db.if_necessary as db:
+            db.max_protection = self.cleaned.max_protection

@@ -53,9 +53,9 @@ DOCUMENT_TYPES = {
         "account": "data.blueprints.account.AccountDocument",
         "char_proto": ("data.blueprints.models.prototypes."
                 "character.CharacterPrototypeDocument"),
-        "object": "data.blueprints.models.object.ObjectDocument",
-        "object_proto": ("data.blueprints.models.prototypes."
-                "object.ObjectPrototypeDocument"),
+        "object": "data.blueprints.models.objects.object.ObjectDocument",
+        "object_proto": ("data.blueprints.models.objects.prototype."
+                "ObjectPrototypeDocument"),
         "player": "data.blueprints.player.PlayerDocument",
         "exit": "data.blueprints.exit.ExitDocument",
         "room": "data.blueprints.room.RoomDocument",
@@ -131,6 +131,33 @@ class Document:
             res[key] = value
 
         return res
+
+    def deduce_external(self, obj: 'db.Entity') -> str:
+        """
+        Deduce and return an external identifier.
+
+        Args:
+            obj (db.Entity): any object in the database.
+
+        """
+        if isinstance(obj, db.Room):
+            return "room:{obj.barcode}"
+
+        raise ValueError("cannot deduce external representation")
+
+    def get_external(self, external: str) -> 'db.Entity':
+        """
+        Get the external object (an entity) if possible.
+
+        Args:
+            external (str): the external representation.
+
+        """
+        obj, identifier = external.split(":", 1)
+        if obj == "room":
+            return db.Room.get(barcode=identifier)
+
+        raise ValueError("cannot retrive the external")
 
     def fill(self, document: Dict[str, Any],
             section: Optional[Dict[str, Any]] = None):
@@ -260,11 +287,18 @@ class Document:
 
         raise ValueError(f"presence {presence} not known")
 
+    def is_proper_external(self, key, value, *args, **kwargs):
+        """An object always is a proper external."""
+        return value
+
     def is_proper_subset(self, key, value, document, document_type, number="any",
             **kwargs):
         """Is it a proper subset?"""
+        if document_type is ...:
+            return value
+
         if document_type not in DOCUMENT_TYPES:
-            raise ValueError(f"{document!r} isn't defined")
+            raise ValueError(f"{document_type!r} isn't defined")
 
         if value is NOT_SET:
             return []
