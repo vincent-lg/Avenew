@@ -40,6 +40,7 @@ context (say, the creation of the username, for instance, or the password).
 
 from abc import ABCMeta, abstractmethod
 import asyncio
+from enum import Enum
 from importlib import import_module
 import inspect
 from pathlib import Path
@@ -53,7 +54,41 @@ from tools.delay import Delay
 # Constants
 CONTEXTS = {}
 
-class BaseContext(metaclass=ABCMeta):
+class MetaContext(ABCMeta):
+
+    """Context metaclass."""
+
+    def __new__(cls, name, bases, attrs):
+        empty_policy = attrs.pop("empty_policy", "refresh")
+        cls = super().__new__(cls, name, bases, attrs)
+        cls.empty_policy = empty_policy
+        return cls
+
+    @property
+    def empty_policy(cls):
+        return cls._empty_policy
+
+    @empty_policy.setter
+    def empty_policy(cls, new_policy: str):
+        """Change the empty policy (takes a string)."""
+        for policy in EmptyPolicy:
+            name = policy.value
+            if new_policy == name:
+                cls._empty_policy = policy
+                return
+
+        raise ValueError(f"unknown policy: {new_policy!r}")
+
+class EmptyPolicy(Enum):
+
+    """Empty policy."""
+
+    REFRESH = "refresh"
+    IGNORE = "ignore"
+    CUSTOM = "custom"
+
+
+class BaseContext(metaclass=MetaContext):
 
     """
     Class defining a context.
@@ -134,6 +169,7 @@ class BaseContext(metaclass=ABCMeta):
     pyname = "UNSET"
     prompt = ""
     text = ""
+    empty_policy = "refresh"
 
     def __str__(self):
         return self.pyname
@@ -235,6 +271,15 @@ class BaseContext(metaclass=ABCMeta):
 
         """
         await type(self).condition.mark_as_running(self)
+        if not user_input: # Empty input, handle it throughh the policy.
+            policy = type(self).empty_policy
+            if policy is EmptyPolicy.REFRESH:
+                await self.refresh()
+                return
+            elif policy is EmptyPolicy.IGNORE:
+                return
+            # The next case is custom, and we go on if custom.
+
         if " " in user_input:
             command, args = user_input.split(" ", 1)
         else:
