@@ -72,26 +72,29 @@ class ObjectPrototype(PicklableEntity, db.Entity):
     def types(self):
         return TypeHandler(self)
 
-    def create_at(self, location: 'db.Room'):
+    def create_at(self, location: 'db.Room',
+            barcode: ty.Optional[str] = None) -> 'db.Object':
         """
         Create an object at this location.
 
         Args:
             location (Room): the object's intended location.
+            barcode (str, opt): the optional barcode.
 
         Returns:
             object (Object): the new object.
 
         """
-        # Find the barcode (needs optimization).
-        existing = select(o.barcode for o in self.objects)
-        x = 1
-        found = False
-        while not found:
-            barcode = f"{self.barcode}_{x}"
-            if barcode not in existing:
-                found = True
-            x += 1
+        if barcode is None:
+            # Find the barcode (needs optimization).
+            existing = select(o.barcode for o in self.objects)
+            x = 1
+            found = False
+            while not found:
+                barcode = f"{self.barcode}_{x}"
+                if barcode not in existing:
+                    found = True
+                x += 1
 
         obj = self.objects.create(barcode=barcode)
 
