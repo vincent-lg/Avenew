@@ -46,7 +46,8 @@ class Player(Character):
 
     """Playing Character (PC)."""
 
-    name = Required(str)
+    first_name = Required(str)
+    last_name = Required(str)
     account = Required("Account")
     created_on = Required(datetime, default=datetime.utcnow)
     binary_context_stack = Optional(bytes)
@@ -65,6 +66,11 @@ class Player(Character):
         stack.add_command_layer("static")
         return stack
 
+    @property
+    def full_name(self):
+        """Return the player's full name."""
+        return f"{self.first_name} {self.last_name}"
+
     def after_insert(self):
         """
         Hook called before the player is inserted.
@@ -72,7 +78,7 @@ class Player(Character):
         We take this opportunity to add the player name as a singular name.
 
         """
-        self.names.singular = self.name
+        self.names.singular = self.full_name
 
     def get_hashable_name(self, group_for: 'db.Character'):
         """
@@ -114,4 +120,4 @@ class Player(Character):
             name (str): the singular or plural name to display, depending.
 
         """
-        return self.name
+        return self.full_name

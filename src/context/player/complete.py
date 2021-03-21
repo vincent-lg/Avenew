@@ -47,31 +47,29 @@ class Complete(SessionContext):
 
     async def refresh(self):
         """Try to create a character."""
-        name = self.session.options.get("player_name")
-
-        # Check that all data are filled
-        if name is None:
-            await self.msg(
-                "Une erreur inattendue s'est produite. Retour au début "
-                "de la création du personnage."
-            )
-            await self.move("player.name")
-            return
+        first_name = self.session.options.get("first_name")
+        last_name = self.session.options.get("last_name")
+        age = self.session.options.get("age")
+        pronoun = self.session.options.get("pronoun")
 
         # Attempt to create the player
         try:
-            player = db.Player(name=name, account=self.session.account)
+            player = db.Player(first_name=first_name, last_name=last_name,
+                    age=age, account=self.session.account)
             commit()
         except OrmError:
             await self.msg(
                 "Une erreur inattendue s'est produite. Retour au début "
                 "de la création du personnage."
             )
-            await self.move("player.name")
+            await self.move("player.first_name")
             return
 
+        player.pronoun = pronoun
         self.session.options["player"] = player
         player.db.saved_location = db.Room.get(
                 barcode=settings.START_ROOM)
-        await self.msg(f"Le personnage nommé {name} a bien été créé.")
+        await self.msg(
+                f"Le personnage nommé {player.full_name} a bien été créé."
+        )
         await self.move("connection.login")

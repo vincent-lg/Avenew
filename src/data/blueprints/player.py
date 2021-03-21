@@ -32,6 +32,7 @@
 from data.base import db
 from data.blueprints.document import Document
 from data.blueprints.exceptions import DelayMe
+from data.constants import Pronoun
 
 class PlayerDocument(Document):
 
@@ -40,10 +41,21 @@ class PlayerDocument(Document):
     doc_type = "player"
     doc_dump = False
     fields = {
-        "name": {
+        "first_name": {
             "type": "str",
             "presence": "required",
-            "py_attr": "name",
+        },
+        "last_name": {
+            "type": "str",
+            "presence": "required",
+        },
+        "age": {
+            "type": "int",
+            "presence": "required",
+        },
+        "pronoun": {
+            "type": "str",
+            "presence": "required",
         },
         "account": {
             "type": "str",
@@ -64,13 +76,29 @@ class PlayerDocument(Document):
             raise DelayMe
 
         # If the player already exists
-        player = db.Player.get(name=self.cleaned.name)
+        player = db.Player.get(first_name=self.cleaned.first_name,
+                last_name=self.cleaned.last_name, account=account)
         if player is None:
-            player = db.Player(name=self.cleaned.name, account=account)
+            player = db.Player(
+                    first_name=self.cleaned.first_name,
+                    last_name=self.cleaned.last_name, account=account
+            )
 
         # Add player to account, if necessary
         if player not in account.players:
             account.players.add(player)
+
+        # Set age
+        player.age = self.cleaned.age
+
+        # Set pronoun
+        choices = {member.subject: member for member in Pronoun}
+        pronoun = self.cleaned.pronoun.lower()
+        if pronoun in choices:
+            member = choices[pronoun]
+            player.pronoun = member
+        else:
+            raise ValueError(f"invalid pronoun: {self.cleaned.pronoun}")
 
         # Add permissions to the player, if necessary
         for permission in self.cleaned.permissions.split():

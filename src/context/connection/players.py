@@ -54,7 +54,7 @@ class Players(SessionContext):
 
         for i, player in enumerate(
                 account.players.sort_by(db.Player.created_on)):
-            screen += f"\n  {i + 1} pour jouer {player.name}"
+            screen += f"\n  {i + 1} pour jouer {player.full_name}"
 
         screen += "\n\n" + dedent("""
             Entrez 'c' pour créer un personnage sur ce compte.
@@ -64,7 +64,7 @@ class Players(SessionContext):
 
     async def input_c(self):
         """The user has entered 'c'."""
-        await self.move("player.name")
+        await self.move("player.first_name")
 
     async def input(self, command: str):
         """Expecting a player number."""

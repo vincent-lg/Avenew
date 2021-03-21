@@ -27,39 +27,25 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Name context, to create a new player's name."""
+"""Data constants."""
 
-from context.session_context import SessionContext
-import settings
+from enum import IntEnum
 
-class Name(SessionContext):
+class Pronoun(IntEnum):
 
-    """
-    Context to enter the player's new name.
+    """List of possible pronouns."""
 
-    Input:
-        <valid>: valid name, move to player.complete.
-        <invalid>: invalid name, gives reason and stays here.
+    UNSET = 0
+    SHE = 1
+    HE = 2
+    NEUTRAL = 3
 
-    """
+    @property
+    def subject(self) -> str:
+        """Return the subject for the pronoun (she, he, they...)."""
+        if self == Pronoun.SHE:
+            return "elle"
+        elif self == Pronoun.HE:
+            return "il"
 
-    text = f"""
-        You are now about to create a new character in {settings.GAME_NAME}.
-        Enter the name of your character as others will see it in the game.
-
-        Your new character's name:
-    """
-
-    async def input(self, name):
-        """The user entered something."""
-        # Check that the name isn't a forbidden name
-        if name.lower() in settings.FORBIDDEN_CHARACTER_NAMES:
-            await self.msg(
-                f"The name {name!r} is forbidden.  Please "
-                "choose another one."
-            )
-            return
-
-        await self.msg(f"You selected the name: {name!r}.")
-        self.session.options["player_name"] = name
-        await self.move("player.complete")
+        return "iel"

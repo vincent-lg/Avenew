@@ -31,9 +31,10 @@
 
 import typing as ty
 
-from pony.orm import Optional
+from pony.orm import Optional, Required
 
 from data.base import db, CanBeNamed, PicklableEntity
+from data.constants import Pronoun
 from data.decorators import lazy_property
 from data.handlers import (
         AttributeHandler, BlueprintHandler, LocatorHandler,
@@ -46,6 +47,8 @@ class Character(CanBeNamed, PicklableEntity, db.Entity):
     """Character entity."""
 
     session = Optional("Session")
+    age = Optional(int)
+    _pronoun = Required(int, default=Pronoun.UNSET)
 
     @lazy_property
     def db(self):
@@ -83,7 +86,18 @@ class Character(CanBeNamed, PicklableEntity, db.Entity):
     def names(self):
         return NameHandler(self)
 
+    @property
+    def pronoun(self):
+        """Return the pronoun, as an enum member."""
+        return Pronoun(self._pronoun)
+
+    @pronoun.setter
+    def pronoun(self, new_pronoun):
+        """Return the pronoun, as an enum member."""
+        self._pronoun = new_pronoun
+
     @classmethod
+
     def init_script(cls):
         """Initialize the script of characters, adding events."""
         cls.add_scripting_event(
